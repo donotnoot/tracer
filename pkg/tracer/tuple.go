@@ -98,3 +98,7 @@ func MulTup(a, b *Tup) *Tup {
 
 // Multiply applies the a Hadamard Product to t in place.
 func (t *Tup) Multiply(a *Tup) { t.X *= a.X; t.Y *= a.Y; t.Z *= a.Z; t.W *= a.W }
+
+func (t *Tup) Reflect(normal *Tup) *Tup {
+	return SubTup(t, ScaleTup(ScaleTup(normal, 2), DotTup(t, normal)))
+}

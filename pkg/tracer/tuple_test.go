@@ -279,4 +279,30 @@ func TestTuple(t *testing.T) {
 
 	// Tests for add, sub, mul colors by scalars skipped, they're the same as tuples.
 	// Test for multiply color skipped, it's just a normal Hadarmard product.
+
+	t.Run("Reflecting a vector off a 45deg normal", func(t *testing.T) {
+		t.Parallel()
+
+		vector := Vector(1, -1, 0)
+		normal := Vector(0, 1, 0)
+
+		reflection := vector.Reflect(normal)
+
+		assert.Equal(t, Vector(1, 1, 0), reflection)
+	})
+
+	t.Run("Reflecting a vector off a slanted surface", func(t *testing.T) {
+		t.Parallel()
+		cmp := &Cmp{10e-5}
+
+		vector := Vector(0, -1, 0)
+		p := math.Sqrt(2) / 2.0
+		normal := Vector(p, p, 0)
+
+		reflection := vector.Reflect(normal)
+
+		assert.True(t, cmp.Equal(1, reflection.X))
+		assert.True(t, cmp.Equal(0, reflection.Y))
+		assert.True(t, cmp.Equal(0, reflection.Z))
+	})
 }
