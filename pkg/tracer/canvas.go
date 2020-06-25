@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"math"
+	"sync"
 )
 
 // Canvas represents a canvas made out of pixels (colors).
@@ -11,6 +12,8 @@ type Canvas struct {
 	Pixels []*Tup
 	Height int
 	Width  int
+
+	m *sync.Mutex
 }
 
 // NewCanvas initializes a new canvas of specified dimensions.
@@ -25,6 +28,7 @@ func NewCanvas(width, height int) *Canvas {
 		}(),
 		Height: height,
 		Width:  width,
+		m:      &sync.Mutex{},
 	}
 }
 
@@ -44,11 +48,29 @@ func (c *Canvas) WritePixel(x, y int, color *Tup) {
 	if offset < 0 {
 		return
 	}
+	c.m.Lock()
+	defer c.m.Unlock()
+	c.Pixels[offset] = color
+}
+
+// WritePixelUnsafely writes a pixel to the canvas but it's not threadsafe.
+func (c *Canvas) WritePixelUnsafely(x, y int, color *Tup) {
+	offset := c.offset(x, y)
+	l := len(c.Pixels)
+	if offset > l {
+		return
+	}
+	if offset < 0 {
+		return
+	}
 	c.Pixels[offset] = color
 }
 
 // PPM generates a PPM byte array representing the canvas
 func (c *Canvas) PPM() []byte {
+	c.m.Lock()
+	defer c.m.Unlock()
+
 	buffer := &bytes.Buffer{}
 
 	fmt.Fprintf(buffer, "P3\n%d %d\n255\n", c.Width, c.Height)
