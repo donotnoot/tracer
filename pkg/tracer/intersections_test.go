@@ -126,4 +126,17 @@ func TestIntersections(t *testing.T) {
 		assert.Equal(t, Vector(0, 0, -1), c.Eye)
 		assert.Equal(t, Vector(0, 0, -1), c.Normal)
 	})
+
+	t.Run("the hit should offset the point", func(t *testing.T) {
+		t.Parallel()
+
+		r := &Ray{Point(0, 0, -5), Vector(0, 0, 1)}
+		shape := NewSphere()
+		shape.Transform = TranslationMatrix(0, 0, 1)
+		i := &Intersection{5, shape}
+		comps := i.PrepareComputations(r)
+
+		assert.True(t, comps.OverPoint.Z < -10e-5/2)
+		assert.True(t, comps.Point.Z > comps.OverPoint.Z)
+	})
 }
