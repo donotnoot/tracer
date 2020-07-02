@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	canvas := tracer.NewCanvas(800, 800)
+	canvas := tracer.NewPPMCanvas(800, 800)
 
 	for r := float64(0); r < math.Pi*2; r += math.Pi / float64(6) {
 		p := tracer.Point(0, 200, 0)

@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 	"runtime/pprof"
-	"sync"
 
+	"github.com/donotnoot/tracer/pkg/openglcanvas"
 	"github.com/donotnoot/tracer/pkg/tracer"
 )
 
@@ -25,8 +25,9 @@ func main() {
 		}
 		defer pprof.StopCPUProfile()
 	}
+
 	canvasPixels := 1000
-	canvas := tracer.NewCanvas(canvasPixels, canvasPixels)
+	canvas := openglcanvas.NewOpenGLCanvas(canvasPixels, canvasPixels, "OpenGL Canvas")
 
 	rayOrigin := tracer.Point(0, 0, -5)
 	wallZ := 10.0
@@ -36,41 +37,44 @@ func main() {
 
 	sphere := tracer.NewSphere()
 	sphere.Material = tracer.NewMaterial()
-	sphere.Material.Color = tracer.Color(.2, .1, .9)
+	sphere.Material.Color = tracer.Color(1, .2, 1)
 
 	light := &tracer.PointLight{
 		Position:  tracer.Point(-10, 10, -10),
 		Intensity: tracer.Color(1, 1, 1),
 	}
 
-	wg := &sync.WaitGroup{}
+	pace := make(chan struct{}, 256)
 
-	for y := 0; y < canvasPixels; y++ {
-		worldY := halfWall - pixelSize*float64(y)
-		for x := 0; x < canvasPixels; x++ {
-			worldX := -halfWall + pixelSize*float64(x)
-			wallPoint := tracer.Point(worldX, worldY, wallZ)
+	go func() {
+		for y := 0; y < canvasPixels; y++ {
+			worldY := halfWall - pixelSize*float64(y)
+			for x := 0; x < canvasPixels; x++ {
+				worldX := -halfWall + pixelSize*float64(x)
+				wallPoint := tracer.Point(worldX, worldY, wallZ)
 
-			// Trace rays concurrently
-			wg.Add(1)
-			go func(x, y int) {
-				defer wg.Done()
+				// Trace rays concurrently
+				go func(x, y int) {
+					pace <- struct{}{}
+					defer func() { <-pace }()
 
-				ray := &tracer.Ray{rayOrigin, tracer.SubTup(wallPoint, rayOrigin).Normalize()}
-				xs := sphere.Intersect(ray)
-				if xs != nil {
-					color := sphere.Material.Lighting(
-						light,
-						ray.Position(xs[0].T).Normalize(),
-						tracer.NegTup(ray.Direction),
-						sphere.Normal(ray.Position(xs[0].T)),
-					)
-					canvas.WritePixel(x, y, color)
-				}
-			}(x, y)
+					ray := &tracer.Ray{rayOrigin, tracer.SubTup(wallPoint, rayOrigin).Normalize()}
+					xs := sphere.Intersect(ray)
+					if xs != nil {
+						color := sphere.Material.Lighting(
+							light,
+							ray.Position(xs[0].T).Normalize(),
+							tracer.NegTup(ray.Direction),
+							sphere.Normal(ray.Position(xs[0].T)),
+						)
+						canvas.WritePixel(x, y, color)
+					}
+				}(x, y)
+			}
 		}
-	}
+	}()
 
-	wg.Wait()
-	os.Stdout.Write(canvas.PPM())
+	// Must run on the main thread, hence the work being done on the gorountine
+	// above.
+	canvas.Run()
 }

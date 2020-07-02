@@ -26,7 +26,7 @@ func main() {
 	proj := &Projectile{tracer.Point(0, 1, 0), tracer.ScaleTup(tracer.Vector(3, 4, 0).Normalize(), 11.25)}
 	env := &Environment{tracer.Vector(0, -.1, 0), tracer.Vector(-.01, 0, 0)}
 
-	canvas := tracer.NewCanvas(900, 550)
+	canvas := tracer.NewPPMCanvas(900, 550)
 
 	i := 0
 	for {
