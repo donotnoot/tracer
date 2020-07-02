@@ -111,4 +111,59 @@ func TestWorld(t *testing.T) {
 
 		assert.Equal(t, w.Objects[1].GetMaterial().Color, c)
 	})
+
+	t.Run("there is no shadown when nothing is collinear with point and line", func(t *testing.T) {
+		t.Parallel()
+
+		w := NewWorld()
+		p := Point(0, 10, 0)
+
+		assert.False(t, w.IsShadowed(p))
+	})
+
+	t.Run("the shadow when an object is between the point and the light", func(t *testing.T) {
+		t.Parallel()
+
+		w := NewWorld()
+		p := Point(10, -10, 10)
+
+		assert.True(t, w.IsShadowed(p))
+	})
+
+	t.Run("there is no shadow when an object is behind the light", func(t *testing.T) {
+		t.Parallel()
+
+		w := NewWorld()
+		p := Point(-20, 20, -20)
+
+		assert.False(t, w.IsShadowed(p))
+	})
+
+	t.Run("there is no shadow when an object is behind the point", func(t *testing.T) {
+		t.Parallel()
+
+		w := NewWorld()
+		p := Point(-2, 2, -2)
+
+		assert.False(t, w.IsShadowed(p))
+	})
+
+	t.Run("ShadeHit is given an intersection in shadow", func(t *testing.T) {
+		t.Parallel()
+
+		w := NewWorld()
+		w.Light = &PointLight{Point(0, 0, -10), Color(1, 1, 1)}
+		w.Objects = append(w.Objects, NewSphere())
+
+		s := NewSphere()
+		s.Transform = TranslationMatrix(0, 0, 10)
+		w.Objects = append(w.Objects, s)
+
+		r := &Ray{Point(0, 0, 5), Vector(0, 0, 1)}
+		i := &Intersection{4, s}
+		comps := i.PrepareComputations(r)
+		c := w.ShadeHit(comps)
+
+		assert.Equal(t, Color(.1, .1, .1), c)
+	})
 }

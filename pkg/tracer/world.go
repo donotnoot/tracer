@@ -41,7 +41,8 @@ func (w *World) Intersect(r *Ray) Intersections {
 }
 
 func (w *World) ShadeHit(c *Computations) *Tup {
-	return c.Object.GetMaterial().Lighting(w.Light, c.Point, c.Eye, c.Normal)
+	s := w.IsShadowed(c.OverPoint)
+	return c.Object.GetMaterial().Lighting(w.Light, c.Point, c.Eye, c.Normal, s)
 }
 
 func (w *World) ColorAt(r *Ray) *Tup {
@@ -53,4 +54,18 @@ func (w *World) ColorAt(r *Ray) *Tup {
 	}
 
 	return w.ShadeHit(intersections[i].PrepareComputations(r))
+}
+
+func (w *World) IsShadowed(p *Tup) bool {
+	v := SubTup(w.Light.Position, p)
+	distance := v.Magnitude()
+	direction := v.Normalize()
+
+	ray := &Ray{p, direction}
+
+	if hit, _, ok := w.Intersect(ray).Hit(); ok {
+		return hit < distance
+	}
+
+	return false
 }
