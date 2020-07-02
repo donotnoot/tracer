@@ -75,13 +75,55 @@ func TestIntersections(t *testing.T) {
 
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				hit, ok := test.ixs.Hit()
+				hit, idx, ok := test.ixs.Hit()
 				if test.hit < 0 {
 					assert.False(t, ok)
 					return
 				}
 				assert.Equal(t, test.ixs[test.hit].T, hit)
+				assert.Equal(t, test.hit, idx)
 			})
 		}
+	})
+
+	t.Run("precomputing the state of an intersection", func(t *testing.T) {
+		t.Parallel()
+
+		r := &Ray{Point(0, 0, -5), Vector(0, 0, 1)}
+		s := NewSphere()
+		i := &Intersection{4.0, s}
+
+		c := i.PrepareComputations(r)
+
+		assert.Equal(t, i.T, c.T)
+		assert.Equal(t, i.Object, c.Object)
+		assert.Equal(t, Point(0, 0, -1), c.Point)
+		assert.Equal(t, Vector(0, 0, -1), c.Eye)
+		assert.Equal(t, Vector(0, 0, -1), c.Normal)
+	})
+
+	t.Run("the hit, when an intersection occurs on the outside", func(t *testing.T) {
+		t.Parallel()
+
+		r := &Ray{Point(0, 0, -5), Vector(0, 0, 1)}
+		s := NewSphere()
+		i := &Intersection{4.0, s}
+		c := i.PrepareComputations(r)
+
+		assert.False(t, c.Inside)
+	})
+
+	t.Run("the hit, when an intersection occurs on the inside", func(t *testing.T) {
+		t.Parallel()
+
+		r := &Ray{Point(0, 0, 0), Vector(0, 0, 1)}
+		s := NewSphere()
+		i := &Intersection{1, s}
+		c := i.PrepareComputations(r)
+
+		assert.True(t, c.Inside)
+		assert.Equal(t, Point(0, 0, 1), c.Point)
+		assert.Equal(t, Vector(0, 0, -1), c.Eye)
+		assert.Equal(t, Vector(0, 0, -1), c.Normal)
 	})
 }
