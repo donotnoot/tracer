@@ -32,7 +32,7 @@ func TestMaterial(t *testing.T) {
 		eyev := Vector(0, 0, -1)
 		normalv := Vector(0, 0, -1)
 		light := &PointLight{Point(0, 0, -10), Color(1, 1, 1)}
-		result := mat.Lighting(light, pos, eyev, normalv)
+		result := mat.Lighting(light, pos, eyev, normalv, false)
 
 		assert.Equal(t, Color(1.9, 1.9, 1.9), result)
 	})
@@ -44,7 +44,7 @@ func TestMaterial(t *testing.T) {
 		eyev := Vector(0, p, p)
 		normalv := Vector(0, 0, -1)
 		light := &PointLight{Point(0, 0, -10), Color(1, 1, 1)}
-		result := mat.Lighting(light, pos, eyev, normalv)
+		result := mat.Lighting(light, pos, eyev, normalv, false)
 
 		assert.Equal(t, Color(1.0, 1.0, 1.0), result)
 	})
@@ -57,7 +57,7 @@ func TestMaterial(t *testing.T) {
 		eyev := Vector(0, 0, -1)
 		normalv := Vector(0, 0, -1)
 		light := &PointLight{Point(0, 10, -10), Color(1, 1, 1)}
-		result := mat.Lighting(light, pos, eyev, normalv)
+		result := mat.Lighting(light, pos, eyev, normalv, false)
 
 		r := .1 + p*.9
 		assert.True(t, cmp.Equal(r, result.Red()))
@@ -73,7 +73,7 @@ func TestMaterial(t *testing.T) {
 		eyev := Vector(0, -p, -p)
 		normalv := Vector(0, 0, -1)
 		light := &PointLight{Point(0, 10, -10), Color(1, 1, 1)}
-		result := mat.Lighting(light, pos, eyev, normalv)
+		result := mat.Lighting(light, pos, eyev, normalv, false)
 
 		r := .1 + .9*p + .9
 		assert.Equal(t, Color(r, r, r), result)
@@ -85,7 +85,18 @@ func TestMaterial(t *testing.T) {
 		eyev := Vector(0, 0, -1)
 		normalv := Vector(0, 0, -1)
 		light := &PointLight{Point(0, 0, 10), Color(1, 1, 1)}
-		result := mat.Lighting(light, pos, eyev, normalv)
+		result := mat.Lighting(light, pos, eyev, normalv, false)
+
+		assert.Equal(t, Color(.1, .1, .1), result)
+	})
+
+	t.Run("lighting with the surface in shadow", func(t *testing.T) {
+		t.Parallel()
+
+		eyev := Vector(0, 0, -1)
+		normalv := Vector(0, 0, -1)
+		light := &PointLight{Point(0, 0, -10), Color(1, 1, 1)}
+		result := mat.Lighting(light, pos, eyev, normalv, true)
 
 		assert.Equal(t, Color(.1, .1, .1), result)
 	})

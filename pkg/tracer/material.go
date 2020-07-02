@@ -2,6 +2,8 @@ package tracer
 
 import "math"
 
+const ()
+
 type Material struct {
 	Color                                 *Tup
 	Ambient, Diffuse, Specular, Shininess float64
@@ -17,12 +19,17 @@ func NewMaterial() *Material {
 	}
 }
 
-func (m *Material) Lighting(l *PointLight, p *Tup, eyev *Tup, normv *Tup) *Tup {
+func (m *Material) Lighting(l *PointLight, p *Tup, eyev *Tup, normv *Tup, inShadow bool) *Tup {
 	var ambient, diffuse, specular *Tup
 
 	effectiveColor := MulTup(m.Color, l.Intensity)
-	lightv := SubTup(l.Position, p).Normalize()
 	ambient = ScaleTup(effectiveColor, m.Ambient)
+
+	if inShadow {
+		return ambient
+	}
+
+	lightv := SubTup(l.Position, p).Normalize()
 	lightDotNormal := DotTup(lightv, normv)
 
 	if lightDotNormal < 0 {
