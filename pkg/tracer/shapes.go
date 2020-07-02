@@ -4,6 +4,9 @@ import "math"
 
 type Object interface {
 	ObjectType() ObjectType
+	Intersect(*Ray) Intersections
+	Normal(*Tup) *Tup
+	GetMaterial() *Material
 }
 
 type ObjectType uint32
@@ -56,6 +59,8 @@ func (s *Sphere) Intersect(r *Ray) Intersections {
 		},
 	}
 }
+
+func (s *Sphere) GetMaterial() *Material { return s.Material }
 
 func (s *Sphere) Normal(point *Tup) *Tup {
 	objectPoint := MatrixTupMultiply(MatrixInverse(s.Transform).(*Mat4), point)
