@@ -244,4 +244,34 @@ func TestTransformations(t *testing.T) {
 	// Skipped tests
 	// "Individual transformations are applied in sequence" p. 54
 	// "Chained transformations must be applied in reverse order" p. 54
+
+	t.Run("the view matrix for the default orientation", func(t *testing.T) {
+		t.Parallel()
+
+		from, to, up := Point(0, 0, 0), Point(0, 0, -1), Vector(0, 1, 0)
+
+		m := ViewMatrix(from, to, up)
+
+		assert.Equal(t, MatrixIdentity(4), m)
+	})
+
+	t.Run("the view matrix looking in the positive Z direction", func(t *testing.T) {
+		t.Parallel()
+
+		from, to, up := Point(0, 0, 0), Point(0, 0, 1), Vector(0, 1, 0)
+
+		m := ViewMatrix(from, to, up)
+
+		assert.Equal(t, ScalingMatrix(-1, 1, -1), m)
+	})
+
+	t.Run("the view transformation moves the world", func(t *testing.T) {
+		t.Parallel()
+
+		from, to, up := Point(0, 0, 8), Point(0, 0, 0), Vector(0, 1, 0)
+
+		m := ViewMatrix(from, to, up)
+
+		assert.Equal(t, TranslationMatrix(0, 0, -8), m)
+	})
 }
