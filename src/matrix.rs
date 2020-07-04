@@ -1,9 +1,9 @@
 use super::tuple;
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct Mat {
     size: usize,
-    mat: [[f64; 4]; 4],
+    pub mat: [[f64; 4]; 4],
 }
 
 impl Mat {
