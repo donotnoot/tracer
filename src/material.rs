@@ -1,5 +1,5 @@
-use super::tuple::{Tup, color, dot};
-use super::light::{PointLight};
+use super::light::PointLight;
+use super::tuple::{color, dot, Tup};
 
 #[derive(Clone)]
 pub struct Material {
@@ -33,8 +33,8 @@ impl Material {
         let light_normal_dot = dot(&light, &normal);
 
         if light_normal_dot < 0.0 {
-            let diffuse = color(0.0,0.0,0.0);
-            let specular = color(0.0,0.0,0.0);
+            let diffuse = color(0.0, 0.0, 0.0);
+            let specular = color(0.0, 0.0, 0.0);
             return &ambient + &(&diffuse + &specular);
         } else {
             let diffuse = &effective_color * (&self.diffuse * &light_normal_dot);
@@ -42,12 +42,12 @@ impl Material {
             let reflect_dot_eye = dot(&reflect, &eye);
 
             if reflect_dot_eye <= 0.0 {
-                let specular = color(0.0,0.0,0.0);
+                let specular = color(0.0, 0.0, 0.0);
                 return &ambient + &(&diffuse + &specular);
             } else {
                 let factor = reflect_dot_eye.powf(self.shininess);
                 let specular = &l.intensity * (&self.specular * factor);
-                return &ambient + &(&diffuse + &specular)
+                return &ambient + &(&diffuse + &specular);
             }
         }
     }

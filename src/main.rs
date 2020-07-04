@@ -34,7 +34,7 @@ fn main() {
 
     // this should somehow run concurrently
     camera.render(world, &mut canvas);
-    
+
     // with this. this should also run in the main thread because opengl needs some thread-local
     // state.
     canvas.run();

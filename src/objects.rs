@@ -13,7 +13,7 @@ pub enum Object {
 impl Normal for Object {
     fn normal(&self, p: &Tup) -> Tup {
         match self {
-        Object::Sphere(s) => s.normal(p),
+            Object::Sphere(s) => s.normal(p),
         }
     }
 }
@@ -21,7 +21,7 @@ impl Normal for Object {
 impl Intersect for Object {
     fn intersect(&self, r: &Ray) -> Intersections {
         match self {
-        Object::Sphere(s) => s.intersect(r),
+            Object::Sphere(s) => s.intersect(r),
         }
     }
 }
@@ -29,7 +29,7 @@ impl Intersect for Object {
 impl HasMaterial for Object {
     fn material(&self) -> material::Material {
         match self {
-        Object::Sphere(s) => s.material()
+            Object::Sphere(s) => s.material(),
         }
     }
 }

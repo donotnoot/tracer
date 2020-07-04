@@ -1,6 +1,6 @@
-use super::objects::{Object, Normal};
+use super::objects::{Normal, Object};
 use super::ray::Ray;
-use super::tuple::{Tup, dot};
+use super::tuple::{dot, Tup};
 
 pub type Intersections = Vec<Intersection>;
 

@@ -151,7 +151,10 @@ impl OpenGLCanvas {
     }
 
     pub fn run(&self) {
-        let (mut rl, thread) = raylib::init().size(self.width as i32, self.height as i32).title(&self.title).build();
+        let (mut rl, thread) = raylib::init()
+            .size(self.width as i32, self.height as i32)
+            .title(&self.title)
+            .build();
 
         while !rl.window_should_close() {
             let mut d = rl.begin_drawing(&thread);

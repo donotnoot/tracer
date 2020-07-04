@@ -1,9 +1,9 @@
-use super::objects::{Object};
-use super::light::{PointLight};
-use super::intersections::{hit, Intersect, Intersections, Computations};
-use super::material::{HasMaterial};
-use super::ray::{Ray};
-use super::tuple::{Tup, point, vector, color};
+use super::intersections::{hit, Computations, Intersect, Intersections};
+use super::light::PointLight;
+use super::material::HasMaterial;
+use super::objects::Object;
+use super::ray::Ray;
+use super::tuple::{color, point, vector, Tup};
 
 pub struct World {
     pub objects: Vec<Object>,
@@ -14,7 +14,7 @@ impl World {
     pub fn new() -> Self {
         World {
             objects: vec![],
-            light: PointLight{
+            light: PointLight {
                 position: point(-10.0, 10.0, -10.0),
                 intensity: vector(-10.0, 10.0, -10.0),
             },
@@ -36,14 +36,14 @@ impl World {
         let distance = v.magnitude();
         let direction = v.normalize();
 
-        let ray = Ray{
+        let ray = Ray {
             origin: p,
             direction,
         };
 
         match hit(&self.intersect(&ray)) {
-        (hit, _, true) => return hit < distance,
-        _ => return false
+            (hit, _, true) => return hit < distance,
+            _ => return false,
         }
     }
 
@@ -51,13 +51,15 @@ impl World {
         let intersections = self.intersect(&r);
 
         match hit(&intersections) {
-        (_,_,false) => return color(0.0,0.0,0.0),
-        (_, i, true) => return self.shade_hit(intersections[i].computations(&r)),
+            (_, _, false) => return color(0.0, 0.0, 0.0),
+            (_, i, true) => return self.shade_hit(intersections[i].computations(&r)),
         }
     }
 
     fn shade_hit(&self, c: Computations) -> Tup {
         let s = self.is_shadowed(c.over_point);
-        c.object.material().lighting(&self.light, c.point, c.eye, c.normal, s)
+        c.object
+            .material()
+            .lighting(&self.light, c.point, c.eye, c.normal, s)
     }
 }

@@ -1,8 +1,8 @@
+use super::canvas::Canvas;
 use super::matrix::{identity, Mat};
 use super::ray::Ray;
-use super::world::World;
 use super::tuple::{point, Tup};
-use super::canvas::Canvas;
+use super::world::World;
 
 pub struct Camera {
     pub aspect_ratio: f64,

@@ -1,6 +1,6 @@
 use super::tuple;
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct Mat {
     size: usize,
     pub mat: [[f64; 4]; 4],
