@@ -181,7 +181,7 @@ impl<'a, 'b> std::ops::Mul<&'b tuple::Tup> for &'a Mat {
 pub fn mat(size: usize) -> Mat {
     match size {
         2 | 3 | 4 => Mat {
-            size: size,
+            size,
             mat: [
                 [0.0, 0.0, 0.0, 0.0],
                 [0.0, 0.0, 0.0, 0.0],
@@ -196,7 +196,7 @@ pub fn mat(size: usize) -> Mat {
 pub fn identity(size: usize) -> Mat {
     match size {
         2 | 3 | 4 => Mat {
-            size: size,
+            size,
             mat: [
                 [1.0, 0.0, 0.0, 0.0],
                 [0.0, 1.0, 0.0, 0.0],
