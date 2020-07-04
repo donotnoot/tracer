@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct Tup {
     pub x: f64,
     pub y: f64,
@@ -9,9 +9,9 @@ pub struct Tup {
 /// New point tuple
 pub fn point(x: f64, y: f64, z: f64) -> Tup {
     Tup {
-        x: x,
-        y: y,
-        z: z,
+        x,
+        y,
+        z,
         w: 1.0,
     }
 }
@@ -19,9 +19,9 @@ pub fn point(x: f64, y: f64, z: f64) -> Tup {
 /// New vector tuple
 pub fn vector(x: f64, y: f64, z: f64) -> Tup {
     Tup {
-        x: x,
-        y: y,
-        z: z,
+        x,
+        y,
+        z,
         w: 0.0,
     }
 }
