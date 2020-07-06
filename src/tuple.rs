@@ -70,7 +70,7 @@ impl Tup {
     }
 
     pub fn magnitude(&self) -> f64 {
-        (self.x*self.x + self.y*self.y + self.z*self.z + self.w*self.w).sqrt()
+        (self.x * self.x + self.y * self.y + self.z * self.z + self.w * self.w).sqrt()
     }
 
     pub fn normalize(&self) -> Tup {
@@ -84,10 +84,10 @@ impl Tup {
     }
 
     pub fn cmp_epsilon(&self, x: f64, y: f64, z: f64, w: f64) -> bool {
-        (self.x - x).abs() < std::f64::EPSILON &&
-        (self.y - y).abs() < std::f64::EPSILON &&
-        (self.z - z).abs() < std::f64::EPSILON &&
-        (self.w - w).abs() < std::f64::EPSILON
+        (self.x - x).abs() < std::f64::EPSILON
+            && (self.y - y).abs() < std::f64::EPSILON
+            && (self.z - z).abs() < std::f64::EPSILON
+            && (self.w - w).abs() < std::f64::EPSILON
     }
 }
 
