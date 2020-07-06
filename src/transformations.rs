@@ -21,7 +21,7 @@ pub fn rotate_x(rad: f64) -> matrix::Mat {
     let mut m = matrix::identity(4);
     let sin = rad.sin();
     let cos = rad.cos();
-    m.mat[0][0] = cos;
+    m.mat[1][1] = cos;
     m.mat[1][2] = -sin;
     m.mat[2][1] = sin;
     m.mat[2][2] = cos;
