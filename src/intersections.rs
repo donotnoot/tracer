@@ -1,4 +1,4 @@
-use super::objects::{Normal, Object, Sphere};
+use super::objects::{Object, Sphere};
 use super::ray::Ray;
 use super::transformations::translation;
 use super::tuple::{dot, point, vector, Tup};
