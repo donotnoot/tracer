@@ -137,11 +137,29 @@ impl std::cmp::PartialEq<Mat> for Mat {
     }
 }
 
-/// Matrix multiplication
+/// Matrix multiplication (borrow)
 impl<'a, 'b> std::ops::Mul<&'b Mat> for &'a Mat {
     type Output = Mat;
 
     fn mul(self, r: &'b Mat) -> Mat {
+        let mut m = mat(self.size);
+        for row in 0..self.size as usize {
+            for col in 0..self.size as usize {
+                m.mat[row][col] = self.mat[row][0] * r.mat[0][col]
+                    + self.mat[row][1] * r.mat[1][col]
+                    + self.mat[row][2] * r.mat[2][col]
+                    + self.mat[row][3] * r.mat[3][col];
+            }
+        }
+        m
+    }
+}
+
+/// Matrix multiplication (move)
+impl std::ops::Mul<Mat> for Mat {
+    type Output = Mat;
+
+    fn mul(self, r: Mat) -> Mat {
         let mut m = mat(self.size);
         for row in 0..self.size as usize {
             for col in 0..self.size as usize {
