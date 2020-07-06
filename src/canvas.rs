@@ -131,7 +131,7 @@ pub struct OpenGLCanvas {
 }
 
 impl OpenGLCanvas {
-    pub fn new(height: u32, width: u32, title: String) -> Self {
+    pub fn new(width: u32, height: u32, title: String) -> Self {
         let mut pixels = vec![];
 
         for x in 0..width {
@@ -187,7 +187,7 @@ impl OpenGLCanvas {
                 match rx.try_recv() {
                     Ok(pixel) => {
                         self.write_pixel(pixel.x, pixel.y, pixel.p);
-                    },
+                    }
                     Err(_) => break,
                 }
             }
