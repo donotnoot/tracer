@@ -1,6 +1,6 @@
 use super::intersections::Intersect;
 use super::matrix::Mat;
-use super::objects::Sphere;
+use super::objects::{Object, Sphere};
 use super::transformations::{scaling, translation};
 use super::tuple::Tup;
 use super::tuple::{point, vector};
@@ -45,7 +45,7 @@ mod tests {
             origin: point(0.0, 0.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let s = Sphere::new();
+        let s = Object::Sphere(Sphere::new());
         let ixs = s.intersect(&r);
 
         assert_eq!(ixs[0].t, 4.0);
@@ -58,7 +58,7 @@ mod tests {
             origin: point(0.0, 1.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let s = Sphere::new();
+        let s = Object::Sphere(Sphere::new());
         let ixs = s.intersect(&r);
 
         assert_eq!(ixs[0].t, 5.0);
@@ -71,7 +71,7 @@ mod tests {
             origin: point(0.0, 2.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let s = Sphere::new();
+        let s = Object::Sphere(Sphere::new());
         let ixs = s.intersect(&r);
 
         assert_eq!(ixs.len(), 0);
@@ -83,7 +83,7 @@ mod tests {
             origin: point(0.0, 0.0, 0.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let s = Sphere::new();
+        let s = Object::Sphere(Sphere::new());
         let ixs = s.intersect(&r);
 
         assert_eq!(ixs[0].t, -1.0);
@@ -96,7 +96,7 @@ mod tests {
             origin: point(0.0, 0.0, 5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let s = Sphere::new();
+        let s = Object::Sphere(Sphere::new());
         let ixs = s.intersect(&r);
 
         assert_eq!(ixs[0].t, -6.0);
