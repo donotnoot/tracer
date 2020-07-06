@@ -136,7 +136,7 @@ mod tests {
     #[test]
     fn ray_when_camera_is_transformed() {
         let mut c = Camera::new(201.0, 101.0, std::f64::consts::PI / 2.0);
-        c.transform = &rotate_y(std::f64::consts::PI / 4.0) * &translation(0.0, -2.0, 5.0);
+        c.set_transform(&rotate_y(std::f64::consts::PI / 4.0) * &translation(0.0, -2.0, 5.0));
         let r = c.ray(100.0, 50.0);
 
         assert_eq!(point(0.0, 2.0, -5.0), r.origin);
