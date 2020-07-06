@@ -1,14 +1,23 @@
 use super::tuple::{color, point, vector, Tup};
 use raylib::prelude::*;
 use std::convert::TryInto;
+use std::sync::mpsc;
+use std::sync::mpsc::{Receiver, Sender};
 
 pub trait Canvas {
+    fn pixels(&mut self) -> &mut Vec<Pixel>;
     fn write_pixel(&mut self, x: u32, y: u32, color: Tup);
     fn pixel_at(&self, x: u32, y: u32) -> Tup;
 }
 
+pub struct Pixel {
+    pub x: u32,
+    pub y: u32,
+    pub p: Tup,
+}
+
 pub struct PPMCanvas {
-    pub pixels: Vec<Tup>,
+    pub pixels: Vec<Pixel>,
     pub height: u32,
     pub width: u32,
 }
@@ -17,8 +26,14 @@ impl PPMCanvas {
     pub fn new(height: u32, width: u32) -> Self {
         let mut pixels = vec![];
 
-        for _ in 0..height * width {
-            pixels.push(color(0.0, 0.0, 0.0))
+        for x in 0..width {
+            for y in 0..height {
+                pixels.push(Pixel {
+                    x,
+                    y,
+                    p: color(0.0, 0.0, 0.0),
+                })
+            }
         }
 
         PPMCanvas {
@@ -60,7 +75,7 @@ impl PPMCanvas {
         let mut ints_written = 0;
 
         for pixel in &self.pixels {
-            for num in &self.scale(pixel) {
+            for num in &self.scale(&pixel.p) {
                 let l = intlen(*num);
 
                 let line_len_after_write = chars_written_to_line + l + 1;
@@ -89,23 +104,27 @@ impl PPMCanvas {
 }
 
 impl Canvas for PPMCanvas {
+    fn pixels(&mut self) -> &mut Vec<Pixel> {
+        &mut self.pixels
+    }
+
     fn write_pixel(&mut self, x: u32, y: u32, color: Tup) {
         let offset = self.offset(x, y);
         let l = (self.height * self.width) - 1;
         if offset as u32 > l {
             return;
         }
-        self.pixels[offset] = color;
+        self.pixels[offset] = Pixel { x, y, p: color };
     }
 
     fn pixel_at(&self, x: u32, y: u32) -> Tup {
         // yolo? should be algebraic type
-        return self.pixels[self.offset(x, y)].clone();
+        return self.pixels[self.offset(x, y)].p.clone();
     }
 }
 
 pub struct OpenGLCanvas {
-    pub pixels: Vec<Tup>,
+    pub pixels: Vec<Pixel>,
     pub height: u32,
     pub width: u32,
     pub title: String,
@@ -115,8 +134,14 @@ impl OpenGLCanvas {
     pub fn new(height: u32, width: u32, title: String) -> Self {
         let mut pixels = vec![];
 
-        for _ in 0..height * width {
-            pixels.push(color(0.0, 0.0, 0.0))
+        for x in 0..width {
+            for y in 0..height {
+                pixels.push(Pixel {
+                    x,
+                    y,
+                    p: color(0.0, 0.0, 0.0),
+                })
+            }
         }
 
         OpenGLCanvas {
@@ -150,13 +175,23 @@ impl OpenGLCanvas {
         }
     }
 
-    pub fn run(&self) {
+    pub fn run(&mut self, rx: Receiver<Pixel>) {
         let (mut rl, thread) = raylib::init()
             .size(self.width as i32, self.height as i32)
             .title(&self.title)
             .build();
 
         while !rl.window_should_close() {
+            // Get as many pixels as possible.
+            loop {
+                match rx.try_recv() {
+                    Ok(pixel) => {
+                        self.write_pixel(pixel.x, pixel.y, pixel.p);
+                    },
+                    Err(_) => break,
+                }
+            }
+
             let mut d = rl.begin_drawing(&thread);
             d.clear_background(Color::BLACK);
 
@@ -174,17 +209,21 @@ impl OpenGLCanvas {
 }
 
 impl Canvas for OpenGLCanvas {
+    fn pixels(&mut self) -> &mut Vec<Pixel> {
+        &mut self.pixels
+    }
+
     fn write_pixel(&mut self, x: u32, y: u32, color: Tup) {
         let offset = self.offset(x, y);
         let l = (self.height * self.width) - 1;
         if offset as u32 > l {
             return;
         }
-        self.pixels[offset] = color;
+        self.pixels[offset] = Pixel { x, y, p: color };
     }
 
     fn pixel_at(&self, x: u32, y: u32) -> Tup {
         // yolo? should be algebraic type
-        return self.pixels[self.offset(x, y)].clone();
+        return self.pixels[self.offset(x, y)].p.clone();
     }
 }
