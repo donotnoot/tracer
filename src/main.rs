@@ -17,7 +17,7 @@ use tuple::{color, point, vector};
 mod world;
 
 const HEIGHT: u32 = 1000;
-const WIDTH: u32 = 1000;
+const WIDTH: u32 = 1500;
 
 fn main() {
     let mut world = world::World::new();
@@ -33,9 +33,10 @@ fn main() {
 
     {
         let mut left_wall = objects::Sphere::new();
-        left_wall.transform = &translation(0.0, 0.0, 5.0)
-            * &(&rotate_y(-(std::f64::consts::PI / 4.0))
-                * &(&rotate_x(std::f64::consts::PI / 2.0) * &scaling(10.0, 0.01, 10.0)));
+        left_wall.transform = translation(0.0, 0.0, 5.0)
+            * rotate_y(-std::f64::consts::PI / 4.0)
+            * rotate_x(-std::f64::consts::PI / 2.0)
+            * scaling(10.0, 0.01, 10.0);
         left_wall.material.color = color(1.0, 0.9, 0.9);
         left_wall.material.specular = 0.0;
         world.objects.push(objects::Object::Sphere(left_wall));
@@ -43,9 +44,10 @@ fn main() {
 
     {
         let mut right_wall = objects::Sphere::new();
-        right_wall.transform = &translation(0.0, 0.0, 5.0)
-            * &(&rotate_y(std::f64::consts::PI / 4.0)
-                * &(&rotate_x(std::f64::consts::PI / 2.0) * &scaling(10.0, 0.01, 10.0)));
+        right_wall.transform = translation(0.0, 0.0, 5.0)
+            * rotate_y(std::f64::consts::PI / 4.0)
+            * rotate_x(std::f64::consts::PI / 2.0)
+            * scaling(10.0, 0.01, 10.0);
         right_wall.material.color = color(1.0, 0.9, 0.9);
         right_wall.material.specular = 0.0;
         world.objects.push(objects::Object::Sphere(right_wall));
@@ -62,14 +64,14 @@ fn main() {
         position: tuple::point(-10.0, 10.0, -10.0),
     };
 
-    let mut camera = camera::Camera::new(HEIGHT as f64, WIDTH as f64, std::f64::consts::PI / 3.0);
+    let mut camera = camera::Camera::new(WIDTH as f64, HEIGHT as f64, std::f64::consts::PI / 3.0);
     camera.set_transform(transformations::view(
         tuple::point(0.0, 1.5, -5.0),
         tuple::point(0.0, 1.0, 0.0),
         tuple::vector(0.0, 1.0, 0.0),
     ));
 
-    let mut canvas = canvas::OpenGLCanvas::new(HEIGHT, WIDTH, "OpenGL Canvas".to_string());
+    let mut canvas = canvas::OpenGLCanvas::new(WIDTH, HEIGHT, "OpenGL Canvas".to_string());
 
     let (tx, rx): (Sender<canvas::Pixel>, Receiver<canvas::Pixel>) = mpsc::channel();
 
