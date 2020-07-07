@@ -73,7 +73,7 @@ impl Camera {
         return Ray { origin, direction };
     }
 
-    pub fn render(&self, w: World, tx: Sender<Pixel>, shuffle: bool) {
+    pub fn render(&self, w: World, tx: Sender<Pixel>, shuffle: bool, reflection_limit: u64) {
         let mut locations: Vec<(u32, u32, Sender<Pixel>)> = vec![];
 
         for y in 0..self.v_size as u32 {
@@ -87,7 +87,7 @@ impl Camera {
         }
 
         locations.par_iter_mut().for_each(|(x, y, tx)| {
-            let p = w.color_at(self.ray(*x as f64, *y as f64));
+            let p = w.color_at(&self.ray(*x as f64, *y as f64), reflection_limit);
             tx.send(Pixel { x: *x, y: *y, p }).unwrap();
         });
     }

@@ -1,4 +1,6 @@
 use super::light::PointLight;
+use super::objects::{Object, Sphere};
+use super::patterns::{Pattern, Pattern::Stripe};
 use super::tuple::{color, dot, point, vector, Tup};
 
 #[derive(Debug, Clone)]
@@ -8,6 +10,7 @@ pub struct Material {
     pub diffuse: f64,
     pub specular: f64,
     pub shininess: f64,
+    pub reflectiveness: f64,
     pub pattern: Option<Pattern>,
 }
 
@@ -19,6 +22,7 @@ impl Material {
             diffuse: 0.9,
             specular: 0.9,
             shininess: 200.0,
+            reflectiveness: 0.0,
             pattern: None,
         }
     }

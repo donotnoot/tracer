@@ -1,4 +1,4 @@
-use super::objects::{Object, Sphere};
+use super::objects::{Object, Plane, Sphere};
 use super::ray::Ray;
 use super::transformations::translation;
 use super::tuple::{dot, point, vector, Tup};
@@ -31,6 +31,7 @@ pub struct Computations {
     pub point: Tup,
     pub eye: Tup,
     pub normal: Tup,
+    pub reflection: Tup,
     pub over_point: Tup,
 }
 
@@ -54,6 +55,7 @@ impl Intersection {
             }
         };
 
+        let reflection = r.direction.reflect(&normal);
         let over_point = &point + &(&normal * 10e-10);
 
         Computations {
@@ -63,6 +65,7 @@ impl Intersection {
             eye,
             normal,
             over_point,
+            reflection,
             inside,
         }
     }
@@ -258,5 +261,24 @@ mod tests {
 
         assert!(c.over_point.z < (-std::f64::EPSILON) / 2.0);
         assert!(c.point.z > c.over_point.z);
+    }
+
+    #[test]
+    fn reflection_vector() {
+        let s = Object::Plane(Plane::new());
+        let p = 2.0f64.sqrt() / 2.0;
+        let r = Ray {
+            origin: point(0.0, 1.0, -1.0),
+            direction: vector(0.0, -p, p),
+        };
+        let i = Intersection {
+            t: p,
+            object: Box::new(s),
+        };
+        let c = i.computations(&r);
+
+        assert_eq!(c.reflection.x, 0.0);
+        assert!((c.reflection.y - p).abs() <= std::f64::EPSILON);
+        assert!((c.reflection.z - p).abs() <= std::f64::EPSILON);
     }
 }
