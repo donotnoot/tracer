@@ -174,4 +174,49 @@ mod test {
         assert_eq!((0.1 - result.y).abs() <= std::f64::EPSILON, true);
         assert_eq!((0.1 - result.z).abs() <= std::f64::EPSILON, true);
     }
+
+    #[test]
+    fn lighting_with_stripe_pattern() {
+        let mut mat = Material::new();
+        mat.pattern = Some(Pattern::Stripe(
+            color(1.0, 1.0, 1.0),
+            color(0.0, 0.0, 0.0),
+            None,
+        ));
+        mat.ambient = 1.0;
+        mat.diffuse = 0.0;
+        mat.specular = 0.0;
+
+        let eyev = vector(0.0, 0.0, -1.0);
+        let normalv = vector(0.0, 0.0, -1.0);
+        let light = PointLight {
+            position: point(0.0, 0.0, -10.0),
+            intensity: color(1.0, 1.0, 1.0),
+        };
+
+        let c1 = mat.lighting(
+            &Object::Sphere(Sphere::new()),
+            &light,
+            point(0.9, 0.0, 0.0),
+            eyev.clone(),
+            normalv.clone(),
+            false,
+        );
+        let c2 = mat.lighting(
+            &Object::Sphere(Sphere::new()),
+            &light,
+            point(1.0, 0.0, 0.0),
+            eyev,
+            normalv,
+            false,
+        );
+
+        assert_eq!((1.0 - c2.x).abs() <= std::f64::EPSILON, false);
+        assert_eq!((1.0 - c2.y).abs() <= std::f64::EPSILON, false);
+        assert_eq!((1.0 - c2.z).abs() <= std::f64::EPSILON, false);
+
+        assert_eq!((0.0 - c1.x).abs() <= std::f64::EPSILON, false);
+        assert_eq!((0.0 - c1.y).abs() <= std::f64::EPSILON, false);
+        assert_eq!((0.0 - c1.z).abs() <= std::f64::EPSILON, false);
+    }
 }
