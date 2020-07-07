@@ -8,6 +8,7 @@ pub struct Material {
     pub diffuse: f64,
     pub specular: f64,
     pub shininess: f64,
+    pub pattern: Option<Pattern>,
 }
 
 impl Material {
@@ -18,11 +19,25 @@ impl Material {
             diffuse: 0.9,
             specular: 0.9,
             shininess: 200.0,
+            pattern: None,
         }
     }
 
-    pub fn lighting(&self, l: &PointLight, p: Tup, eye: Tup, normal: Tup, in_shadow: bool) -> Tup {
-        let effective_color = &self.color * &l.intensity;
+    pub fn lighting(
+        &self,
+        o: &Object,
+        l: &PointLight,
+        p: Tup,
+        eye: Tup,
+        normal: Tup,
+        in_shadow: bool,
+    ) -> Tup {
+        let object_color = match &self.pattern {
+            Some(c) => c.at_object(o, &p),
+            None => self.color.clone(), // TODO: no need to clone this...
+        };
+
+        let effective_color = &object_color * &l.intensity;
         let ambient = &effective_color * self.ambient;
 
         if in_shadow {
@@ -71,7 +86,14 @@ mod test {
             position: point(0.0, 0.0, -10.0),
             intensity: color(1.0, 1.0, 1.0),
         };
-        let result = mat.lighting(&light, pos, eyev, normalv, false);
+        let result = mat.lighting(
+            &Object::Sphere(Sphere::new()),
+            &light,
+            pos,
+            eyev,
+            normalv,
+            false,
+        );
 
         assert_eq!((1.9 - result.x).abs() <= std::f64::EPSILON, true);
         assert_eq!((1.9 - result.y).abs() <= std::f64::EPSILON, true);
@@ -90,7 +112,14 @@ mod test {
             position: point(0.0, 0.0, -10.0),
             intensity: color(1.0, 1.0, 1.0),
         };
-        let result = mat.lighting(&light, pos, eyev, normalv, false);
+        let result = mat.lighting(
+            &Object::Sphere(Sphere::new()),
+            &light,
+            pos,
+            eyev,
+            normalv,
+            false,
+        );
 
         assert_eq!((1.0 - result.x).abs() <= std::f64::EPSILON, true);
         assert_eq!((1.0 - result.y).abs() <= std::f64::EPSILON, true);
@@ -110,7 +139,14 @@ mod test {
             position: point(0.0, 10.0, -10.0),
             intensity: color(1.0, 1.0, 1.0),
         };
-        let result = mat.lighting(&light, pos, eyev, normalv, false);
+        let result = mat.lighting(
+            &Object::Sphere(Sphere::new()),
+            &light,
+            pos,
+            eyev,
+            normalv,
+            false,
+        );
 
         let r = 0.1 + p * 0.9;
         assert_eq!((r - result.x).abs() <= std::f64::EPSILON, true);
@@ -131,7 +167,14 @@ mod test {
             position: point(0.0, 10.0, -10.0),
             intensity: color(1.0, 1.0, 1.0),
         };
-        let result = mat.lighting(&light, pos, eyev, normalv, false);
+        let result = mat.lighting(
+            &Object::Sphere(Sphere::new()),
+            &light,
+            pos,
+            eyev,
+            normalv,
+            false,
+        );
 
         let r = 0.1 + 0.9 * p + 0.9;
         assert_eq!((r - result.x).abs() <= std::f64::EPSILON, true);
@@ -150,7 +193,14 @@ mod test {
             position: point(0.0, 0.0, 10.0),
             intensity: color(1.0, 1.0, 1.0),
         };
-        let result = mat.lighting(&light, pos, eyev, normalv, false);
+        let result = mat.lighting(
+            &Object::Sphere(Sphere::new()),
+            &light,
+            pos,
+            eyev,
+            normalv,
+            false,
+        );
 
         assert_eq!((0.1 - result.x).abs() <= std::f64::EPSILON, true);
         assert_eq!((0.1 - result.y).abs() <= std::f64::EPSILON, true);
@@ -168,7 +218,14 @@ mod test {
             position: point(0.0, 0.0, -10.0),
             intensity: color(1.0, 1.0, 1.0),
         };
-        let result = mat.lighting(&light, pos, eyev, normalv, true);
+        let result = mat.lighting(
+            &Object::Sphere(Sphere::new()),
+            &light,
+            pos,
+            eyev,
+            normalv,
+            true,
+        );
 
         assert_eq!((0.1 - result.x).abs() <= std::f64::EPSILON, true);
         assert_eq!((0.1 - result.y).abs() <= std::f64::EPSILON, true);
