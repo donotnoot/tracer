@@ -43,6 +43,13 @@ impl Object {
             Object::Plane(o) => o.intersect(&common(r, &o.transform)),
         }
     }
+
+    pub fn transformation(&self) -> Mat {
+        match self {
+            Object::Sphere(o) => o.transform.clone(),
+            Object::Plane(o) => o.transform.clone(),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
