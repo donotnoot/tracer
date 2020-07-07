@@ -26,6 +26,16 @@ pub fn color(r: f64, g: f64, b: f64) -> Tup {
     }
 }
 
+pub fn color_u8(r: u8, g: u8, b: u8) -> Tup {
+    let c = |c: u8| -> f64 { c as f64 / 255.0 };
+    Tup {
+        x: c(r),
+        y: c(g),
+        z: c(b),
+        w: 0.0,
+    }
+}
+
 impl Tup {
     pub fn new() -> Self {
         Tup {
