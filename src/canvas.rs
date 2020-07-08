@@ -131,7 +131,7 @@ pub struct OpenGLCanvas {
 }
 
 impl OpenGLCanvas {
-    pub fn new(width: u32, height: u32, title: String) -> Self {
+    pub fn new(width: u32, height: u32, title: String, background_color: Tup) -> Self {
         let mut pixels = vec![];
 
         for x in 0..width {
@@ -139,7 +139,7 @@ impl OpenGLCanvas {
                 pixels.push(Pixel {
                     x,
                     y,
-                    p: color(0.0, 0.0, 0.0),
+                    p: background_color.clone(),
                 })
             }
         }

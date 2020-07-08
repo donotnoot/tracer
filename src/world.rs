@@ -8,6 +8,7 @@ use super::tuple::{color, point, vector, Tup};
 pub struct World {
     pub objects: Vec<Object>,
     pub light: PointLight,
+    pub background_color: Tup,
 }
 
 impl World {
@@ -31,6 +32,7 @@ impl World {
                 position: point(-10.0, 10.0, -10.0),
                 intensity: vector(1.0, 1.0, 1.0),
             },
+            background_color: color(0.0, 0.0, 0.0),
         }
     }
 
@@ -66,7 +68,7 @@ impl World {
         let intersections = self.intersect(r);
 
         match hit(&intersections) {
-            (_, _, false) => return color(0.0, 0.0, 0.0),
+            (_, _, false) => return self.background_color.clone(),
             (_, i, true) => {
                 return self.shade_hit(&intersections[i].computations(&r), depth_remaining)
             }
