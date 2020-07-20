@@ -71,7 +71,6 @@ impl Sphere {
     /// Creates a new sphere with a material that resembles glass.
     pub fn new_glass() -> Self {
         Sphere {
-            id: rand::thread_rng().gen(),
             transform: identity(4),
             material: {
                 let mut m = material::Material::new();
