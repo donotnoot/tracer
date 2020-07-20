@@ -1,8 +1,8 @@
-use super::tuple::{color, point, vector, Tup};
+use super::tuple::{color, Tup};
 use raylib::prelude::*;
 use std::convert::TryInto;
-use std::sync::mpsc;
-use std::sync::mpsc::{Receiver, Sender};
+
+use std::sync::mpsc::{Receiver};
 
 pub trait Canvas {
     fn pixels(&mut self) -> &mut Vec<Pixel>;

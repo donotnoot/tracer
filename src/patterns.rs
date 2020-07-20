@@ -1,7 +1,7 @@
 use super::matrix::{identity, Mat};
-use super::objects::{Object, Sphere};
-use super::transformations::{scaling, translation};
-use super::tuple::{color, point, Tup};
+use super::objects::{Object};
+
+use super::tuple::{color, Tup};
 
 use num_complex::Complex;
 
@@ -53,8 +53,8 @@ impl Pattern {
         let cxmax = 1f32;
         let cymin = -1.5f32;
         let cymax = 1.5f32;
-        let scalex = (cxmax - cxmin) / img_side as f32;
-        let scaley = (cymax - cymin) / img_side as f32;
+        let _scalex = (cxmax - cxmin) / img_side as f32;
+        let _scaley = (cymax - cymin) / img_side as f32;
 
         let cx = cxmin + p.x as f32;
         let cy = cymin + p.z as f32;

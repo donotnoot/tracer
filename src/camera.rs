@@ -1,12 +1,12 @@
-use std::sync::mpsc;
-use std::sync::mpsc::{Receiver, Sender};
-use std::sync::Once;
 
-use super::canvas::{Canvas, Pixel};
+use std::sync::mpsc::{Sender};
+
+
+use super::canvas::{Pixel};
 use super::matrix::{identity, Mat};
 use super::ray::Ray;
-use super::transformations::{rotate_y, translation};
-use super::tuple::{point, vector, Tup};
+
+use super::tuple::{point};
 use super::world::World;
 
 use rand::seq::SliceRandom;

@@ -1,11 +1,11 @@
-use super::intersections::{hit, Computations, Intersect, Intersection, Intersections};
+use super::intersections::{hit, Computations, Intersect, Intersections};
 use super::light::PointLight;
-use super::objects::{Object, Plane, Sphere};
+use super::objects::{Object, Sphere};
 use super::ray::Ray;
-use super::transformations::{scaling, translation};
+use super::transformations::{scaling};
 use super::tuple::{dot, color, point, vector, Tup};
 
-use std::sync::Arc;
+
 
 pub struct World {
     pub objects: Vec<Object>,

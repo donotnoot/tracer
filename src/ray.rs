@@ -1,9 +1,9 @@
-use super::intersections::Intersect;
+
 use super::matrix::Mat;
-use super::objects::{Object, Sphere};
-use super::transformations::{scaling, translation};
+
+
 use super::tuple::Tup;
-use super::tuple::{point, vector};
+
 
 #[derive(Debug)]
 pub struct Ray {

@@ -13,10 +13,10 @@ mod ray;
 mod transformations;
 use transformations::{rotate_x, rotate_y, rotate_z, scaling, shearing, translation, view};
 mod tuple;
-use tuple::{color, color_u8, point, vector, Tup};
+use tuple::{color, color_u8, Tup};
 mod patterns;
 use patterns::Pattern;
-use patterns::Pattern::Stripe;
+
 mod world;
 
 const HEIGHT: u32 = 1080;

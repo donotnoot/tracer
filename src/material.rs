@@ -1,7 +1,7 @@
 use super::light::PointLight;
-use super::objects::{Object, Sphere};
-use super::patterns::{Pattern, Pattern::Stripe};
-use super::tuple::{color, dot, point, vector, Tup};
+use super::objects::{Object};
+use super::patterns::{Pattern};
+use super::tuple::{color, dot, Tup};
 
 #[derive(Debug, Clone)]
 pub struct Material {
@@ -81,7 +81,7 @@ pub trait HasMaterial {
 }
 
 mod test {
-    use super::*;
+    
 
     #[test]
     fn eye_between_light_and_surface() {

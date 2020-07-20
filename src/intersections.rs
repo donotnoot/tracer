@@ -1,7 +1,7 @@
-use super::objects::{Object, Plane, Sphere};
+use super::objects::{Object};
 use super::ray::Ray;
-use super::transformations::{scaling, translation};
-use super::tuple::{dot, point, vector, Tup};
+
+use super::tuple::{dot, Tup};
 use std::sync::Arc;
 
 pub type Intersections = Vec<Intersection>;

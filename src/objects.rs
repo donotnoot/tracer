@@ -1,11 +1,11 @@
 use super::intersections::{Intersect, Intersection, Intersections};
 use super::material;
-use super::material::{HasMaterial, Material};
+use super::material::{HasMaterial};
 use super::matrix::{identity, Mat};
 use super::ray::Ray;
-use super::transformations::{rotate_z, scaling, translation};
+
 use super::tuple::{dot, point, vector, Tup};
-use std::f32;
+
 
 use std::sync::Arc;
 
