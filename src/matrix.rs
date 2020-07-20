@@ -1,10 +1,24 @@
 use super::tuple;
+use super::tuple::vector;
+use core::arch::x86_64::{
+    _mm256_mul_ps, _mm256_set_ps, _mm256_store_ps, _mm256_storeu_ps, _mm_mul_ps, _mm_set_ps,
+    _mm_store_ps,
+};
 
 #[derive(Debug, Clone)]
 pub struct Mat {
     size: usize,
     pub mat: [[f32; 4]; 4],
-    pub mat: [[f64; 4]; 4],
+    pub kind: Kind,
+}
+
+/// Used to determine whether the matrix can be inverted quickly ussing different approaches.
+// TODO: Turn this into a monad (View(Mat)) for maximum FP points.
+#[derive(Copy, Debug, Clone)]
+pub enum Kind {
+    General,
+    Transform,
+    TransformNoScale,
 }
 
 impl Mat {
@@ -70,6 +84,7 @@ impl Mat {
     pub fn transpose(&self) -> Mat {
         Mat {
             size: self.size,
+            kind: self.kind,
             mat: [
                 [
                     self.mat[0][0],
@@ -99,7 +114,38 @@ impl Mat {
         }
     }
 
-    pub fn inverse(&self) -> Mat {
+    fn inverse_no_scale(&self) -> Mat {
+        let mut res = mat(self.size);
+
+        // Transpose top-left 3x3
+        res.mat[0][0] = self.mat[0][0];
+        res.mat[0][1] = self.mat[1][0];
+        res.mat[0][2] = self.mat[2][0];
+        res.mat[1][0] = self.mat[0][1];
+        res.mat[1][1] = self.mat[1][1];
+        res.mat[1][2] = self.mat[2][1];
+        res.mat[2][0] = self.mat[0][2];
+        res.mat[2][1] = self.mat[1][2];
+        res.mat[2][2] = self.mat[2][2];
+
+        // Transform translation
+        let trans = vector(-self.mat[0][3], -self.mat[1][3], -self.mat[2][3]);
+        let trans = &res * &trans;
+        res.mat[0][3] = trans.x;
+        res.mat[1][3] = trans.y;
+        res.mat[2][3] = trans.z;
+        res.mat[3][3] = trans.w;
+
+        // Bottom row
+        res.mat[3][0] = 0.0;
+        res.mat[3][1] = 0.0;
+        res.mat[3][2] = 0.0;
+        res.mat[3][3] = 1.0;
+
+        res
+    }
+
+    fn inverse_general(&self) -> Mat {
         let (det, is_inversible) = self.is_inversible();
         if !is_inversible {
             std::panic!("cannot inverse matrix");
@@ -115,6 +161,14 @@ impl Mat {
         }
 
         res
+    }
+
+    pub fn inverse(&self) -> Mat {
+        match self.kind {
+            Kind::TransformNoScale => self.inverse_no_scale(),
+            // Kind::Transform => self.inverse_with_scale(),
+            _ => self.inverse_general(),
+        }
     }
 
     pub fn minor(&self, row_to_remove: usize, col_to_remove: usize) -> f32 {
@@ -144,12 +198,47 @@ impl<'a, 'b> std::ops::Mul<&'b Mat> for &'a Mat {
 
     fn mul(self, r: &'b Mat) -> Mat {
         let mut m = mat(self.size);
-        for row in 0..self.size as usize {
-            for col in 0..self.size as usize {
-                m.mat[row][col] = self.mat[row][0] * r.mat[0][col]
-                    + self.mat[row][1] * r.mat[1][col]
-                    + self.mat[row][2] * r.mat[2][col]
-                    + self.mat[row][3] * r.mat[3][col];
+        m.kind = r.kind;
+
+        for row in 0..self.size {
+            for col in (0..self.size).step_by(2) {
+                let (a, b, c, d, e, f, g, h) = unsafe {
+                    let lhs = _mm256_set_ps(
+                        self.mat[row][0],
+                        self.mat[row][1],
+                        self.mat[row][2],
+                        self.mat[row][3],
+                        self.mat[row][0],
+                        self.mat[row][1],
+                        self.mat[row][2],
+                        self.mat[row][3],
+                    );
+                    let rhs = _mm256_set_ps(
+                        r.mat[0][col + 1],
+                        r.mat[1][col + 1],
+                        r.mat[2][col + 1],
+                        r.mat[3][col + 1],
+                        r.mat[0][col],
+                        r.mat[1][col],
+                        r.mat[2][col],
+                        r.mat[3][col],
+                    );
+                    let result = _mm256_mul_ps(lhs, rhs);
+                    let mut unpacked: [f32; 8] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+                    _mm256_storeu_ps(&mut unpacked[0], result);
+                    (
+                        unpacked[0],
+                        unpacked[1],
+                        unpacked[2],
+                        unpacked[3],
+                        unpacked[4],
+                        unpacked[5],
+                        unpacked[6],
+                        unpacked[7],
+                    )
+                };
+                m.mat[row][col] = a + b + c + d;
+                m.mat[row][col+1] = e + f + g + h;
             }
         }
         m
@@ -161,16 +250,7 @@ impl std::ops::Mul<Mat> for Mat {
     type Output = Mat;
 
     fn mul(self, r: Mat) -> Mat {
-        let mut m = mat(self.size);
-        for row in 0..self.size as usize {
-            for col in 0..self.size as usize {
-                m.mat[row][col] = self.mat[row][0] * r.mat[0][col]
-                    + self.mat[row][1] * r.mat[1][col]
-                    + self.mat[row][2] * r.mat[2][col]
-                    + self.mat[row][3] * r.mat[3][col];
-            }
-        }
-        m
+        &self * &r
     }
 }
 
@@ -180,13 +260,37 @@ impl<'a, 'b> std::ops::Mul<&'b tuple::Tup> for &'a Mat {
 
     fn mul(self, r: &'b tuple::Tup) -> tuple::Tup {
         let mut t: [f32; 4] = [0.0, 0.0, 0.0, 0.0];
-        let mut t: [f64; 4] = [0.0, 0.0, 0.0, 0.0];
 
-        for row in 0..self.size as usize {
-            t[row] = self.mat[row][0] * r.x
-                + self.mat[row][1] * r.y
-                + self.mat[row][2] * r.z
-                + self.mat[row][3] * r.w;
+        for row in (0..self.size).step_by(2) {
+            let (a, b, c, d, e, f, g, h) = unsafe {
+                let lhs = _mm256_set_ps(
+                    self.mat[row + 1][0],
+                    self.mat[row + 1][1],
+                    self.mat[row + 1][2],
+                    self.mat[row + 1][3],
+                    self.mat[row][0],
+                    self.mat[row][1],
+                    self.mat[row][2],
+                    self.mat[row][3],
+                );
+                let rhs = _mm256_set_ps(r.x, r.y, r.z, r.w, r.x, r.y, r.z, r.w);
+                let result = _mm256_mul_ps(lhs, rhs);
+                let mut unpacked: [f32; 8] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+                _mm256_storeu_ps(&mut unpacked[0], result);
+                (
+                    unpacked[0],
+                    unpacked[1],
+                    unpacked[2],
+                    unpacked[3],
+                    unpacked[4],
+                    unpacked[5],
+                    unpacked[6],
+                    unpacked[7],
+                )
+            };
+
+            t[row] = a + b + c + d;
+            t[row + 1] = e + f + g + h;
         }
 
         tuple::Tup {
@@ -202,6 +306,7 @@ pub fn mat(size: usize) -> Mat {
     match size {
         2 | 3 | 4 => Mat {
             size,
+            kind: Kind::TransformNoScale,
             mat: [
                 [0.0, 0.0, 0.0, 0.0],
                 [0.0, 0.0, 0.0, 0.0],
@@ -217,6 +322,7 @@ pub fn identity(size: usize) -> Mat {
     match size {
         2 | 3 | 4 => Mat {
             size,
+            kind: Kind::TransformNoScale,
             mat: [
                 [1.0, 0.0, 0.0, 0.0],
                 [0.0, 1.0, 0.0, 0.0],
@@ -236,6 +342,7 @@ mod tests {
     fn matrix_equality() {
         let a = Mat {
             size: 4,
+            kind: Kind::TransformNoScale,
             mat: [
                 [1.0, 0.0, 0.0, 0.0],
                 [0.0, 1.0, 0.0, 0.0],
@@ -245,6 +352,7 @@ mod tests {
         };
         let b = Mat {
             size: 4,
+            kind: Kind::TransformNoScale,
             mat: [
                 [1.0, 0.0, 0.0, 0.0],
                 [0.0, 1.0, 0.0, 0.0],
@@ -260,6 +368,7 @@ mod tests {
     fn matrix_multiplication() {
         let a = Mat {
             size: 4,
+            kind: Kind::TransformNoScale,
             mat: [
                 [1.0, 2.0, 3.0, 4.0],
                 [5.0, 6.0, 7.0, 8.0],
@@ -269,6 +378,7 @@ mod tests {
         };
         let b = Mat {
             size: 4,
+            kind: Kind::TransformNoScale,
             mat: [
                 [-2.0, 1.0, 2.0, 3.0],
                 [3.0, 2.0, 1.0, -1.0],
@@ -278,6 +388,7 @@ mod tests {
         };
         let r = Mat {
             size: 4,
+            kind: Kind::TransformNoScale,
             mat: [
                 [20.0, 22.0, 50.0, 48.0],
                 [44.0, 54.0, 114.0, 108.0],
@@ -293,6 +404,7 @@ mod tests {
     fn matrix_tuple_multiplication() {
         let a = Mat {
             size: 4,
+            kind: Kind::TransformNoScale,
             mat: [
                 [1.0, 2.0, 3.0, 4.0],
                 [2.0, 4.0, 4.0, 2.0],
@@ -320,6 +432,7 @@ mod tests {
     fn multiplying_by_the_identity_matrix_returns_the_original_matrix() {
         let m = Mat {
             size: 4,
+            kind: Kind::TransformNoScale,
             mat: [
                 [1.0, 2.0, 3.0, 4.0],
                 [5.0, 6.0, 7.0, 8.0],
@@ -336,6 +449,7 @@ mod tests {
     fn transposing_a_matrix() {
         let m = Mat {
             size: 4,
+            kind: Kind::TransformNoScale,
             mat: [
                 [1.0, 2.0, 3.0, 4.0],
                 [5.0, 6.0, 7.0, 8.0],
@@ -345,6 +459,7 @@ mod tests {
         };
         let expected = Mat {
             size: 4,
+            kind: Kind::TransformNoScale,
             mat: [
                 [1.0, 5.0, 9.0, 5.0],
                 [2.0, 6.0, 8.0, 4.0],
@@ -360,6 +475,7 @@ mod tests {
     fn determinant_2x2_matrix() {
         let m = Mat {
             size: 2,
+            kind: Kind::TransformNoScale,
             mat: [
                 [1.0, 5.0, 0.0, 0.0],
                 [-3.0, 2.0, 0.0, 0.0],
@@ -376,6 +492,7 @@ mod tests {
         {
             let m4 = Mat {
                 size: 4,
+                kind: Kind::TransformNoScale,
                 mat: [
                     [1.0, 5.0, 0.0, 0.0],
                     [-3.0, 2.0, 0.0, 0.0],
@@ -393,6 +510,7 @@ mod tests {
         {
             let m3 = Mat {
                 size: 3,
+                kind: Kind::TransformNoScale,
                 mat: [
                     [1.0, 5.0, 0.0, 0.0],
                     [-3.0, 2.0, 0.0, 0.0],
@@ -412,6 +530,7 @@ mod tests {
     fn minors() {
         let m = Mat {
             size: 3,
+            kind: Kind::TransformNoScale,
             mat: [
                 [1.0, 5.0, 1.0, 0.0],
                 [0.0, 6.0, 5.0, 0.0],
@@ -433,6 +552,7 @@ mod tests {
         {
             let m = Mat {
                 size: 3,
+                kind: Kind::TransformNoScale,
                 mat: [
                     [3.0, 5.0, 0.0, 0.0],
                     [2.0, -1.0, -7.0, 0.0],
@@ -454,6 +574,7 @@ mod tests {
         {
             let m = Mat {
                 size: 3,
+                kind: Kind::TransformNoScale,
                 mat: [
                     [1.0, 2.0, 6.0, 0.0],
                     [-5.0, 8.0, -4.0, 0.0],
@@ -468,6 +589,7 @@ mod tests {
         {
             let m = Mat {
                 size: 4,
+                kind: Kind::TransformNoScale,
                 mat: [
                     [-2.0, -8.0, 3.0, 5.0],
                     [-3.0, 1.0, 7.0, 3.0],
@@ -485,6 +607,7 @@ mod tests {
         {
             let m = Mat {
                 size: 4,
+                kind: Kind::TransformNoScale,
                 mat: [
                     [6.0, 4.0, 4.0, 4.0],
                     [5.0, 5.0, 7.0, 6.0],
@@ -499,6 +622,7 @@ mod tests {
         {
             let m = Mat {
                 size: 4,
+                kind: Kind::TransformNoScale,
                 mat: [
                     [-4.0, 2.0, -2.0, -3.0],
                     [9.0, 6.0, 2.0, 6.0],
@@ -515,6 +639,7 @@ mod tests {
     fn inverse_of_matrix() {
         let m = Mat {
             size: 4,
+            kind: Kind::TransformNoScale,
             mat: [
                 [-5.0, 2.0, 6.0, -8.0],
                 [1.0, -5.0, 1.0, 8.0],
@@ -530,5 +655,34 @@ mod tests {
 
         assert_eq!(cof_a / det, inv.mat[3][2]);
         assert_eq!(cof_b / det, inv.mat[2][3]);
+    }
+
+    #[test]
+    fn multiplication_keeps_kind_of_rhs() {
+        let mut lhs = identity(4);
+        lhs.kind = Kind::TransformNoScale;
+
+        let mut rhs = identity(4);
+        rhs.kind = Kind::General;
+
+        {
+            // Borrow
+            let res = &lhs * &rhs;
+
+            match res.kind {
+                Kind::General => (),
+                _ => panic!("borrow: kind is not expected"),
+            };
+        }
+
+        {
+            // Move
+            let res = lhs * rhs;
+
+            match res.kind {
+                Kind::General => (),
+                _ => panic!("move: kind is not expected"),
+            };
+        }
     }
 }

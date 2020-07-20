@@ -1,4 +1,11 @@
+use core::arch::x86_64::{
+    _mm256_hsub_ps, _mm256_mul_ps, _mm256_set1_ps, _mm256_set_ps, _mm256_shuffle_ps,
+    _mm256_store_ps, _mm256_storeu_ps, _mm256_sub_ps, _mm_add_ps, _mm_div_ps, _mm_mul_ps,
+    _mm_set1_ps, _mm_set_ps, _mm_store_ps, _mm_storeu_ps, _mm_sub_ps
+};
+
 #[derive(Debug, Clone)]
+#[repr(C)]
 pub struct Tup {
     pub x: f32,
     pub y: f32,
@@ -81,15 +88,26 @@ impl Tup {
 
     pub fn magnitude(&self) -> f32 {
         unsafe {
+            let mul = _mm_mul_ps(
+                _mm_set_ps(self.x, self.y, self.z, self.w),
+                _mm_set_ps(self.x, self.y, self.z, self.w),
+            );
+            let mut unpacked: [f32; 4] = [0.0, 0.0, 0.0, 0.0];
+            _mm_storeu_ps(&mut unpacked[0], mul);
+            unpacked
+        }
+        .iter()
+        .sum::<f32>()
+        .sqrt()
     }
 
     pub fn normalize(&self) -> Tup {
         let mag = self.magnitude();
-        Tup {
-            x: self.x / mag,
-            y: self.y / mag,
-            z: self.z / mag,
-            w: self.w / mag,
+        unsafe {
+            let mut t = Tup::new();
+            let div = _mm_div_ps(_mm_set_ps(self.w, self.z, self.y, self.x), _mm_set1_ps(mag));
+            _mm_storeu_ps(&mut t.x as *mut f32, div);
+            t
         }
     }
 
@@ -106,11 +124,16 @@ impl<'a, 'b> std::ops::Add<&'b Tup> for &'a Tup {
     type Output = Tup;
 
     fn add(self, r: &'b Tup) -> Tup {
-        Tup {
-            x: self.x + r.x,
-            y: self.y + r.y,
-            z: self.z + r.z,
-            w: self.w + r.w,
+        unsafe {
+            let mut t = Tup::new();
+            _mm_storeu_ps(
+                &mut t.x as *mut f32,
+                _mm_add_ps(
+                    _mm_set_ps(self.w, self.z, self.y, self.x),
+                    _mm_set_ps(r.w, r.z, r.y, r.x),
+                ),
+            );
+            t
         }
     }
 }
@@ -121,10 +144,15 @@ impl<'a> std::ops::Div<f32> for &'a Tup {
 
     fn div(self, f: f32) -> Tup {
         unsafe {
-            x: self.x / f,
-            y: self.y / f,
-            z: self.z / f,
-            w: self.w / f,
+            let mut t = Tup::new();
+            _mm_storeu_ps(
+                &mut t.x as *mut f32,
+                _mm_div_ps(
+                    _mm_set_ps(self.w, self.z, self.y, self.x),
+                    _mm_set1_ps(f),
+                ),
+            );
+            t
         }
     }
 }
@@ -135,10 +163,15 @@ impl<'a> std::ops::Mul<f32> for &'a Tup {
 
     fn mul(self, f: f32) -> Tup {
         unsafe {
-            x: self.x * f,
-            y: self.y * f,
-            z: self.z * f,
-            w: self.w * f,
+            let mut t = Tup::new();
+            _mm_storeu_ps(
+                &mut t.x as *mut f32,
+                _mm_mul_ps(
+                    _mm_set_ps(self.w, self.z, self.y, self.x),
+                    _mm_set1_ps(f),
+                ),
+            );
+            t
         }
     }
 }
@@ -148,11 +181,16 @@ impl<'a, 'b> std::ops::Mul<&'b Tup> for &'a Tup {
     type Output = Tup;
 
     fn mul(self, r: &'b Tup) -> Tup {
-        Tup {
-            x: self.x * r.x,
-            y: self.y * r.y,
-            z: self.z * r.z,
-            w: self.w * r.w,
+        unsafe {
+            let mut t = Tup::new();
+            _mm_storeu_ps(
+                &mut t.x as *mut f32,
+                _mm_mul_ps(
+                    _mm_set_ps(self.w, self.z, self.y, self.x),
+                    _mm_set_ps(r.w, r.z, r.y, r.x),
+                ),
+            );
+            t
         }
     }
 }
@@ -162,11 +200,16 @@ impl<'a, 'b> std::ops::Sub<&'b Tup> for &'a Tup {
     type Output = Tup;
 
     fn sub(self, r: &'b Tup) -> Tup {
-        Tup {
-            x: self.x - r.x,
-            y: self.y - r.y,
-            z: self.z - r.z,
-            w: self.w - r.w,
+        unsafe {
+            let mut t = Tup::new();
+            _mm_storeu_ps(
+                &mut t.x as *mut f32,
+                _mm_sub_ps(
+                    _mm_set_ps(self.w, self.z, self.y, self.x),
+                    _mm_set_ps(r.w, r.z, r.y, r.x),
+                ),
+            );
+            t
         }
     }
 }
@@ -203,15 +246,32 @@ impl std::fmt::Display for Tup {
 
 /// Cross product
 pub fn cross(a: &Tup, b: &Tup) -> Tup {
-    vector(
-        a.y * b.z - a.z * b.y,
-        a.z * b.x - a.x * b.z,
-        a.x * b.y - a.y * b.x,
-    )
+    let (x, y, z) = unsafe {
+        let mul = _mm256_mul_ps(
+            _mm256_set_ps(a.z, a.y, a.x, a.z, a.y, a.x, 0.0, 0.0),
+            _mm256_set_ps(b.y, b.z, b.z, b.x, b.x, b.y, 0.0, 0.0),
+        );
+        let sub = _mm256_hsub_ps(mul, _mm256_set1_ps(0.0));
+        let mut unpacked: [f32; 8] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+        _mm256_storeu_ps(&mut unpacked[0], sub);
+        (unpacked[5], unpacked[4], unpacked[1])
+    };
+    vector(x, y, z)
 }
 
 /// Dot product
 pub fn dot(a: &Tup, b: &Tup) -> f32 {
+    unsafe {
+        let mul = _mm_mul_ps(
+            _mm_set_ps(a.x, a.y, a.z, a.w),
+            _mm_set_ps(b.x, b.y, b.z, b.w),
+        );
+        let mut unpacked: [f32; 4] = [0.0, 0.0, 0.0, 0.0];
+        _mm_storeu_ps(&mut unpacked[0], mul);
+        unpacked
+    }
+    .iter()
+    .sum::<f32>()
 }
 
 #[cfg(test)]
