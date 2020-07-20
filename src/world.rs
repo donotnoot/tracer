@@ -84,7 +84,7 @@ impl World {
         let surface = c.object.material().lighting(
             &(*c.object),
             &self.light,
-            c.point.clone(),
+            c.over_point.clone(),
             c.eye.clone(),
             c.normal.clone(),
             s,
