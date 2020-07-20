@@ -5,7 +5,7 @@ use super::matrix::{identity, Mat};
 use super::ray::Ray;
 use super::transformations::{rotate_z, scaling, translation};
 use super::tuple::{dot, point, vector, Tup};
-use std::f64;
+use std::f32;
 
 #[derive(Debug, Clone)]
 pub enum Object {
@@ -202,7 +202,7 @@ mod tests {
         {
             // non axis
             let s = Sphere::new();
-            let p = 3_f64.sqrt() / 3.0;
+            let p = 3_f32.sqrt() / 3.0;
             let normal = s.normal(&point(p, p, p));
             assert!(normal.cmp_epsilon(p, p, p, 0.0));
         }
@@ -221,9 +221,9 @@ mod tests {
         {
             // transformed
             let mut s = Sphere::new();
-            s.transform = &scaling(1.0, 0.5, 1.0) * &rotate_z(std::f64::consts::PI / 5.0);
+            s.transform = &scaling(1.0, 0.5, 1.0) * &rotate_z(std::f32::consts::PI / 5.0);
 
-            let p = 2.0_f64.sqrt() / 2.0;
+            let p = 2.0_f32.sqrt() / 2.0;
             let obj = Object::Sphere(s);
             let normal = obj.normal(&point(0.0, p, -p));
 
@@ -236,7 +236,7 @@ mod tests {
     #[test]
     fn sphere_normals_should_be_normalised() {
         let s = Sphere::new();
-        let p = 3_f64.sqrt() / 3.0;
+        let p = 3_f32.sqrt() / 3.0;
         let normal = s.normal(&point(p, p, p));
         let normalized = normal.normalize();
         assert!(normal.cmp_epsilon(normalized.x, normalized.y, normalized.z, 0.0));

@@ -14,20 +14,20 @@ use rand::thread_rng;
 use rayon::prelude::*;
 
 pub struct Camera {
-    pub aspect_ratio: f64,
-    pub fov: f64,
-    pub h_size: f64,
-    pub v_size: f64,
-    pub half_width: f64,
-    pub half_height: f64,
-    pub pixel_size: f64,
+    pub aspect_ratio: f32,
+    pub fov: f32,
+    pub h_size: f32,
+    pub v_size: f32,
+    pub half_width: f32,
+    pub half_height: f32,
+    pub pixel_size: f32,
 
     transform: Mat,
     transform_inverse: Mat,
 }
 
 impl Camera {
-    pub fn new(h_size: f64, v_size: f64, fov: f64) -> Self {
+    pub fn new(h_size: f32, v_size: f32, fov: f32) -> Self {
         let aspect_ratio = h_size / v_size;
         let half = (fov / 2.0).tan();
 
@@ -59,7 +59,7 @@ impl Camera {
         self.transform_inverse = transform.inverse();
     }
 
-    fn ray(&self, x: f64, y: f64) -> Ray {
+    fn ray(&self, x: f32, y: f32) -> Ray {
         let x_off = (x + 0.5) * self.pixel_size;
         let y_off = (y + 0.5) * self.pixel_size;
 
@@ -87,7 +87,7 @@ impl Camera {
         }
 
         locations.par_iter_mut().for_each(|(x, y, tx)| {
-            let p = w.color_at(&self.ray(*x as f64, *y as f64), reflection_limit);
+            let p = w.color_at(&self.ray(*x as f32, *y as f32), reflection_limit);
             tx.send(Pixel { x: *x, y: *y, p }).unwrap();
         });
     }
@@ -99,31 +99,31 @@ mod tests {
 
     #[test]
     fn pixel_size_horizontal_camera() {
-        let c = Camera::new(200.0, 125.0, std::f64::consts::PI / 2.0);
-        assert!((c.pixel_size - 0.01).abs() <= std::f64::EPSILON);
+        let c = Camera::new(200.0, 125.0, std::f32::consts::PI / 2.0);
+        assert!((c.pixel_size - 0.01).abs() <= std::f32::EPSILON);
     }
 
     #[test]
     fn pixel_size_vertical_camera() {
-        let c = Camera::new(125.0, 200.0, std::f64::consts::PI / 2.0);
-        assert!((c.pixel_size - 0.01).abs() <= std::f64::EPSILON);
+        let c = Camera::new(125.0, 200.0, std::f32::consts::PI / 2.0);
+        assert!((c.pixel_size - 0.01).abs() <= std::f32::EPSILON);
     }
 
     #[test]
     fn ray_through_center_of_canvas() {
-        let c = Camera::new(201.0, 101.0, std::f64::consts::PI / 2.0);
+        let c = Camera::new(201.0, 101.0, std::f32::consts::PI / 2.0);
         let r = c.ray(100.0, 50.0);
 
         assert_eq!(point(0.0, 0.0, 0.0), r.origin);
 
-        assert!(r.direction.x.abs() <= std::f64::EPSILON);
-        assert!(r.direction.y.abs() <= std::f64::EPSILON);
-        assert!((r.direction.z - -1.0).abs() <= std::f64::EPSILON);
+        assert!(r.direction.x.abs() <= std::f32::EPSILON);
+        assert!(r.direction.y.abs() <= std::f32::EPSILON);
+        assert!((r.direction.z - -1.0).abs() <= std::f32::EPSILON);
     }
 
     #[test]
     fn ray_through_corner_of_canvas() {
-        let c = Camera::new(201.0, 101.0, std::f64::consts::PI / 2.0);
+        let c = Camera::new(201.0, 101.0, std::f32::consts::PI / 2.0);
         let r = c.ray(0.0, 0.0);
 
         assert_eq!(point(0.0, 0.0, 0.0), r.origin);
@@ -135,13 +135,13 @@ mod tests {
 
     #[test]
     fn ray_when_camera_is_transformed() {
-        let mut c = Camera::new(201.0, 101.0, std::f64::consts::PI / 2.0);
-        c.set_transform(&rotate_y(std::f64::consts::PI / 4.0) * &translation(0.0, -2.0, 5.0));
+        let mut c = Camera::new(201.0, 101.0, std::f32::consts::PI / 2.0);
+        c.set_transform(&rotate_y(std::f32::consts::PI / 4.0) * &translation(0.0, -2.0, 5.0));
         let r = c.ray(100.0, 50.0);
 
         assert_eq!(point(0.0, 2.0, -5.0), r.origin);
 
-        let p = 2.0f64.sqrt() / 2.0;
+        let p = 2.0f32.sqrt() / 2.0;
         assert!((r.direction.x - p).abs() <= 0.001);
         assert!(r.direction.y <= 0.001);
         assert!((r.direction.z - -p).abs() <= 0.001);

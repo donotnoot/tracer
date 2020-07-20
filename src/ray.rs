@@ -12,7 +12,7 @@ pub struct Ray {
 }
 
 impl Ray {
-    pub fn position(&self, t: f64) -> Tup {
+    pub fn position(&self, t: f32) -> Tup {
         &self.origin + &(&self.direction * t)
     }
 

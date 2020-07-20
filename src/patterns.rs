@@ -119,22 +119,22 @@ mod tests {
         {
             // constant in y
             for y in 0..100 {
-                assert_eq!(stripe.at(&point(0.0, y as f64, 0.0)), color(1.0, 1.0, 1.0));
+                assert_eq!(stripe.at(&point(0.0, y as f32, 0.0)), color(1.0, 1.0, 1.0));
             }
         }
         {
             // constant in z
             for z in 0..100 {
-                assert_eq!(stripe.at(&point(0.0, 0.0, z as f64)), color(1.0, 1.0, 1.0));
+                assert_eq!(stripe.at(&point(0.0, 0.0, z as f32)), color(1.0, 1.0, 1.0));
             }
         }
         {
             // alternates in x
             let mut last_was = stripe.at(&point(0.0, 0.0, 0.0));
             for x in 1..100 {
-                let this = stripe.at(&point(x as f64, 0.0, 0.0));
+                let this = stripe.at(&point(x as f32, 0.0, 0.0));
                 assert_ne!(this, last_was);
-                last_was = stripe.at(&point(x as f64, 0.0, 0.0));
+                last_was = stripe.at(&point(x as f32, 0.0, 0.0));
             }
         }
     }

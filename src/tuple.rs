@@ -1,23 +1,23 @@
 #[derive(Debug, Clone)]
 pub struct Tup {
-    pub x: f64,
-    pub y: f64,
-    pub z: f64,
-    pub w: f64,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+    pub w: f32,
 }
 
 /// New point tuple
-pub fn point(x: f64, y: f64, z: f64) -> Tup {
+pub fn point(x: f32, y: f32, z: f32) -> Tup {
     Tup { x, y, z, w: 1.0 }
 }
 
 /// New vector tuple
-pub fn vector(x: f64, y: f64, z: f64) -> Tup {
+pub fn vector(x: f32, y: f32, z: f32) -> Tup {
     Tup { x, y, z, w: 0.0 }
 }
 
 /// New color tuple
-pub fn color(r: f64, g: f64, b: f64) -> Tup {
+pub fn color(r: f32, g: f32, b: f32) -> Tup {
     Tup {
         x: r,
         y: g,
@@ -27,7 +27,7 @@ pub fn color(r: f64, g: f64, b: f64) -> Tup {
 }
 
 pub fn color_u8(r: u8, g: u8, b: u8) -> Tup {
-    let c = |c: u8| -> f64 { c as f64 / 255.0 };
+    let c = |c: u8| -> f32 { c as f32 / 255.0 };
     Tup {
         x: c(r),
         y: c(g),
@@ -46,22 +46,22 @@ impl Tup {
         }
     }
 
-    pub fn with_x(mut self, v: f64) -> Self {
+    pub fn with_x(mut self, v: f32) -> Self {
         self.x = v;
         self
     }
 
-    pub fn with_y(mut self, v: f64) -> Self {
+    pub fn with_y(mut self, v: f32) -> Self {
         self.y = v;
         self
     }
 
-    pub fn with_z(mut self, v: f64) -> Self {
+    pub fn with_z(mut self, v: f32) -> Self {
         self.z = v;
         self
     }
 
-    pub fn with_w(mut self, v: f64) -> Self {
+    pub fn with_w(mut self, v: f32) -> Self {
         self.w = v;
         self
     }
@@ -79,8 +79,8 @@ impl Tup {
         self - &(&(normal * 2.0) * dot(self, normal))
     }
 
-    pub fn magnitude(&self) -> f64 {
-        (self.x * self.x + self.y * self.y + self.z * self.z + self.w * self.w).sqrt()
+    pub fn magnitude(&self) -> f32 {
+        unsafe {
     }
 
     pub fn normalize(&self) -> Tup {
@@ -93,11 +93,11 @@ impl Tup {
         }
     }
 
-    pub fn cmp_epsilon(&self, x: f64, y: f64, z: f64, w: f64) -> bool {
-        (self.x - x).abs() < std::f64::EPSILON
-            && (self.y - y).abs() < std::f64::EPSILON
-            && (self.z - z).abs() < std::f64::EPSILON
-            && (self.w - w).abs() < std::f64::EPSILON
+    pub fn cmp_epsilon(&self, x: f32, y: f32, z: f32, w: f32) -> bool {
+        (self.x - x).abs() < std::f32::EPSILON
+            && (self.y - y).abs() < std::f32::EPSILON
+            && (self.z - z).abs() < std::f32::EPSILON
+            && (self.w - w).abs() < std::f32::EPSILON
     }
 }
 
@@ -116,11 +116,11 @@ impl<'a, 'b> std::ops::Add<&'b Tup> for &'a Tup {
 }
 
 /// Scalar division
-impl<'a> std::ops::Div<f64> for &'a Tup {
+impl<'a> std::ops::Div<f32> for &'a Tup {
     type Output = Tup;
 
-    fn div(self, f: f64) -> Tup {
-        Tup {
+    fn div(self, f: f32) -> Tup {
+        unsafe {
             x: self.x / f,
             y: self.y / f,
             z: self.z / f,
@@ -130,11 +130,11 @@ impl<'a> std::ops::Div<f64> for &'a Tup {
 }
 
 /// Scalar multiplication
-impl<'a> std::ops::Mul<f64> for &'a Tup {
+impl<'a> std::ops::Mul<f32> for &'a Tup {
     type Output = Tup;
 
-    fn mul(self, f: f64) -> Tup {
-        Tup {
+    fn mul(self, f: f32) -> Tup {
+        unsafe {
             x: self.x * f,
             y: self.y * f,
             z: self.z * f,
@@ -211,8 +211,7 @@ pub fn cross(a: &Tup, b: &Tup) -> Tup {
 }
 
 /// Dot product
-pub fn dot(a: &Tup, b: &Tup) -> f64 {
-    a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w
+pub fn dot(a: &Tup, b: &Tup) -> f32 {
 }
 
 #[cfg(test)]
@@ -378,8 +377,8 @@ mod tests {
         vector_magnitude_100: (vector(1.0,0.0,0.0), 1.0),
         vector_magnitude_010: (vector(0.0,1.0,0.0), 1.0),
         vector_magnitude_001: (vector(0.0,0.0,1.0), 1.0),
-        vector_magnitude_123: (vector(1.0,2.0,3.0), (14.0 as f64).sqrt()),
-        vector_magnitude_123_neg: (vector(-1.0,-2.0,-3.0), (14.0 as f64).sqrt()),
+        vector_magnitude_123: (vector(1.0,2.0,3.0), (14.0 as f32).sqrt()),
+        vector_magnitude_123_neg: (vector(-1.0,-2.0,-3.0), (14.0 as f32).sqrt()),
     }
 
     macro_rules! vector_normalizing {
@@ -436,7 +435,7 @@ mod tests {
     #[test]
     fn reflecting_a_vector_off_a_slanted_surface() {
         let v = vector(0.0, -1.0, 0.0);
-        let p = (2 as f64).sqrt() / 2.0;
+        let p = (2 as f32).sqrt() / 2.0;
         let n = vector(p, p, 0.0);
         let r = v.reflect(&n);
 

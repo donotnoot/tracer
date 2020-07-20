@@ -48,7 +48,7 @@ impl PPMCanvas {
     }
 
     fn scale(&self, p: &Tup) -> [u8; 3] {
-        fn s(f: f64) -> u8 {
+        fn s(f: f32) -> u8 {
             let n = (255.0 * f).ceil() as i16;
             if n > 255 {
                 return 255 as u8;
@@ -157,7 +157,7 @@ impl OpenGLCanvas {
     }
 
     fn tup_to_rl_color(&self, t: Tup) -> raylib::color::Color {
-        fn s(f: f64) -> u8 {
+        fn s(f: f32) -> u8 {
             let n = (255.0 * f).ceil() as i16;
             if n > 255 {
                 return 255 as u8;

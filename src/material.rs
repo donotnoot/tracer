@@ -6,11 +6,11 @@ use super::tuple::{color, dot, point, vector, Tup};
 #[derive(Debug, Clone)]
 pub struct Material {
     pub color: Tup,
-    pub ambient: f64,
-    pub diffuse: f64,
-    pub specular: f64,
-    pub shininess: f64,
-    pub reflectiveness: f64,
+    pub ambient: f32,
+    pub diffuse: f32,
+    pub specular: f32,
+    pub shininess: f32,
+    pub reflectiveness: f32,
     pub pattern: Option<Pattern>,
 }
 
@@ -99,9 +99,9 @@ mod test {
             false,
         );
 
-        assert_eq!((1.9 - result.x).abs() <= std::f64::EPSILON, true);
-        assert_eq!((1.9 - result.y).abs() <= std::f64::EPSILON, true);
-        assert_eq!((1.9 - result.z).abs() <= std::f64::EPSILON, true);
+        assert_eq!((1.9 - result.x).abs() <= std::f32::EPSILON, true);
+        assert_eq!((1.9 - result.y).abs() <= std::f32::EPSILON, true);
+        assert_eq!((1.9 - result.z).abs() <= std::f32::EPSILON, true);
     }
 
     #[test]
@@ -109,7 +109,7 @@ mod test {
         let mat = Material::new();
         let pos = point(0.0, 0.0, 0.0);
 
-        let p = 2_f64.sqrt() / 2.0;
+        let p = 2_f32.sqrt() / 2.0;
         let eyev = vector(0.0, p, p);
         let normalv = vector(0.0, 0.0, -1.0);
         let light = PointLight {
@@ -125,9 +125,9 @@ mod test {
             false,
         );
 
-        assert_eq!((1.0 - result.x).abs() <= std::f64::EPSILON, true);
-        assert_eq!((1.0 - result.y).abs() <= std::f64::EPSILON, true);
-        assert_eq!((1.0 - result.z).abs() <= std::f64::EPSILON, true);
+        assert_eq!((1.0 - result.x).abs() <= std::f32::EPSILON, true);
+        assert_eq!((1.0 - result.y).abs() <= std::f32::EPSILON, true);
+        assert_eq!((1.0 - result.z).abs() <= std::f32::EPSILON, true);
     }
 
     #[test]
@@ -135,7 +135,7 @@ mod test {
         let mat = Material::new();
         let pos = point(0.0, 0.0, 0.0);
 
-        let p = 2_f64.sqrt() / 2.0;
+        let p = 2_f32.sqrt() / 2.0;
 
         let eyev = vector(0.0, 0.0, -1.0);
         let normalv = vector(0.0, 0.0, -1.0);
@@ -153,9 +153,9 @@ mod test {
         );
 
         let r = 0.1 + p * 0.9;
-        assert_eq!((r - result.x).abs() <= std::f64::EPSILON, true);
-        assert_eq!((r - result.y).abs() <= std::f64::EPSILON, true);
-        assert_eq!((r - result.z).abs() <= std::f64::EPSILON, true);
+        assert_eq!((r - result.x).abs() <= std::f32::EPSILON, true);
+        assert_eq!((r - result.y).abs() <= std::f32::EPSILON, true);
+        assert_eq!((r - result.z).abs() <= std::f32::EPSILON, true);
     }
 
     #[test]
@@ -163,7 +163,7 @@ mod test {
         let mat = Material::new();
         let pos = point(0.0, 0.0, 0.0);
 
-        let p = 2_f64.sqrt() / 2.0;
+        let p = 2_f32.sqrt() / 2.0;
 
         let eyev = vector(0.0, -p, -p);
         let normalv = vector(0.0, 0.0, -1.0);
@@ -181,9 +181,9 @@ mod test {
         );
 
         let r = 0.1 + 0.9 * p + 0.9;
-        assert_eq!((r - result.x).abs() <= std::f64::EPSILON, true);
-        assert_eq!((r - result.y).abs() <= std::f64::EPSILON, true);
-        assert_eq!((r - result.z).abs() <= std::f64::EPSILON, true);
+        assert_eq!((r - result.x).abs() <= std::f32::EPSILON, true);
+        assert_eq!((r - result.y).abs() <= std::f32::EPSILON, true);
+        assert_eq!((r - result.z).abs() <= std::f32::EPSILON, true);
     }
 
     #[test]
@@ -206,9 +206,9 @@ mod test {
             false,
         );
 
-        assert_eq!((0.1 - result.x).abs() <= std::f64::EPSILON, true);
-        assert_eq!((0.1 - result.y).abs() <= std::f64::EPSILON, true);
-        assert_eq!((0.1 - result.z).abs() <= std::f64::EPSILON, true);
+        assert_eq!((0.1 - result.x).abs() <= std::f32::EPSILON, true);
+        assert_eq!((0.1 - result.y).abs() <= std::f32::EPSILON, true);
+        assert_eq!((0.1 - result.z).abs() <= std::f32::EPSILON, true);
     }
 
     #[test]
@@ -231,9 +231,9 @@ mod test {
             true,
         );
 
-        assert_eq!((0.1 - result.x).abs() <= std::f64::EPSILON, true);
-        assert_eq!((0.1 - result.y).abs() <= std::f64::EPSILON, true);
-        assert_eq!((0.1 - result.z).abs() <= std::f64::EPSILON, true);
+        assert_eq!((0.1 - result.x).abs() <= std::f32::EPSILON, true);
+        assert_eq!((0.1 - result.y).abs() <= std::f32::EPSILON, true);
+        assert_eq!((0.1 - result.z).abs() <= std::f32::EPSILON, true);
     }
 
     #[test]
@@ -272,12 +272,12 @@ mod test {
             false,
         );
 
-        assert_eq!((1.0 - c2.x).abs() <= std::f64::EPSILON, false);
-        assert_eq!((1.0 - c2.y).abs() <= std::f64::EPSILON, false);
-        assert_eq!((1.0 - c2.z).abs() <= std::f64::EPSILON, false);
+        assert_eq!((1.0 - c2.x).abs() <= std::f32::EPSILON, false);
+        assert_eq!((1.0 - c2.y).abs() <= std::f32::EPSILON, false);
+        assert_eq!((1.0 - c2.z).abs() <= std::f32::EPSILON, false);
 
-        assert_eq!((0.0 - c1.x).abs() <= std::f64::EPSILON, false);
-        assert_eq!((0.0 - c1.y).abs() <= std::f64::EPSILON, false);
-        assert_eq!((0.0 - c1.z).abs() <= std::f64::EPSILON, false);
+        assert_eq!((0.0 - c1.x).abs() <= std::f32::EPSILON, false);
+        assert_eq!((0.0 - c1.y).abs() <= std::f32::EPSILON, false);
+        assert_eq!((0.0 - c1.z).abs() <= std::f32::EPSILON, false);
     }
 }

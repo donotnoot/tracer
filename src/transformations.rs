@@ -1,24 +1,30 @@
-use super::matrix;
+use super::matrix::{Mat, Kind, identity};
 use super::tuple;
 
-pub fn translation(x: f64, y: f64, z: f64) -> matrix::Mat {
-    let mut m = matrix::identity(4);
+pub fn translation(x: f32, y: f32, z: f32) -> Mat {
+    let mut m = identity(4);
+    m.kind = Kind::TransformNoScale;
+
     m.mat[0][3] = x;
     m.mat[1][3] = y;
     m.mat[2][3] = z;
     m
 }
 
-pub fn scaling(x: f64, y: f64, z: f64) -> matrix::Mat {
-    let mut m = matrix::identity(4);
+pub fn scaling(x: f32, y: f32, z: f32) -> Mat {
+    let mut m = identity(4);
+    m.kind = Kind::Transform;
+
     m.mat[0][0] = x;
     m.mat[1][1] = y;
     m.mat[2][2] = z;
     m
 }
 
-pub fn rotate_x(rad: f64) -> matrix::Mat {
-    let mut m = matrix::identity(4);
+pub fn rotate_x(rad: f32) -> Mat {
+    let mut m = identity(4);
+    m.kind = Kind::TransformNoScale;
+
     let sin = rad.sin();
     let cos = rad.cos();
     m.mat[1][1] = cos;
@@ -28,8 +34,10 @@ pub fn rotate_x(rad: f64) -> matrix::Mat {
     m
 }
 
-pub fn rotate_y(rad: f64) -> matrix::Mat {
-    let mut m = matrix::identity(4);
+pub fn rotate_y(rad: f32) -> Mat {
+    let mut m = identity(4);
+    m.kind = Kind::TransformNoScale;
+
     let sin = rad.sin();
     let cos = rad.cos();
     m.mat[0][0] = cos;
@@ -39,8 +47,10 @@ pub fn rotate_y(rad: f64) -> matrix::Mat {
     m
 }
 
-pub fn rotate_z(rad: f64) -> matrix::Mat {
-    let mut m = matrix::identity(4);
+pub fn rotate_z(rad: f32) -> Mat {
+    let mut m = identity(4);
+    m.kind = Kind::TransformNoScale;
+
     let sin = rad.sin();
     let cos = rad.cos();
     m.mat[0][0] = cos;
@@ -50,8 +60,10 @@ pub fn rotate_z(rad: f64) -> matrix::Mat {
     m
 }
 
-pub fn shearing(xy: f64, xz: f64, yx: f64, yz: f64, zx: f64, zy: f64) -> matrix::Mat {
-    let mut m = matrix::identity(4);
+pub fn shearing(xy: f32, xz: f32, yx: f32, yz: f32, zx: f32, zy: f32) -> Mat {
+    let mut m = identity(4);
+    m.kind = Kind::TransformNoScale;
+
     m.mat[0][1] = xy;
     m.mat[0][2] = xz;
     m.mat[1][0] = yx;
@@ -61,8 +73,9 @@ pub fn shearing(xy: f64, xz: f64, yx: f64, yz: f64, zx: f64, zy: f64) -> matrix:
     m
 }
 
-pub fn view(from: tuple::Tup, to: tuple::Tup, up: tuple::Tup) -> matrix::Mat {
-    let mut m = matrix::identity(4);
+pub fn view(from: tuple::Tup, to: tuple::Tup, up: tuple::Tup) -> Mat {
+    let mut m = identity(4);
+    m.kind = Kind::General;
 
     let forward = (&to - &from).normalize();
     let left = tuple::cross(&forward, &up.normalize());

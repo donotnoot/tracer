@@ -3,16 +3,17 @@ use super::tuple;
 #[derive(Debug, Clone)]
 pub struct Mat {
     size: usize,
+    pub mat: [[f32; 4]; 4],
     pub mat: [[f64; 4]; 4],
 }
 
 impl Mat {
-    pub fn is_inversible(&self) -> (f64, bool) {
+    pub fn is_inversible(&self) -> (f32, bool) {
         let det = self.determinant();
         (det, det != 0.0)
     }
 
-    pub fn cofactor(&self, row_to_remove: usize, col_to_remove: usize) -> f64 {
+    pub fn cofactor(&self, row_to_remove: usize, col_to_remove: usize) -> f32 {
         let det = self.submatrix(row_to_remove, col_to_remove).determinant();
 
         if (row_to_remove + col_to_remove) & 1 == 0 {
@@ -22,11 +23,11 @@ impl Mat {
         }
     }
 
-    pub fn determinant(&self) -> f64 {
+    pub fn determinant(&self) -> f32 {
         match self.size {
             2 => self.mat[0][0] * self.mat[1][1] - self.mat[1][0] * self.mat[0][1],
             3 | 4 => {
-                let mut result: f64 = 0.0;
+                let mut result: f32 = 0.0;
                 for col in 0..self.size as usize {
                     let cf = self.cofactor(0, col);
                     result += self.mat[0][col] * cf;
@@ -116,7 +117,7 @@ impl Mat {
         res
     }
 
-    pub fn minor(&self, row_to_remove: usize, col_to_remove: usize) -> f64 {
+    pub fn minor(&self, row_to_remove: usize, col_to_remove: usize) -> f32 {
         self.submatrix(row_to_remove, col_to_remove).determinant()
     }
 }
@@ -178,6 +179,7 @@ impl<'a, 'b> std::ops::Mul<&'b tuple::Tup> for &'a Mat {
     type Output = tuple::Tup;
 
     fn mul(self, r: &'b tuple::Tup) -> tuple::Tup {
+        let mut t: [f32; 4] = [0.0, 0.0, 0.0, 0.0];
         let mut t: [f64; 4] = [0.0, 0.0, 0.0, 0.0];
 
         for row in 0..self.size as usize {
