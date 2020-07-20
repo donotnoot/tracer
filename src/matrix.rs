@@ -2,8 +2,9 @@ use super::tuple;
 use super::tuple::vector;
 use super::tuple::Tup;
 use core::arch::x86_64::{
-    _mm256_add_ps, _mm256_hadd_ps, _mm256_loadu_ps, _mm256_mul_ps, _mm256_set1_ps, _mm256_set_ps,
-    _mm256_store_ps, _mm256_storeu_ps, _mm_mul_ps, _mm_set_ps, _mm_store_ps,
+    __m128, _mm256_add_ps, _mm256_hadd_ps, _mm256_loadu_ps, _mm256_mul_ps, _mm256_set1_ps,
+    _mm256_set_ps, _mm256_store_ps, _mm256_storeu_ps, _mm_mul_ps, _mm_set_ps, _mm_store_ps,
+    _MM_TRANSPOSE4_PS,
 };
 
 #[derive(Debug, Clone)]
@@ -84,51 +85,31 @@ impl Mat {
     }
 
     pub fn transpose(&self) -> Mat {
-        Mat {
-            size: self.size,
-            kind: self.kind,
-            mat: [
-                [
-                    self.mat[0][0],
-                    self.mat[1][0],
-                    self.mat[2][0],
-                    self.mat[3][0],
-                ],
-                [
-                    self.mat[0][1],
-                    self.mat[1][1],
-                    self.mat[2][1],
-                    self.mat[3][1],
-                ],
-                [
-                    self.mat[0][2],
-                    self.mat[1][2],
-                    self.mat[2][2],
-                    self.mat[3][2],
-                ],
-                [
-                    self.mat[0][3],
-                    self.mat[1][3],
-                    self.mat[2][3],
-                    self.mat[3][3],
-                ],
-            ],
+        let mut m = self.clone();
+
+        unsafe {
+            _MM_TRANSPOSE4_PS(
+                std::mem::transmute(&mut m.mat[0][0]),
+                std::mem::transmute(&mut m.mat[1][0]),
+                std::mem::transmute(&mut m.mat[2][0]),
+                std::mem::transmute(&mut m.mat[3][0]),
+            );
         }
+
+        m
     }
 
     fn inverse_no_scale(&self) -> Mat {
-        let mut res = mat(self.size);
+        let mut res = self.clone();
 
-        // Transpose top-left 3x3
-        res.mat[0][0] = self.mat[0][0];
-        res.mat[0][1] = self.mat[1][0];
-        res.mat[0][2] = self.mat[2][0];
-        res.mat[1][0] = self.mat[0][1];
-        res.mat[1][1] = self.mat[1][1];
-        res.mat[1][2] = self.mat[2][1];
-        res.mat[2][0] = self.mat[0][2];
-        res.mat[2][1] = self.mat[1][2];
-        res.mat[2][2] = self.mat[2][2];
+        unsafe {
+            _MM_TRANSPOSE4_PS(
+                std::mem::transmute(&mut res.mat[0][0]),
+                std::mem::transmute(&mut res.mat[1][0]),
+                std::mem::transmute(&mut res.mat[2][0]),
+                std::mem::transmute(&mut res.mat[3][0]),
+            );
+        }
 
         // Transform translation
         let trans = vector(-self.mat[0][3], -self.mat[1][3], -self.mat[2][3]);
@@ -153,7 +134,7 @@ impl Mat {
             std::panic!("cannot inverse matrix");
         }
 
-        let mut res = mat(self.size);
+        let mut res = self.clone();
 
         for row in 0..self.size as usize {
             for col in 0..self.size as usize {
@@ -171,10 +152,6 @@ impl Mat {
             // Kind::Transform => self.inverse_with_scale(),
             _ => self.inverse_general(),
         }
-    }
-
-    pub fn minor(&self, row_to_remove: usize, col_to_remove: usize) -> f32 {
-        self.submatrix(row_to_remove, col_to_remove).determinant()
     }
 }
 
@@ -503,27 +480,6 @@ mod tests {
     }
 
     #[test]
-    fn minors() {
-        let m = Mat {
-            size: 3,
-            kind: Kind::TransformNoScale,
-            mat: [
-                [1.0, 5.0, 1.0, 0.0],
-                [0.0, 6.0, 5.0, 0.0],
-                [1.0, 7.0, 9.0, 0.0],
-                [0.0, 0.0, 0.0, 0.0],
-            ],
-        };
-        let row = 1;
-        let col = 2;
-        let expected = 2.0;
-
-        let result = m.minor(row, col);
-
-        assert_eq!(expected, result)
-    }
-
-    #[test]
     fn cofactrors() {
         {
             let m = Mat {
@@ -537,10 +493,7 @@ mod tests {
                 ],
             };
 
-            assert_eq!(-12.0, m.minor(0, 0));
             assert_eq!(-12.0, m.cofactor(0, 0));
-
-            assert_eq!(25.0, m.minor(1, 0));
             assert_eq!(-25.0, m.cofactor(1, 0));
         }
     }
