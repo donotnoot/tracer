@@ -87,7 +87,7 @@ impl Intersection {
         let mut n1: f32 = 1.0;
         let mut n2: f32 = 1.0;
 
-        if xs.len() == 0 {
+        if xs.is_empty() {
             return (n1, n2);
         }
 
@@ -98,7 +98,7 @@ impl Intersection {
             let is_hit = std::ptr::eq(self, i);
 
             if is_hit {
-                if containers.len() == 0 {
+                if containers.is_empty() {
                     n1 = 1.0;
                 } else {
                     n1 = containers.last().unwrap().material().refractive_index;
@@ -112,7 +112,7 @@ impl Intersection {
             }
 
             if is_hit {
-                if containers.len() == 0 {
+                if containers.is_empty() {
                     n2 = 1.0;
                 } else {
                     n2 = containers.last().unwrap().material().refractive_index;
@@ -121,7 +121,7 @@ impl Intersection {
             }
         }
 
-        return (n1, n2);
+        (n1, n2)
     }
 }
 

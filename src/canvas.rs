@@ -119,7 +119,7 @@ impl Canvas for PPMCanvas {
 
     fn pixel_at(&self, x: u32, y: u32) -> Tup {
         // yolo? should be algebraic type
-        return self.pixels[self.offset(x, y)].p.clone();
+        self.pixels[self.offset(x, y)].p.clone()
     }
 }
 
@@ -183,13 +183,8 @@ impl OpenGLCanvas {
 
         while !rl.window_should_close() {
             // Get as many pixels as possible.
-            loop {
-                match rx.try_recv() {
-                    Ok(pixel) => {
-                        self.write_pixel(pixel.x, pixel.y, pixel.p);
-                    }
-                    Err(_) => break,
-                }
+            while let Ok(pixel) = rx.try_recv() {
+                self.write_pixel(pixel.x, pixel.y, pixel.p);
             }
 
             let mut d = rl.begin_drawing(&thread);
@@ -223,7 +218,6 @@ impl Canvas for OpenGLCanvas {
     }
 
     fn pixel_at(&self, x: u32, y: u32) -> Tup {
-        // yolo? should be algebraic type
-        return self.pixels[self.offset(x, y)].p.clone();
+        self.pixels[self.offset(x, y)].p.clone()
     }
 }

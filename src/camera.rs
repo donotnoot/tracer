@@ -1,12 +1,10 @@
+use std::sync::mpsc::Sender;
 
-use std::sync::mpsc::{Sender};
-
-
-use super::canvas::{Pixel};
+use super::canvas::Pixel;
 use super::matrix::{identity, Mat};
 use super::ray::Ray;
 
-use super::tuple::{point};
+use super::tuple::point;
 use super::world::World;
 
 use rand::seq::SliceRandom;
@@ -31,15 +29,11 @@ impl Camera {
         let aspect_ratio = h_size / v_size;
         let half = (fov / 2.0).tan();
 
-        let half_width;
-        let half_height;
-        if aspect_ratio >= 1.0 {
-            half_width = half;
-            half_height = half / aspect_ratio;
+        let (half_width, half_height) = if aspect_ratio >= 1.0 {
+            (half, half / aspect_ratio)
         } else {
-            half_width = half * aspect_ratio;
-            half_height = half;
-        }
+            (half * aspect_ratio, half)
+        };
 
         Camera {
             aspect_ratio,
@@ -70,7 +64,7 @@ impl Camera {
         let origin = &self.transform_inverse * &point(0.0, 0.0, 0.0);
         let direction = (&pixel - &origin).normalize();
 
-        return Ray { origin, direction };
+        Ray { origin, direction }
     }
 
     pub fn render(&self, w: World, tx: Sender<Pixel>, shuffle: bool, reflection_limit: u64) {

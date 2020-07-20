@@ -4,7 +4,7 @@ use core::arch::x86_64::{
     _mm_set1_ps, _mm_set_ps, _mm_store_ps, _mm_storeu_ps, _mm_sub_ps
 };
 
-#[derive(Debug, Clone)]
+#[derive(Default, Debug, Clone)]
 #[repr(C)]
 pub struct Tup {
     pub x: f32,

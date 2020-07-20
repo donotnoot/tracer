@@ -185,8 +185,8 @@ impl std::cmp::PartialEq<Mat> for Mat {
         // TODO: epsilon cmp, SIMD?
         match self.size {
             4 => self.mat == b.mat,
-            3 => self.mat[0] == b.mat[0] && self.mat[1] == b.mat[1] && self.mat[2] == self.mat[2],
-            2 => self.mat[0] == b.mat[0] && self.mat[1] == b.mat[1],
+            3 => (self.mat[0] == b.mat[0]) && (self.mat[1] == b.mat[1]) && (self.mat[2] == b.mat[2]),
+            2 => (self.mat[0] == b.mat[0]) && (self.mat[1] == b.mat[1]),
             _ => std::panic!("unsupported matrix size"),
         }
     }
@@ -196,13 +196,15 @@ impl std::cmp::PartialEq<Mat> for Mat {
 impl<'a, 'b> std::ops::Mul<&'b Mat> for &'a Mat {
     type Output = Mat;
 
-    fn mul(self, r: &'b Mat) -> Mat {
+    fn mul(self, rhs: &'b Mat) -> Mat {
         let mut m = mat(self.size);
-        m.kind = r.kind;
+        m.kind = rhs.kind;
 
         for row in 0..self.size {
             for col in (0..self.size).step_by(2) {
-                let (a, b, c, d, e, f, g, h) = unsafe {
+                let next_col = col + 1;
+
+                let result: [f32; 8] = unsafe {
                     let lhs = _mm256_set_ps(
                         self.mat[row][0],
                         self.mat[row][1],
@@ -214,31 +216,22 @@ impl<'a, 'b> std::ops::Mul<&'b Mat> for &'a Mat {
                         self.mat[row][3],
                     );
                     let rhs = _mm256_set_ps(
-                        r.mat[0][col + 1],
-                        r.mat[1][col + 1],
-                        r.mat[2][col + 1],
-                        r.mat[3][col + 1],
-                        r.mat[0][col],
-                        r.mat[1][col],
-                        r.mat[2][col],
-                        r.mat[3][col],
+                        rhs.mat[0][next_col],
+                        rhs.mat[1][next_col],
+                        rhs.mat[2][next_col],
+                        rhs.mat[3][next_col],
+                        rhs.mat[0][col],
+                        rhs.mat[1][col],
+                        rhs.mat[2][col],
+                        rhs.mat[3][col],
                     );
                     let result = _mm256_mul_ps(lhs, rhs);
                     let mut unpacked: [f32; 8] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
                     _mm256_storeu_ps(&mut unpacked[0], result);
-                    (
-                        unpacked[0],
-                        unpacked[1],
-                        unpacked[2],
-                        unpacked[3],
-                        unpacked[4],
-                        unpacked[5],
-                        unpacked[6],
-                        unpacked[7],
-                    )
+                    unpacked
                 };
-                m.mat[row][col] = a + b + c + d;
-                m.mat[row][col+1] = e + f + g + h;
+                m.mat[row][col] = result[0..4].iter().sum::<f32>();
+                m.mat[row][next_col] = result[4..].iter().sum::<f32>();
             }
         }
         m
@@ -262,7 +255,9 @@ impl<'a, 'b> std::ops::Mul<&'b tuple::Tup> for &'a Mat {
         let mut t: [f32; 4] = [0.0, 0.0, 0.0, 0.0];
 
         for row in (0..self.size).step_by(2) {
-            let (a, b, c, d, e, f, g, h) = unsafe {
+            let next_row = row + 1;
+
+            let result: [f32; 8] = unsafe {
                 let lhs = _mm256_set_ps(
                     self.mat[row + 1][0],
                     self.mat[row + 1][1],
@@ -277,20 +272,11 @@ impl<'a, 'b> std::ops::Mul<&'b tuple::Tup> for &'a Mat {
                 let result = _mm256_mul_ps(lhs, rhs);
                 let mut unpacked: [f32; 8] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
                 _mm256_storeu_ps(&mut unpacked[0], result);
-                (
-                    unpacked[0],
-                    unpacked[1],
-                    unpacked[2],
-                    unpacked[3],
-                    unpacked[4],
-                    unpacked[5],
-                    unpacked[6],
-                    unpacked[7],
-                )
+                unpacked
             };
 
-            t[row] = a + b + c + d;
-            t[row + 1] = e + f + g + h;
+            t[row] = result[0..4].iter().sum::<f32>();
+            t[next_row] = result[4..].iter().sum::<f32>();
         }
 
         tuple::Tup {

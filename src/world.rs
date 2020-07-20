@@ -2,10 +2,8 @@ use super::intersections::{hit, Computations, Intersect, Intersections};
 use super::light::PointLight;
 use super::objects::{Object, Sphere};
 use super::ray::Ray;
-use super::transformations::{scaling};
-use super::tuple::{dot, color, point, vector, Tup};
-
-
+use super::transformations::scaling;
+use super::tuple::{color, dot, point, vector, Tup};
 
 pub struct World {
     pub objects: Vec<Object>,
@@ -51,7 +49,7 @@ impl World {
     }
 
     fn is_shadowed(&self, p: &Tup) -> bool {
-        let v = &(self.light.position) - &p;
+        let v = &(self.light.position) - p;
         let distance = v.magnitude();
         let direction = v.normalize();
 
@@ -61,8 +59,8 @@ impl World {
         };
 
         match hit(&self.intersect(&ray)) {
-            (hit, _, true) => return hit < distance,
-            _ => return false,
+            (hit, _, true) => hit < distance,
+            _ => false,
         }
     }
 
@@ -70,9 +68,9 @@ impl World {
         let intersections = self.intersect(r);
 
         match hit(&intersections) {
-            (_, _, false) => return self.background_color.clone(),
+            (_, _, false) => self.background_color.clone(),
             (_, i, true) => {
-                return self.shade_hit(
+                self.shade_hit(
                     &intersections[i].computations(&r, Some(&intersections)),
                     depth_remaining,
                 )
@@ -123,7 +121,7 @@ impl World {
             return color(0.0, 0.0, 0.0);
         }
 
-        let n_ratio = c.n1/c.n2;
+        let n_ratio = c.n1 / c.n2;
         let cos_i = dot(&c.eye, &c.normal);
         let sin2_t = n_ratio.powi(2) * (1.0 - cos_i.powi(2));
         if sin2_t > 1.0 {
@@ -131,7 +129,7 @@ impl World {
             return color(0.0, 0.0, 0.0);
         }
 
-        return color(1.0, 1.0, 1.0);
+        color(1.0, 1.0, 1.0)
     }
 }
 
@@ -322,7 +320,7 @@ mod tests {
         };
 
         let shape = Arc::new(w.objects[0].clone());
-        let p = 2f32.sqrt()/2.0;
+        let p = 2f32.sqrt() / 2.0;
         let r = Ray {
             origin: point(0.0, 0.0, p),
             direction: vector(0.0, 1.0, 0.0),
