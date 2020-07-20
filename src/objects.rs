@@ -147,13 +147,13 @@ impl Plane {
     }
 
     fn intersect(&self, ray: &Ray) -> Intersections {
-        if ray.direction.y.abs() < 10e-10 {
+        if ray.direction.y.abs() < 10e-5 {
             let v: Vec<Intersection> = vec![];
             v
         } else {
             vec![Intersection {
                 object: Arc::new(Object::Plane(self.clone())),
-                t: -ray.origin.y / ray.direction.y,
+                t: (-ray.origin.y) / ray.direction.y,
             }]
         }
     }
