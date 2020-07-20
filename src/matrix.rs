@@ -1,11 +1,13 @@
 use super::tuple;
 use super::tuple::vector;
+use super::tuple::Tup;
 use core::arch::x86_64::{
-    _mm256_mul_ps, _mm256_set_ps, _mm256_store_ps, _mm256_storeu_ps, _mm_mul_ps, _mm_set_ps,
-    _mm_store_ps,
+    _mm256_add_ps, _mm256_hadd_ps, _mm256_loadu_ps, _mm256_mul_ps, _mm256_set1_ps, _mm256_set_ps,
+    _mm256_store_ps, _mm256_storeu_ps, _mm_mul_ps, _mm_set_ps, _mm_store_ps,
 };
 
 #[derive(Debug, Clone)]
+#[repr(C)]
 pub struct Mat {
     size: usize,
     pub mat: [[f32; 4]; 4],
@@ -185,7 +187,9 @@ impl std::cmp::PartialEq<Mat> for Mat {
         // TODO: epsilon cmp, SIMD?
         match self.size {
             4 => self.mat == b.mat,
-            3 => (self.mat[0] == b.mat[0]) && (self.mat[1] == b.mat[1]) && (self.mat[2] == b.mat[2]),
+            3 => {
+                (self.mat[0] == b.mat[0]) && (self.mat[1] == b.mat[1]) && (self.mat[2] == b.mat[2])
+            }
             2 => (self.mat[0] == b.mat[0]) && (self.mat[1] == b.mat[1]),
             _ => std::panic!("unsupported matrix size"),
         }
@@ -234,6 +238,7 @@ impl<'a, 'b> std::ops::Mul<&'b Mat> for &'a Mat {
                 m.mat[row][next_col] = result[4..].iter().sum::<f32>();
             }
         }
+
         m
     }
 }
@@ -252,39 +257,24 @@ impl<'a, 'b> std::ops::Mul<&'b tuple::Tup> for &'a Mat {
     type Output = tuple::Tup;
 
     fn mul(self, r: &'b tuple::Tup) -> tuple::Tup {
-        let mut t: [f32; 4] = [0.0, 0.0, 0.0, 0.0];
+        let (x, y, z, w) = unsafe {
+            let rhs = _mm256_set_ps(r.w, r.z, r.y, r.x, r.w, r.z, r.y, r.x);
 
-        for row in (0..self.size).step_by(2) {
-            let next_row = row + 1;
+            let lhs0 = _mm256_loadu_ps(&self.mat[0][0] as *const f32);
+            let result0 = _mm256_mul_ps(lhs0, rhs);
 
-            let result: [f32; 8] = unsafe {
-                let lhs = _mm256_set_ps(
-                    self.mat[row + 1][0],
-                    self.mat[row + 1][1],
-                    self.mat[row + 1][2],
-                    self.mat[row + 1][3],
-                    self.mat[row][0],
-                    self.mat[row][1],
-                    self.mat[row][2],
-                    self.mat[row][3],
-                );
-                let rhs = _mm256_set_ps(r.x, r.y, r.z, r.w, r.x, r.y, r.z, r.w);
-                let result = _mm256_mul_ps(lhs, rhs);
-                let mut unpacked: [f32; 8] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
-                _mm256_storeu_ps(&mut unpacked[0], result);
-                unpacked
-            };
+            let lhs1 = _mm256_loadu_ps(&self.mat[2][0] as *const f32);
+            let result1 = _mm256_mul_ps(lhs1, rhs);
 
-            t[row] = result[0..4].iter().sum::<f32>();
-            t[next_row] = result[4..].iter().sum::<f32>();
-        }
+            let result = _mm256_hadd_ps(result0, result1);
+            let result = _mm256_hadd_ps(result, _mm256_set1_ps(0.0));
 
-        tuple::Tup {
-            x: t[0],
-            y: t[1],
-            z: t[2],
-            w: t[3],
-        }
+            let mut unpacked: [f32; 8] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+            _mm256_storeu_ps(&mut unpacked[0] as *mut f32, result);
+
+            (unpacked[0], unpacked[4], unpacked[1], unpacked[5])
+        };
+        Tup { x, y, z, w }
     }
 }
 
