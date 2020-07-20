@@ -45,7 +45,7 @@ fn main() {
 
     {
         let mut backdrop = objects::Plane::new();
-        backdrop.transform = translation(0.0, 0.0, 3.0) * rotate_x(std::f64::consts::PI / 2.0);
+        backdrop.transform = translation(0.0, 0.0, 3.0) * rotate_x(std::f32::consts::PI / 2.0);
         backdrop.material.color = color(1.0, 0.9, 0.9);
         backdrop.material.specular = 0.0;
         backdrop.material.pattern =
@@ -56,7 +56,7 @@ fn main() {
     {
         let mut frontdrop = objects::Plane::new();
         frontdrop.transform =
-            translation(0.0, 0.0, -10.0) * rotate_x(3.0 * std::f64::consts::PI / 2.0);
+            translation(0.0, 0.0, -10.0) * rotate_x(3.0 * std::f32::consts::PI / 2.0);
         frontdrop.material.color = color(1.0, 1.0, 1.0);
         frontdrop.material.specular = 0.0;
         frontdrop.material.pattern =
@@ -66,7 +66,7 @@ fn main() {
 
     {
         let mut object = objects::Sphere::new();
-        object.transform = translation(-2.5, 1.0, 0.0);
+        object.transform = translation(-2.5, 1.0, 0.0) * scaling(1.5, 1.5, 1.5);
         object.material.reflectiveness = 0.8;
         object.material.pattern = Some(Pattern::Stripe(
             P_MED.clone(),
@@ -104,9 +104,9 @@ fn main() {
         position: tuple::point(-10.0, 10.0, -10.0),
     };
 
-    let mut camera = camera::Camera::new(WIDTH as f64, HEIGHT as f64, std::f64::consts::PI / 2.0);
+    let mut camera = camera::Camera::new(WIDTH as f32, HEIGHT as f32, std::f32::consts::PI / 2.0);
     camera.set_transform(transformations::view(
-        tuple::point(0.0, 1.5, -5.0),
+        tuple::point(1.0, 3.5, -5.0),
         tuple::point(0.0, 1.0, 0.0),
         tuple::vector(0.0, 1.0, 0.0),
     ));

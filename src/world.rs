@@ -3,7 +3,9 @@ use super::light::PointLight;
 use super::objects::{Object, Plane, Sphere};
 use super::ray::Ray;
 use super::transformations::{scaling, translation};
-use super::tuple::{color, point, vector, Tup};
+use super::tuple::{dot, color, point, vector, Tup};
+
+use std::sync::Arc;
 
 pub struct World {
     pub objects: Vec<Object>,
@@ -70,7 +72,10 @@ impl World {
         match hit(&intersections) {
             (_, _, false) => return self.background_color.clone(),
             (_, i, true) => {
-                return self.shade_hit(&intersections[i].computations(&r), depth_remaining)
+                return self.shade_hit(
+                    &intersections[i].computations(&r, Some(&intersections)),
+                    depth_remaining,
+                )
             }
         }
     }
@@ -93,10 +98,10 @@ impl World {
     }
 
     fn reflected_color(&self, c: &Computations, depth_remaining: u64) -> Tup {
-        if depth_remaining < 1 {
+        if depth_remaining == 0 {
             return color(0.0, 0.0, 0.0);
         }
-        if (*c.object).material().reflectiveness < std::f64::EPSILON {
+        if (*c.object).material().reflectiveness < std::f32::EPSILON {
             return color(0.0, 0.0, 0.0);
         }
 
@@ -107,6 +112,26 @@ impl World {
         let color = self.color_at(&reflect_ray, depth_remaining - 1);
 
         &color * (*c.object).material().reflectiveness
+    }
+
+    fn refracted_color(&self, c: &Computations, depth_remaining: u64) -> Tup {
+        if depth_remaining == 0 {
+            return color(0.0, 0.0, 0.0);
+        }
+        if c.object.material().transparency == 0.0 {
+            println!("wtd");
+            return color(0.0, 0.0, 0.0);
+        }
+
+        let n_ratio = c.n1/c.n2;
+        let cos_i = dot(&c.eye, &c.normal);
+        let sin2_t = n_ratio.powi(2) * (1.0 - cos_i.powi(2));
+        if sin2_t > 1.0 {
+            // total internal reflection
+            return color(0.0, 0.0, 0.0);
+        }
+
+        return color(1.0, 1.0, 1.0);
     }
 }
 
@@ -140,14 +165,14 @@ mod tests {
         };
         let i = Intersection {
             t: 1.0,
-            object: Box::new(w.objects[1].clone()),
+            object: Arc::new(w.objects[1].clone()),
         };
-        let c = i.computations(&r);
+        let c = i.computations(&r, None);
         let color = w.reflected_color(&c, 10);
 
-        assert!((color.x).abs() <= std::f64::EPSILON);
-        assert!((color.y).abs() <= std::f64::EPSILON);
-        assert!((color.z).abs() <= std::f64::EPSILON);
+        assert!((color.x).abs() <= std::f32::EPSILON);
+        assert!((color.y).abs() <= std::f32::EPSILON);
+        assert!((color.z).abs() <= std::f32::EPSILON);
     }
 
     #[test]
@@ -160,16 +185,16 @@ mod tests {
         let s = Object::Plane(p);
         w.objects.push(s.clone());
 
-        let p = 2.0f64.sqrt() / 2.0;
+        let p = 2.0f32.sqrt() / 2.0;
         let r = Ray {
             origin: point(0.0, 0.0, -3.0),
             direction: vector(0.0, -p, p),
         };
         let i = Intersection {
-            t: 2.0f64.sqrt(),
-            object: Box::new(s),
+            t: 2.0f32.sqrt(),
+            object: Arc::new(s),
         };
-        let c = i.computations(&r);
+        let c = i.computations(&r, None);
         let color = w.reflected_color(&c, 10);
 
         println!("{}", color);
@@ -188,16 +213,16 @@ mod tests {
         let s = Object::Plane(p);
         w.objects.push(s.clone());
 
-        let p = 2.0f64.sqrt() / 2.0;
+        let p = 2.0f32.sqrt() / 2.0;
         let r = Ray {
             origin: point(0.0, 0.0, -3.0),
             direction: vector(0.0, -p, p),
         };
         let i = Intersection {
-            t: 2.0f64.sqrt(),
-            object: Box::new(s),
+            t: 2.0f32.sqrt(),
+            object: Arc::new(s),
         };
-        let c = i.computations(&r);
+        let c = i.computations(&r, None);
         let color = w.shade_hit(&c, 10);
 
         println!("{}", color);
@@ -216,17 +241,105 @@ mod tests {
         let s = Object::Plane(p);
         w.objects.push(s.clone());
 
-        let p = 2.0f64.sqrt() / 2.0;
+        let p = 2.0f32.sqrt() / 2.0;
         let r = Ray {
             origin: point(0.0, 0.0, -2.0),
             direction: vector(0.0, -p, p),
         };
         let i = Intersection {
-            t: 2.0f64.sqrt(),
-            object: Box::new(s),
+            t: 2.0f32.sqrt(),
+            object: Arc::new(s),
         };
-        let c = i.computations(&r);
+        let c = i.computations(&r, None);
         let color = w.reflected_color(&c, 0);
+
+        assert_eq!(color.y, 0.0);
+        assert_eq!(color.z, 0.0);
+    }
+
+    #[test]
+    fn the_refracted_color_with_opaque_surface() {
+        let w = World::new();
+        let shape = Arc::new(w.objects[0].clone());
+        let r = Ray {
+            origin: point(0.0, 0.0, -5.0),
+            direction: vector(0.0, 0.0, 1.0),
+        };
+        let xs: Intersections = vec![
+            Intersection {
+                t: 4.0,
+                object: Arc::clone(&shape),
+            },
+            Intersection {
+                t: 6.0,
+                object: Arc::clone(&shape),
+            },
+        ];
+        let comps = xs[0].computations(&r, Some(&xs));
+
+        let color = w.refracted_color(&comps, 5);
+
+        assert_eq!(color.x, 0.0);
+        assert_eq!(color.y, 0.0);
+        assert_eq!(color.z, 0.0);
+    }
+
+    #[test]
+    fn refracted_color_at_max_recursive_depth() {
+        let w = World::new();
+        let shape = Arc::new(w.objects[0].clone());
+        let r = Ray {
+            origin: point(0.0, 0.0, -5.0),
+            direction: vector(0.0, 0.0, 1.0),
+        };
+        let xs: Intersections = vec![
+            Intersection {
+                t: 4.0,
+                object: Arc::clone(&shape),
+            },
+            Intersection {
+                t: 6.0,
+                object: Arc::clone(&shape),
+            },
+        ];
+        let comps = xs[0].computations(&r, Some(&xs));
+
+        let color = w.refracted_color(&comps, 0);
+
+        assert_eq!(color.x, 0.0);
+        assert_eq!(color.y, 0.0);
+        assert_eq!(color.z, 0.0);
+    }
+
+    #[test]
+    fn refracted_color_total_internal_reflection() {
+        let mut w = World::new();
+        w.objects[0] = {
+            let mut o = Sphere::new();
+            o.material.transparency = 1.0;
+            o.material.refractive_index = 1.5;
+            Object::Sphere(o)
+        };
+
+        let shape = Arc::new(w.objects[0].clone());
+        let p = 2f32.sqrt()/2.0;
+        let r = Ray {
+            origin: point(0.0, 0.0, p),
+            direction: vector(0.0, 1.0, 0.0),
+        };
+        let xs: Intersections = vec![
+            Intersection {
+                t: -p,
+                object: Arc::clone(&shape),
+            },
+            Intersection {
+                t: p,
+                object: Arc::clone(&shape),
+            },
+        ];
+        let comps = xs[1].computations(&r, Some(&xs));
+
+        let color = w.refracted_color(&comps, 5);
 
         assert_eq!(color.x, 0.0);
         assert_eq!(color.y, 0.0);

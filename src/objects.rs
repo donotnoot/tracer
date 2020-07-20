@@ -7,6 +7,8 @@ use super::transformations::{rotate_z, scaling, translation};
 use super::tuple::{dot, point, vector, Tup};
 use std::f32;
 
+use std::sync::Arc;
+
 #[derive(Debug, Clone)]
 pub enum Object {
     Sphere(Sphere),
@@ -66,6 +68,20 @@ impl Sphere {
         }
     }
 
+    /// Creates a new sphere with a material that resembles glass.
+    pub fn new_glass() -> Self {
+        Sphere {
+            id: rand::thread_rng().gen(),
+            transform: identity(4),
+            material: {
+                let mut m = material::Material::new();
+                m.transparency = 1.0;
+                m.refractive_index = 1.5;
+                m
+            },
+        }
+    }
+
     fn material(&self) -> material::Material {
         self.material.clone()
     }
@@ -98,11 +114,11 @@ impl Sphere {
         let v: Vec<Intersection> = vec![
             Intersection {
                 t: t1,
-                object: Box::new(Object::Sphere(self.clone())),
+                object: Arc::new(Object::Sphere(self.clone())),
             },
             Intersection {
                 t: t2,
-                object: Box::new(Object::Sphere(self.clone())),
+                object: Arc::new(Object::Sphere(self.clone())),
             },
         ];
         v
@@ -137,7 +153,7 @@ impl Plane {
             v
         } else {
             vec![Intersection {
-                object: Box::new(Object::Plane(self.clone())),
+                object: Arc::new(Object::Plane(self.clone())),
                 t: -ray.origin.y / ray.direction.y,
             }]
         }
