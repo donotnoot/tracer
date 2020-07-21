@@ -50,11 +50,11 @@ impl World {
     fn intersect(&self, r: &Ray) -> Intersections {
         let mut i: Intersections = vec![];
 
-        for (_, elem) in self.objects.iter().enumerate() {
+        for elem in self.objects.iter() {
             i.append(&mut (*elem).intersect(r));
         }
 
-        i.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
+        i.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap_or(std::cmp::Ordering::Less));
 
         i
     }
