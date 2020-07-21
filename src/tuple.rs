@@ -500,8 +500,8 @@ mod tests {
         let r = v.reflect(&n);
 
         // TODO: compare these properly?
-        assert_eq!(r.x.floor(), 1.0);
-        assert_eq!(r.y.floor(), 0.0);
-        assert_eq!(r.z.floor(), 0.0);
+        assert!((r.x - 1.0).abs() < 10e-4);
+        assert!((r.y - 0.0).abs() < 10e-4);
+        assert!((r.z - 0.0).abs() < 10e-4);
     }
 }
