@@ -237,13 +237,13 @@ mod tests {
         {
             // transformed
             let mut s = Sphere::new();
-            s.transform = &scaling(1.0, 0.5, 1.0) * &rotate_z(std::f32::consts::PI / 5.0);
+            s.transform = scaling(1.0, 0.5, 1.0) * rotate_z(std::f32::consts::PI / 5.0);
 
             let p = 2.0_f32.sqrt() / 2.0;
             let obj = Object::Sphere(s);
             let normal = obj.normal(&point(0.0, p, -p));
 
-            assert_eq!(0.0, normal.x);
+            assert!(normal.x.abs() < 10e-5);
             assert!((normal.y - 0.97014).abs() < 10e-5);
             assert!((normal.z - -0.24254).abs() < 10e-5);
         }
