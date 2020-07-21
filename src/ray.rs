@@ -27,6 +27,9 @@ impl Ray {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::tuple::{vector, point};
+    use super::super::objects::{Object, Sphere};
+    use super::super::transformations::{scaling, translation};
 
     #[test]
     fn computing_point_from_distance() {
