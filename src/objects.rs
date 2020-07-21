@@ -110,14 +110,16 @@ impl Sphere {
             std::mem::swap(&mut t2, &mut t1);
         }
 
+        let arc = Arc::new(Object::Sphere(self.clone()));
+
         let v: Vec<Intersection> = vec![
             Intersection {
                 t: t1,
-                object: Arc::new(Object::Sphere(self.clone())),
+                object: Arc::clone(&arc),
             },
             Intersection {
                 t: t2,
-                object: Arc::new(Object::Sphere(self.clone())),
+                object: Arc::clone(&arc),
             },
         ];
         v
