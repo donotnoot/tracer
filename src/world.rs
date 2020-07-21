@@ -14,6 +14,17 @@ pub struct World {
 impl World {
     pub fn new() -> Self {
         World {
+            objects: vec![],
+            light: PointLight {
+                position: point(-10.0, 10.0, -10.0),
+                intensity: vector(1.0, 1.0, 1.0),
+            },
+            background_color: color(0.0, 0.0, 0.0),
+        }
+    }
+
+    pub fn new_with_stuff() -> Self {
+        World {
             objects: vec![
                 {
                     let mut s = Sphere::new();
@@ -143,7 +154,7 @@ mod tests {
 
     #[test]
     fn intersecting_world_with_ray() {
-        let w = World::new();
+        let w = World::new_with_stuff();
         let r = Ray {
             origin: point(0.0, 0.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
@@ -159,7 +170,7 @@ mod tests {
 
     #[test]
     fn reflection_of_non_reflective_material() {
-        let mut w = World::new();
+        let mut w = World::new_with_stuff();
         w.objects[1].material().ambient = 1.0;
         let r = Ray {
             origin: point(0.0, 0.0, 0.0),
@@ -179,7 +190,7 @@ mod tests {
 
     #[test]
     fn reflection_color_of_reflective_material() {
-        let mut w = World::new();
+        let mut w = World::new_with_stuff();
 
         let mut p = Plane::new();
         p.material.reflectiveness = 0.5;
@@ -207,7 +218,7 @@ mod tests {
 
     #[test]
     fn shade_hit_with_reflective_material() {
-        let mut w = World::new();
+        let mut w = World::new_with_stuff();
 
         let mut p = Plane::new();
         p.material.reflectiveness = 0.5;
@@ -235,7 +246,7 @@ mod tests {
 
     #[test]
     fn the_reflected_color_at_the_maximum_recursive_depth() {
-        let mut w = World::new();
+        let mut w = World::new_with_stuff();
 
         let mut p = Plane::new();
         p.material.reflectiveness = 0.5;
@@ -261,7 +272,7 @@ mod tests {
 
     #[test]
     fn the_refracted_color_with_opaque_surface() {
-        let w = World::new();
+        let w = World::new_with_stuff();
         let shape = Arc::new(w.objects[0].clone());
         let r = Ray {
             origin: point(0.0, 0.0, -5.0),
@@ -288,7 +299,7 @@ mod tests {
 
     #[test]
     fn refracted_color_at_max_recursive_depth() {
-        let w = World::new();
+        let w = World::new_with_stuff();
         let shape = Arc::new(w.objects[0].clone());
         let r = Ray {
             origin: point(0.0, 0.0, -5.0),
@@ -315,7 +326,7 @@ mod tests {
 
     #[test]
     fn refracted_color_total_internal_reflection() {
-        let mut w = World::new();
+        let mut w = World::new_with_stuff();
         w.objects[0] = {
             let mut o = Sphere::new();
             o.material.transparency = 1.0;
