@@ -80,12 +80,10 @@ impl World {
 
         match hit(&intersections) {
             (_, _, false) => self.background_color.clone(),
-            (_, i, true) => {
-                self.shade_hit(
-                    &intersections[i].computations(&r, Some(&intersections)),
-                    depth_remaining,
-                )
-            }
+            (_, i, true) => self.shade_hit(
+                &intersections[i].computations(&r, Some(&intersections)),
+                depth_remaining,
+            ),
         }
     }
 
@@ -101,9 +99,10 @@ impl World {
             s,
         );
 
+        let refracted = self.refracted_color(&c, depth_remaining);
         let reflected = self.reflected_color(&c, depth_remaining);
 
-        &surface + &reflected
+        &(&surface + &reflected) + &refracted
     }
 
     fn reflected_color(&self, c: &Computations, depth_remaining: u64) -> Tup {
@@ -125,22 +124,34 @@ impl World {
 
     fn refracted_color(&self, c: &Computations, depth_remaining: u64) -> Tup {
         if depth_remaining == 0 {
-            return color(0.0, 0.0, 0.0);
+            return self.background_color.clone();
         }
         if c.object.material().transparency == 0.0 {
-            println!("wtd");
             return color(0.0, 0.0, 0.0);
         }
 
         let n_ratio = c.n1 / c.n2;
+        if n_ratio.is_infinite() {
+            // ray doesn't hit anything, so use the BG color.
+            return self.background_color.clone();
+        }
+
         let cos_i = dot(&c.eye, &c.normal);
         let sin2_t = n_ratio.powi(2) * (1.0 - cos_i.powi(2));
-        if sin2_t > 1.0 {
+        if sin2_t > 1.0 || sin2_t.is_nan() {
             // total internal reflection
             return color(0.0, 0.0, 0.0);
         }
 
-        color(1.0, 1.0, 1.0)
+        let cos_t = (1. - sin2_t).sqrt();
+
+        let direction = &(&c.normal * (n_ratio * cos_i - cos_t)) - &(&c.eye * n_ratio);
+        let refracted_ray = Ray {
+            origin: c.under_point.clone(),
+            direction,
+        };
+
+        &self.color_at(&refracted_ray, depth_remaining - 1) * c.object.material().transparency
     }
 }
 
