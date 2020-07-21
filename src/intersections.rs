@@ -60,8 +60,8 @@ impl Intersection {
         };
 
         let reflection = r.direction.reflect(&normal);
-        let over_point = &point + &(&normal * 10e-6);
-        let under_point = &point - &(&normal * 10e-6);
+        let over_point = &point + &(&normal * 10e-5);
+        let under_point = &point - &(&normal * 10e-5);
 
         let (n1, n2) = match xs {
             Some(xs) => self.calculate_refractions(xs),
@@ -316,7 +316,7 @@ mod tests {
         };
         let c = i.computations(&r, None);
 
-        assert!(c.over_point.z < 10e-5);
+        assert!(c.over_point.z < 10e-4);
         assert!(c.point.z > c.over_point.z);
     }
 
@@ -335,7 +335,7 @@ mod tests {
         };
         let c = i.computations(&r, None);
 
-        assert!(c.under_point.z < 10e-5);
+        assert!(c.under_point.z < 10e-4);
         assert!(c.point.z < c.under_point.z);
     }
 
@@ -364,19 +364,19 @@ mod tests {
             let mut sphere = Sphere::new_glass();
             sphere.transform = scaling(2.0, 2.0, 2.0);
             sphere.material.refractive_index = 1.5;
-            sphere
+            Arc::new(Object::Sphere(sphere))
         };
         let b = {
             let mut sphere = Sphere::new_glass();
             sphere.transform = translation(0.0, 0.0, -0.25);
             sphere.material.refractive_index = 2.0;
-            sphere
+            Arc::new(Object::Sphere(sphere))
         };
         let c = {
             let mut sphere = Sphere::new_glass();
             sphere.transform = translation(0.0, 0.0, 0.25);
             sphere.material.refractive_index = 2.5;
-            sphere
+            Arc::new(Object::Sphere(sphere))
         };
 
         let r = Ray {
@@ -386,27 +386,27 @@ mod tests {
         let xs: Intersections = vec![
             Intersection {
                 t: 2.0,
-                object: Arc::new(Object::Sphere(a.clone())),
+                object: Arc::clone(&a),
             },
             Intersection {
                 t: 2.75,
-                object: Arc::new(Object::Sphere(b.clone())),
+                object: Arc::clone(&b),
             },
             Intersection {
                 t: 3.25,
-                object: Arc::new(Object::Sphere(c.clone())),
+                object: Arc::clone(&c),
             },
             Intersection {
                 t: 4.75,
-                object: Arc::new(Object::Sphere(b.clone())),
+                object: Arc::clone(&b),
             },
             Intersection {
                 t: 5.25,
-                object: Arc::new(Object::Sphere(c.clone())),
+                object: Arc::clone(&c),
             },
             Intersection {
                 t: 6.0,
-                object: Arc::new(Object::Sphere(a.clone())),
+                object: Arc::clone(&a),
             },
         ];
 
