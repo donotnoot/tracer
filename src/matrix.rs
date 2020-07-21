@@ -19,9 +19,19 @@ pub struct Mat {
 // TODO: Turn this into a monad (View(Mat)) for maximum FP points.
 #[derive(Copy, Debug, Clone)]
 pub enum Kind {
-    General,
-    Transform,
-    TransformNoScale,
+    General = 0,
+    Transform = 1,
+    TransformNoScale = 2,
+}
+
+impl Kind {
+    fn worst(&self, rhs: &Kind) -> Kind {
+        if (*self) as i32 > (*rhs) as i32 {
+            rhs.clone()
+        } else {
+            self.clone()
+        }
+    }
 }
 
 impl Mat {
@@ -179,7 +189,7 @@ impl<'a, 'b> std::ops::Mul<&'b Mat> for &'a Mat {
 
     fn mul(self, rhs: &'b Mat) -> Mat {
         let mut m = mat(self.size);
-        m.kind = rhs.kind;
+        m.kind = self.kind.worst(&rhs.kind);
 
         for row in 0..self.size {
             for col in (0..self.size).step_by(2) {
