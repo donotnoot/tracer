@@ -44,7 +44,7 @@ impl Camera {
             half_height,
             pixel_size: (half_width * 2.0) / h_size,
             transform: identity(4),
-            transform_inverse: identity(4).inverse(),
+            transform_inverse: identity(4),
         }
     }
 
