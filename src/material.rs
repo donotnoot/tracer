@@ -189,9 +189,9 @@ mod test {
         );
 
         let r = 0.1 + 0.9 * p + 0.9;
-        assert_eq!((r - result.x).abs() <= std::f32::EPSILON, true);
-        assert_eq!((r - result.y).abs() <= std::f32::EPSILON, true);
-        assert_eq!((r - result.z).abs() <= std::f32::EPSILON, true);
+        assert!((r - result.x).abs() < 10e-4);
+        assert!((r - result.y).abs() < 10e-4);
+        assert!((r - result.z).abs() < 10e-4);
     }
 
     #[test]
