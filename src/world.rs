@@ -135,7 +135,11 @@ impl World {
 
 #[cfg(test)]
 mod tests {
+    use super::super::intersections::Intersection;
+    use super::super::objects::Plane;
+    use super::super::transformations::translation;
     use super::*;
+    use std::sync::Arc;
 
     #[test]
     fn intersecting_world_with_ray() {

@@ -162,6 +162,7 @@ impl Plane {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::transformations::{scaling, translation, rotate_z};
 
     #[test]
     fn intersecting_scaled_sphere() {

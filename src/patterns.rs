@@ -112,6 +112,9 @@ impl Pattern {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::tuple::{point};
+    use super::super::transformations::{scaling, translation};
+    use super::super::objects::{Sphere};
 
     #[test]
     fn stripe_pattern() {

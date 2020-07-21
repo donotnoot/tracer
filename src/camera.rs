@@ -90,6 +90,7 @@ impl Camera {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::transformations::{rotate_y, translation};
 
     #[test]
     fn pixel_size_horizontal_camera() {

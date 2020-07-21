@@ -81,7 +81,11 @@ pub trait HasMaterial {
 }
 
 mod test {
-    
+    use super::super::tuple::{point, vector, color};
+    use super::super::material::{Material};
+    use super::super::light::{PointLight};
+    use super::super::objects::{Sphere, Object};
+    use super::super::patterns::{Pattern};
 
     #[test]
     fn eye_between_light_and_surface() {

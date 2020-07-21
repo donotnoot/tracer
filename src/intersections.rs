@@ -132,6 +132,9 @@ pub trait Intersect {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::tuple::{point, vector};
+    use super::super::transformations::{translation, scaling};
+    use super::super::objects::{Object, Sphere, Plane};
 
     #[test]
     fn getting_the_hit_when_all_are_positive() {
