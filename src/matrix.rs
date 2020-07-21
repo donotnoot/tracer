@@ -97,14 +97,25 @@ impl Mat {
     pub fn transpose(&self) -> Mat {
         let mut m = self.clone();
 
-        unsafe {
-            _MM_TRANSPOSE4_PS(
-                std::mem::transmute(&mut m.mat[0][0]),
-                std::mem::transmute(&mut m.mat[1][0]),
-                std::mem::transmute(&mut m.mat[2][0]),
-                std::mem::transmute(&mut m.mat[3][0]),
-            );
-        }
+        m.mat[0][0] = self.mat[0][0];
+        m.mat[0][1] = self.mat[1][0];
+        m.mat[0][2] = self.mat[2][0];
+        m.mat[0][3] = self.mat[3][0];
+
+        m.mat[1][0] = self.mat[0][1];
+        m.mat[1][1] = self.mat[1][1];
+        m.mat[1][2] = self.mat[2][1];
+        m.mat[1][3] = self.mat[3][1];
+
+        m.mat[2][0] = self.mat[0][2];
+        m.mat[2][1] = self.mat[1][2];
+        m.mat[2][2] = self.mat[2][2];
+        m.mat[2][3] = self.mat[3][2];
+
+        m.mat[3][0] = self.mat[0][3];
+        m.mat[3][1] = self.mat[1][3];
+        m.mat[3][2] = self.mat[2][3];
+        m.mat[3][3] = self.mat[3][3];
 
         m
     }
@@ -112,14 +123,15 @@ impl Mat {
     fn inverse_no_scale(&self) -> Mat {
         let mut res = self.clone();
 
-        unsafe {
-            _MM_TRANSPOSE4_PS(
-                std::mem::transmute(&mut res.mat[0][0]),
-                std::mem::transmute(&mut res.mat[1][0]),
-                std::mem::transmute(&mut res.mat[2][0]),
-                std::mem::transmute(&mut res.mat[3][0]),
-            );
-        }
+        res.mat[0][0] = self.mat[0][0];
+        res.mat[0][1] = self.mat[1][0];
+        res.mat[0][2] = self.mat[2][0];
+        res.mat[1][0] = self.mat[0][1];
+        res.mat[1][1] = self.mat[1][1];
+        res.mat[1][2] = self.mat[2][1];
+        res.mat[2][0] = self.mat[0][2];
+        res.mat[2][1] = self.mat[1][2];
+        res.mat[2][2] = self.mat[2][2];
 
         // Transform translation
         let trans = vector(-self.mat[0][3], -self.mat[1][3], -self.mat[2][3]);
