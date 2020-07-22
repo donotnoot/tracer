@@ -1,0 +1,47 @@
+background_color: "black"
+rendering:
+  randomize_rays: true
+camera:
+  width: 1280
+  height: 800
+  fov: 90
+  from: [0, 5, 0]
+  to: [0, 0, 0]
+  up: [1, 0, 0]
+colors:
+  black: 0
+  white: 0xFFFFFF
+objects:
+  - shape: "Sphere"
+    transform: []
+    material: 
+      color: "black"
+      ambient: 0
+      diffuse: 0
+      specular: 0
+      reflectiveness: 0.0
+      transparency: 1
+      refractive_index: 1.8
+  - shape: "Sphere"
+    transform:
+      - Scaling: [ 0.4, 0.4, 0.4 ]
+    material: 
+      color: "black"
+      ambient: 0
+      diffuse: 0
+      specular: 0
+      reflectiveness: 0.0
+      transparency: 1
+      refractive_index: 1.2
+  - shape: "Plane"
+    transform:
+      - Translation: [0, -6.0, 0]
+    material:
+      ambient: 0.3
+      diffuse: 0.8
+      specular: 1.0
+      shininess: 200
+      pattern:
+        type: "Checker"
+        color_a: "black"
+        color_b: "white"
