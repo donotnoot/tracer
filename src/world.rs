@@ -62,18 +62,24 @@ impl World {
     }
 
     fn shadow_at_point(&self, p: &Tup) -> f32 {
-        match self.light.kind {
-            LightKind::Point => {
-                match self.is_shadowed_point(&self.light, &p) {
-                    true => 1.0,
-                    false => 0.0,
-                }
+        match self.is_point_shadowed(&self.light.position, &p) {
+            false => 0.0,
+            true => match &self.light.kind {
+                LightKind::Point => 1.0,
+                LightKind::Area {
+                    corner,
+                    vvec,
+                    vsteps,
+                    uvec,
+                    usteps,
+                    samples,
+                } => self.area_light_shadow_intensity(p, *vsteps, *usteps, *samples),
             },
         }
     }
 
-    fn is_shadowed_point(&self, light: &Light, p: &Tup) -> bool {
-        let v = &(light.position) - p;
+    fn is_point_shadowed(&self, light: &Tup, p: &Tup) -> bool {
+        let v = light - p;
         let distance = v.magnitude();
         let direction = v.normalize();
 
@@ -86,6 +92,22 @@ impl World {
             (hit, _, true) => hit < distance,
             _ => false,
         }
+    }
+
+    fn area_light_shadow_intensity(&self, p: &Tup, vsteps: u32, usteps: u32, samples: u32) -> f32 {
+        let mut total = 0.0;
+
+        for v in 0..vsteps{
+            for u in 0..usteps {
+                let light_position = self.light.point_on(u, v);
+
+                if !self.is_point_shadowed(&light_position, p) {
+                    total += 1.0;
+                }
+            }
+        }
+
+        1.0 - (total / samples as f32)
     }
 
     pub fn color_at(&self, r: &Ray, depth_remaining: u64) -> Tup {
@@ -117,9 +139,9 @@ impl World {
 
         if c.object.material().reflectiveness > 0.0 && c.object.material().transparency > 0.0 {
             let reflectance = c.schlick();
-            &(&surface + &(&reflected * reflectance)) + &(&refracted * (1.0 - reflectance))
+            surface + (reflected * reflectance) + (refracted * (1.0 - reflectance))
         } else {
-            &(&surface + &reflected) + &refracted
+            surface + reflected + refracted
         }
     }
 
