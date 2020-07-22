@@ -328,7 +328,7 @@ impl SceneFile {
             ColorSpec::Ints(r, g, b) => color_u8(*r, *g, *b),
             ColorSpec::Floats(r, g, b) => color(*r, *g, *b),
             ColorSpec::Reference(name) => self.process_color(self.colors.get(name).unwrap()),
-            ColorSpec::Hex(hex) => color_u8((*hex >> 4) as u8, (*hex >> 2) as u8, *hex as u8),
+            ColorSpec::Hex(hex) => color_u8((*hex >> 16) as u8, (*hex >> 8) as u8, *hex as u8),
         }
     }
 }
