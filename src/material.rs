@@ -1,4 +1,4 @@
-use super::light::PointLight;
+use super::light::*;
 use super::objects::{Object};
 use super::patterns::{Pattern};
 use super::tuple::{color, dot, Tup};
@@ -34,11 +34,11 @@ impl Material {
     pub fn lighting(
         &self,
         o: &Object,
-        l: &PointLight,
+        l: &Light,
         p: Tup,
         eye: Tup,
         normal: Tup,
-        in_shadow: bool,
+        shadow_strength: f32,
     ) -> Tup {
         let object_color = match &self.pattern {
             Some(c) => c.at_object(o, &p),
@@ -48,14 +48,14 @@ impl Material {
         let effective_color = &object_color * &l.intensity;
         let ambient = &effective_color * self.ambient;
 
-        if in_shadow {
+        if shadow_strength >= 1.0 {
             return ambient;
         }
 
         let light = (&l.position - &p).normalize();
         let light_normal_dot = dot(&light, &normal);
 
-        if light_normal_dot < 0.0 {
+        let color = if light_normal_dot < 0.0 {
             let diffuse = color(0.0, 0.0, 0.0);
             let specular = color(0.0, 0.0, 0.0);
             &ambient + &(&diffuse + &specular)
@@ -72,7 +72,9 @@ impl Material {
                 let specular = &l.intensity * (self.specular * factor);
                 &ambient + &(&diffuse + &specular)
             }
-        }
+        };
+
+        &color * (1.0 - shadow_strength)
     }
 }
 
@@ -83,7 +85,7 @@ pub trait HasMaterial {
 mod test {
     use super::super::tuple::{point, vector, color};
     use super::super::material::{Material};
-    use super::super::light::{PointLight};
+    use super::super::light::*;
     use super::super::objects::{Sphere, Object};
     use super::super::patterns::{Pattern};
 
@@ -94,9 +96,10 @@ mod test {
 
         let eyev = vector(0.0, 0.0, -1.0);
         let normalv = vector(0.0, 0.0, -1.0);
-        let light = PointLight {
+        let light = Light {
             position: point(0.0, 0.0, -10.0),
             intensity: color(1.0, 1.0, 1.0),
+            kind: LightKind::Point,
         };
         let result = mat.lighting(
             &Object::Sphere(Sphere::new()),
@@ -104,7 +107,7 @@ mod test {
             pos,
             eyev,
             normalv,
-            false,
+            0.0,
         );
 
         assert_eq!((1.9 - result.x).abs() <= std::f32::EPSILON, true);
@@ -120,9 +123,10 @@ mod test {
         let p = 2_f32.sqrt() / 2.0;
         let eyev = vector(0.0, p, p);
         let normalv = vector(0.0, 0.0, -1.0);
-        let light = PointLight {
+        let light = Light {
             position: point(0.0, 0.0, -10.0),
             intensity: color(1.0, 1.0, 1.0),
+            kind: LightKind::Point,
         };
         let result = mat.lighting(
             &Object::Sphere(Sphere::new()),
@@ -130,7 +134,7 @@ mod test {
             pos,
             eyev,
             normalv,
-            false,
+            0.0,
         );
 
         assert_eq!((1.0 - result.x).abs() <= std::f32::EPSILON, true);
@@ -147,9 +151,10 @@ mod test {
 
         let eyev = vector(0.0, 0.0, -1.0);
         let normalv = vector(0.0, 0.0, -1.0);
-        let light = PointLight {
+        let light = Light {
             position: point(0.0, 10.0, -10.0),
             intensity: color(1.0, 1.0, 1.0),
+            kind: LightKind::Point,
         };
         let result = mat.lighting(
             &Object::Sphere(Sphere::new()),
@@ -157,7 +162,7 @@ mod test {
             pos,
             eyev,
             normalv,
-            false,
+            0.0,
         );
 
         let r = 0.1 + p * 0.9;
@@ -175,9 +180,10 @@ mod test {
 
         let eyev = vector(0.0, -p, -p);
         let normalv = vector(0.0, 0.0, -1.0);
-        let light = PointLight {
+        let light = Light {
             position: point(0.0, 10.0, -10.0),
             intensity: color(1.0, 1.0, 1.0),
+            kind: LightKind::Point,
         };
         let result = mat.lighting(
             &Object::Sphere(Sphere::new()),
@@ -185,7 +191,7 @@ mod test {
             pos,
             eyev,
             normalv,
-            false,
+            0.0,
         );
 
         let r = 0.1 + 0.9 * p + 0.9;
@@ -201,9 +207,10 @@ mod test {
 
         let eyev = vector(0.0, 0.0, -1.0);
         let normalv = vector(0.0, 0.0, -1.0);
-        let light = PointLight {
+        let light = Light {
             position: point(0.0, 0.0, 10.0),
             intensity: color(1.0, 1.0, 1.0),
+            kind: LightKind::Point,
         };
         let result = mat.lighting(
             &Object::Sphere(Sphere::new()),
@@ -211,7 +218,7 @@ mod test {
             pos,
             eyev,
             normalv,
-            false,
+            0.0,
         );
 
         assert_eq!((0.1 - result.x).abs() <= std::f32::EPSILON, true);
@@ -226,9 +233,10 @@ mod test {
 
         let eyev = vector(0.0, 0.0, -1.0);
         let normalv = vector(0.0, 0.0, -1.0);
-        let light = PointLight {
+        let light = Light {
             position: point(0.0, 0.0, -10.0),
             intensity: color(1.0, 1.0, 1.0),
+            kind: LightKind::Point,
         };
         let result = mat.lighting(
             &Object::Sphere(Sphere::new()),
@@ -236,7 +244,7 @@ mod test {
             pos,
             eyev,
             normalv,
-            true,
+            1.0,
         );
 
         assert_eq!((0.1 - result.x).abs() <= std::f32::EPSILON, true);
@@ -258,9 +266,10 @@ mod test {
 
         let eyev = vector(0.0, 0.0, -1.0);
         let normalv = vector(0.0, 0.0, -1.0);
-        let light = PointLight {
+        let light = Light {
             position: point(0.0, 0.0, -10.0),
             intensity: color(1.0, 1.0, 1.0),
+            kind: LightKind::Point,
         };
 
         let c1 = mat.lighting(
@@ -269,7 +278,7 @@ mod test {
             point(0.9, 0.0, 0.0),
             eyev.clone(),
             normalv.clone(),
-            false,
+            0.0,
         );
         let c2 = mat.lighting(
             &Object::Sphere(Sphere::new()),
@@ -277,7 +286,7 @@ mod test {
             point(1.0, 0.0, 0.0),
             eyev,
             normalv,
-            false,
+            0.0,
         );
 
         assert_eq!((1.0 - c2.x).abs() <= std::f32::EPSILON, false);

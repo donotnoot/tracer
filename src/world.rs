@@ -1,5 +1,5 @@
 use super::intersections::{hit, Computations, Intersect, Intersections};
-use super::light::PointLight;
+use super::light::*;
 use super::objects::{Object, Sphere};
 use super::ray::Ray;
 use super::transformations::scaling;
@@ -7,7 +7,7 @@ use super::tuple::{color, dot, point, vector, Tup};
 
 pub struct World {
     pub objects: Vec<Object>,
-    pub light: PointLight,
+    pub light: Light,
     pub background_color: Tup,
 }
 
@@ -15,9 +15,10 @@ impl World {
     pub fn new() -> Self {
         World {
             objects: vec![],
-            light: PointLight {
+            light: Light {
                 position: point(-10.0, 10.0, -10.0),
                 intensity: vector(1.0, 1.0, 1.0),
+                kind: LightKind::Point,
             },
             background_color: color(0.0, 0.0, 0.0),
         }
@@ -39,9 +40,10 @@ impl World {
                     Object::Sphere(s)
                 },
             ],
-            light: PointLight {
+            light: Light {
                 position: point(-10.0, 10.0, -10.0),
                 intensity: vector(1.0, 1.0, 1.0),
+                kind: LightKind::Point,
             },
             background_color: color(0.0, 0.0, 0.0),
         }
@@ -59,8 +61,19 @@ impl World {
         i
     }
 
-    fn is_shadowed(&self, p: &Tup) -> bool {
-        let v = &(self.light.position) - p;
+    fn shadow_at_point(&self, p: &Tup) -> f32 {
+        match self.light.kind {
+            LightKind::Point => {
+                match self.is_shadowed_point(&self.light, &p) {
+                    true => 1.0,
+                    false => 0.0,
+                }
+            },
+        }
+    }
+
+    fn is_shadowed_point(&self, light: &Light, p: &Tup) -> bool {
+        let v = &(light.position) - p;
         let distance = v.magnitude();
         let direction = v.normalize();
 
@@ -88,7 +101,7 @@ impl World {
     }
 
     fn shade_hit(&self, c: &Computations, depth_remaining: u64) -> Tup {
-        let s = self.is_shadowed(&c.over_point);
+        let shadow_strength = self.shadow_at_point(&c.over_point);
 
         let surface = c.object.material().lighting(
             &(*c.object),
@@ -96,7 +109,7 @@ impl World {
             c.over_point.clone(),
             c.eye.clone(),
             c.normal.clone(),
-            s,
+            shadow_strength,
         );
 
         let refracted = self.refracted_color(&c, depth_remaining);
