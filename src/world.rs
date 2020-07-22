@@ -115,7 +115,12 @@ impl World {
         let refracted = self.refracted_color(&c, depth_remaining);
         let reflected = self.reflected_color(&c, depth_remaining);
 
-        &(&surface + &reflected) + &refracted
+        if c.object.material().reflectiveness > 0.0 && c.object.material().transparency > 0.0 {
+            let reflectance = c.schlick();
+            &(&surface + &(&reflected * reflectance)) + &(&refracted * (1.0 - reflectance))
+        } else {
+            &(&surface + &reflected) + &refracted
+        }
     }
 
     fn reflected_color(&self, c: &Computations, depth_remaining: u64) -> Tup {
@@ -381,5 +386,42 @@ mod tests {
         assert_eq!(color.x, 0.0);
         assert_eq!(color.y, 0.0);
         assert_eq!(color.z, 0.0);
+    }
+
+    #[test]
+    fn shade_hit_reflective_transparent_material() {
+        let mut w = World::new_with_stuff();
+
+        let mut floor = Plane::new();
+        floor.transform = translation(0., -1., 0.);
+        floor.material.reflectiveness = 0.5;
+        floor.material.transparency = 0.5;
+        floor.material.refractive_index = 1.5;
+        w.objects.push(Object::Plane(floor.clone()));
+        let floor = Arc::new(Object::Plane(floor));
+
+        let mut ball = Sphere::new();
+        ball.material.color = color(1.0, 0., 0.);
+        ball.material.ambient = 0.5;
+        ball.transform = translation(0., -3.5, -0.5);
+        w.objects.push(Object::Sphere(ball));
+
+        let xs: Intersections = vec![Intersection {
+            t: 2.0f32.sqrt(),
+            object: floor.clone(),
+        }];
+
+        let p = (2f32).sqrt() / 2.;
+        let r = Ray {
+            origin: point(0., 0., -3.),
+            direction: vector(0., -p, p),
+        };
+        let comps = xs[0].computations(&r, Some(&xs));
+        let color = w.shade_hit(&comps, 5);
+
+        println!("{}", color);
+        assert!((color.x - 0.93391).abs() < 10e-3);
+        assert!((color.y - 0.69643).abs() < 10e-3);
+        assert!((color.z - 0.69243).abs() < 10e-3);
     }
 }

@@ -39,6 +39,26 @@ pub struct Computations {
     pub n2: f32,
 }
 
+impl Computations {
+    pub fn schlick(&self) -> f32 {
+        let mut cos = dot(&self.eye, &self.normal);
+
+        if self.n1 > self.n2 {
+            let n = self.n1 / self.n2;
+            let sin2_t = n.powi(2) * (1.0 - cos.powi(2));
+            if sin2_t > 1.0 {
+                return 1.0;
+            }
+
+            let cos_t = (1.0 - sin2_t).sqrt();
+            cos = cos_t;
+        }
+
+        let r0 = ((self.n1 - self.n2) / (self.n1 + self.n2)).powi(2);
+        r0 + (1. - r0) * (1. - cos).powi(5)
+    }
+}
+
 #[derive(Debug)]
 pub struct Intersection {
     pub t: f32,
@@ -429,5 +449,77 @@ mod tests {
         cases.iter().for_each(|case| {
             comps(case.0, case.1, case.2);
         });
+    }
+
+    fn glass_sphere() -> Sphere {
+        let mut s = Sphere::new();
+        s.material.transparency = 1.0;
+        s.material.refractive_index = 1.5;
+        s
+    }
+
+    #[test]
+    fn schlick_total_internal_reflection() {
+        let shape = glass_sphere();
+        let shape = Arc::new(Object::Sphere(shape));
+        let p = 2f32.sqrt() / 2.0;
+        let ray = Ray {
+            origin: point(0.0, 0.0, p),
+            direction: vector(0.0, 1.0, 0.0),
+        };
+        let xs: Intersections = vec![
+            Intersection {
+                t: -p,
+                object: shape.clone(),
+            },
+            Intersection {
+                t: p,
+                object: shape.clone(),
+            },
+        ];
+        let comps = xs[1].computations(&ray, Some(&xs));
+        let reflectance = comps.schlick();
+        assert_eq!(reflectance, 1.0);
+    }
+
+    #[test]
+    fn schlick_perpendicular_angle() {
+        let shape = glass_sphere();
+        let shape = Arc::new(Object::Sphere(shape));
+        let ray = Ray {
+            origin: point(0.0, 0.0, 0.0),
+            direction: vector(0.0, 1.0, 0.0),
+        };
+        let xs: Intersections = vec![
+            Intersection {
+                t: -1.,
+                object: shape.clone(),
+            },
+            Intersection {
+                t: 1.,
+                object: shape.clone(),
+            },
+        ];
+        let comps = xs[1].computations(&ray, Some(&xs));
+        let reflectance = comps.schlick();
+        assert!((reflectance - 0.04).abs() < 10e-4);
+    }
+
+    #[test]
+    fn schlick_small_angle_n2_gt_n1() {
+        let shape = glass_sphere();
+        let shape = Arc::new(Object::Sphere(shape));
+        let p = 2f32.sqrt() / 2.0;
+        let ray = Ray {
+            origin: point(0.0, 0.99, -2.0),
+            direction: vector(0.0, 0.0, 1.0),
+        };
+        let xs: Intersections = vec![Intersection {
+            t: 1.8589,
+            object: shape.clone(),
+        }];
+        let comps = xs[0].computations(&ray, Some(&xs));
+        let reflectance = comps.schlick();
+        assert!((reflectance - 0.48873).abs() < 10e-4);
     }
 }
