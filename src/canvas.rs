@@ -2,7 +2,7 @@ use super::tuple::{color, Tup};
 use raylib::prelude::*;
 use std::convert::TryInto;
 
-use std::sync::mpsc::{Receiver};
+use std::sync::mpsc::Receiver;
 
 pub trait Canvas {
     fn pixels(&mut self) -> &mut Vec<Pixel>;

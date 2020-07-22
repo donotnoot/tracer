@@ -1,7 +1,7 @@
 use core::arch::x86_64::{
     _mm256_hsub_ps, _mm256_mul_ps, _mm256_set1_ps, _mm256_set_ps, _mm256_shuffle_ps,
     _mm256_store_ps, _mm256_storeu_ps, _mm256_sub_ps, _mm_add_ps, _mm_div_ps, _mm_mul_ps,
-    _mm_set1_ps, _mm_set_ps, _mm_store_ps, _mm_storeu_ps, _mm_sub_ps
+    _mm_set1_ps, _mm_set_ps, _mm_store_ps, _mm_storeu_ps, _mm_sub_ps,
 };
 
 #[derive(Default, Debug, Clone)]
@@ -138,6 +138,15 @@ impl<'a, 'b> std::ops::Add<&'b Tup> for &'a Tup {
     }
 }
 
+/// Adds two tuples(move)
+impl std::ops::Add<Tup> for Tup {
+    type Output = Tup;
+
+    fn add(self, r: Tup) -> Tup {
+        &self + &r
+    }
+}
+
 /// Scalar division
 impl<'a> std::ops::Div<f32> for &'a Tup {
     type Output = Tup;
@@ -147,10 +156,7 @@ impl<'a> std::ops::Div<f32> for &'a Tup {
             let mut t = Tup::new();
             _mm_storeu_ps(
                 &mut t.x as *mut f32,
-                _mm_div_ps(
-                    _mm_set_ps(self.w, self.z, self.y, self.x),
-                    _mm_set1_ps(f),
-                ),
+                _mm_div_ps(_mm_set_ps(self.w, self.z, self.y, self.x), _mm_set1_ps(f)),
             );
             t
         }
@@ -166,10 +172,7 @@ impl<'a> std::ops::Mul<f32> for &'a Tup {
             let mut t = Tup::new();
             _mm_storeu_ps(
                 &mut t.x as *mut f32,
-                _mm_mul_ps(
-                    _mm_set_ps(self.w, self.z, self.y, self.x),
-                    _mm_set1_ps(f),
-                ),
+                _mm_mul_ps(_mm_set_ps(self.w, self.z, self.y, self.x), _mm_set1_ps(f)),
             );
             t
         }

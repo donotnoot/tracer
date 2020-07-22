@@ -33,7 +33,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (tx, rx): (Sender<canvas::Pixel>, Receiver<canvas::Pixel>) = mpsc::channel();
 
     thread::spawn(move || {
-        camera.render(world, tx, rendering_spec.randomize_rays, rendering_spec.max_bounces);
+        camera.render(
+            world,
+            tx,
+            rendering_spec.randomize_rays,
+            rendering_spec.max_bounces,
+        );
     });
 
     canvas.run(rx);

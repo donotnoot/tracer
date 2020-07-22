@@ -1,11 +1,10 @@
 use super::intersections::{Intersect, Intersection, Intersections};
 use super::material;
-use super::material::{HasMaterial};
+use super::material::HasMaterial;
 use super::matrix::{identity, Mat};
 use super::ray::Ray;
 
 use super::tuple::{dot, point, vector, Tup};
-
 
 use std::sync::Arc;
 
@@ -163,8 +162,8 @@ impl Plane {
 
 #[cfg(test)]
 mod tests {
+    use super::super::transformations::{rotate_z, scaling, translation};
     use super::*;
-    use super::super::transformations::{scaling, translation, rotate_z};
 
     #[test]
     fn intersecting_scaled_sphere() {

@@ -1,4 +1,4 @@
-use super::objects::{Object};
+use super::objects::Object;
 use super::ray::Ray;
 
 use super::tuple::{dot, Tup};
@@ -131,10 +131,10 @@ pub trait Intersect {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::super::objects::{Object, Plane, Sphere};
+    use super::super::transformations::{scaling, translation};
     use super::super::tuple::{point, vector};
-    use super::super::transformations::{translation, scaling};
-    use super::super::objects::{Object, Sphere, Plane};
+    use super::*;
 
     #[test]
     fn getting_the_hit_when_all_are_positive() {

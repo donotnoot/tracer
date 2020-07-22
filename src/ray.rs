@@ -1,9 +1,6 @@
-
 use super::matrix::Mat;
 
-
 use super::tuple::Tup;
-
 
 #[derive(Debug)]
 pub struct Ray {
@@ -26,10 +23,10 @@ impl Ray {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use super::super::tuple::{vector, point};
     use super::super::objects::{Object, Sphere};
     use super::super::transformations::{scaling, translation};
+    use super::super::tuple::{point, vector};
+    use super::*;
 
     #[test]
     fn computing_point_from_distance() {

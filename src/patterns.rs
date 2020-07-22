@@ -1,5 +1,5 @@
 use super::matrix::{identity, Mat};
-use super::objects::{Object};
+use super::objects::Object;
 
 use super::tuple::{color, Tup};
 
@@ -111,10 +111,10 @@ impl Pattern {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use super::super::tuple::{point};
+    use super::super::objects::Sphere;
     use super::super::transformations::{scaling, translation};
-    use super::super::objects::{Sphere};
+    use super::super::tuple::point;
+    use super::*;
 
     #[test]
     fn stripe_pattern() {
