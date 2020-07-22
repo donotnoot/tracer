@@ -55,10 +55,10 @@ impl Material {
         let light = (&l.position - &p).normalize();
         let light_normal_dot = dot(&light, &normal);
 
-        let color = if light_normal_dot < 0.0 {
+        let (diffuse, specular) = if light_normal_dot < 0.0 {
             let diffuse = color(0.0, 0.0, 0.0);
             let specular = color(0.0, 0.0, 0.0);
-            &ambient + &(&diffuse + &specular)
+            (diffuse, specular)
         } else {
             let diffuse = &effective_color * (self.diffuse * light_normal_dot);
             let reflect = &(-&light).reflect(&normal);
@@ -66,15 +66,19 @@ impl Material {
 
             if reflect_dot_eye <= 0.0 {
                 let specular = color(0.0, 0.0, 0.0);
-                &ambient + &(&diffuse + &specular)
+            (diffuse, specular)
             } else {
                 let factor = reflect_dot_eye.powf(self.shininess);
                 let specular = &l.intensity * (self.specular * factor);
-                &ambient + &(&diffuse + &specular)
+            (diffuse, specular)
             }
         };
 
-        &color * (1.0 - shadow_strength)
+        let shadow_factor = 1.0 - shadow_strength;
+        let diffuse = diffuse * shadow_factor;
+        let specular = specular * shadow_factor;
+
+        ambient + diffuse + specular
     }
 }
 
