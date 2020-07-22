@@ -1,4 +1,5 @@
 use super::camera::Camera;
+use super::light::{Light, LightKind};
 use super::material::Material;
 use super::matrix;
 use super::matrix::Mat;
@@ -18,6 +19,9 @@ struct SceneFile {
     background_color: ColorSpec,
 
     #[serde(default)]
+    light: LightSpec,
+
+    #[serde(default)]
     rendering: RenderingSpec,
 
     #[serde(default)]
@@ -31,6 +35,36 @@ struct SceneFile {
 
     #[serde(default)]
     patterns: HashMap<String, PatternSpec>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LightSpec {
+    pub position: [f32; 3],
+    pub intensity: ColorSpec,
+    pub kind: LightKindSpec,
+}
+
+impl Default for LightSpec {
+    fn default() -> Self {
+        LightSpec {
+            position: [-10., 10., -10.],
+            intensity: ColorSpec::Floats(1.0, 1.0, 1.0),
+            kind: LightKindSpec::Point,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+pub enum LightKindSpec {
+    Point,
+    Area {
+        corner: [f32; 3],
+        uvec: [f32; 3],
+        vvec: [f32; 3],
+        usteps: u32,
+        vsteps: u32,
+    },
 }
 
 #[derive(Debug, Deserialize)]
@@ -102,7 +136,7 @@ struct Phong {
 impl Default for Phong {
     fn default() -> Self {
         Phong {
-            color: ColorSpec::Ints(255,255,255),
+            color: ColorSpec::Ints(255, 255, 255),
             ambient: 0.1,
             diffuse: 0.9,
             specular: 0.9,
@@ -117,7 +151,7 @@ impl Default for Phong {
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
-enum ColorSpec {
+pub enum ColorSpec {
     Reference(String),
     Ints(u8, u8, u8),
     Floats(f32, f32, f32),
@@ -172,6 +206,37 @@ pub fn stdin_world() -> Result<(World, Camera, RenderingSpec), Box<dyn Error>> {
     println!("Scene:\n{:#?}", scene);
 
     let mut world = World::new();
+
+    let light_position = point(
+        scene.light.position[0],
+        scene.light.position[1],
+        scene.light.position[2],
+    );
+
+    let light_intensity = scene.process_color(&scene.light.intensity);
+
+    world.light = match scene.light.kind {
+        LightKindSpec::Point => Light {
+            position: light_position,
+            intensity: light_intensity,
+            kind: LightKind::Point,
+        },
+        LightKindSpec::Area {
+            corner,
+            uvec,
+            vvec,
+            usteps,
+            vsteps,
+        } => Light::new_area(
+            &light_intensity,
+            &f32x3toPoint(corner),
+            &f32x3toVec(uvec),
+            usteps,
+            &f32x3toVec(vvec),
+            vsteps,
+        ),
+    };
+
     let mut camera = Camera::new(
         scene.camera.width,
         scene.camera.height,
@@ -335,4 +400,12 @@ impl SceneFile {
 
 fn deg2rad(a: f32) -> f32 {
     a * std::f32::consts::PI / 180.
+}
+
+fn f32x3toPoint(i: [f32; 3]) -> Tup {
+    point(i[0], i[1], i[2])
+}
+
+fn f32x3toVec(i: [f32; 3]) -> Tup {
+    vector(i[0], i[1], i[2])
 }
