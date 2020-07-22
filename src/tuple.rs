@@ -179,6 +179,15 @@ impl<'a> std::ops::Mul<f32> for &'a Tup {
     }
 }
 
+/// Scalar multiplication (move)
+impl std::ops::Mul<f32> for Tup {
+    type Output = Tup;
+
+    fn mul(self, f: f32) -> Tup {
+        &self * f
+    }
+}
+
 /// Hadamard product
 impl<'a, 'b> std::ops::Mul<&'b Tup> for &'a Tup {
     type Output = Tup;
