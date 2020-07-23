@@ -2,23 +2,7 @@ use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 
-mod camera;
-mod canvas;
-mod intersections;
-mod light;
-mod material;
-mod matrix;
-mod objects;
-mod ray;
-mod transformations;
-use transformations::{rotate_x, rotate_y, rotate_z, scaling, shearing, translation, view};
-mod tuple;
-use tuple::{color, color_u8, Tup};
-mod patterns;
-use patterns::Pattern;
-mod scene_parser;
-
-mod world;
+use rstracer::tracer::*;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (world, camera, rendering_spec) = scene_parser::stdin_world()?;
