@@ -4,7 +4,7 @@ use super::canvas::Pixel;
 use super::matrix::{identity, Mat};
 use super::ray::Ray;
 
-use super::tuple::point;
+use super::tuple::{point, Tup};
 use super::world::World;
 
 use rand::seq::SliceRandom;
@@ -19,13 +19,14 @@ pub struct Camera {
     pub half_width: f32,
     pub half_height: f32,
     pub pixel_size: f32,
+    pub antialias: u32,
 
     transform: Mat,
     transform_inverse: Mat,
 }
 
 impl Camera {
-    pub fn new(h_size: f32, v_size: f32, fov: f32) -> Self {
+    pub fn new(h_size: f32, v_size: f32, fov: f32, aa: u32) -> Self {
         let aspect_ratio = h_size / v_size;
         let half = (fov / 2.0).tan();
 
@@ -45,6 +46,7 @@ impl Camera {
             pixel_size: (half_width * 2.0) / h_size,
             transform: identity(4),
             transform_inverse: identity(4),
+            antialias: aa,
         }
     }
 
@@ -53,9 +55,9 @@ impl Camera {
         self.transform_inverse = transform.inverse();
     }
 
-    fn ray(&self, x: f32, y: f32) -> Ray {
-        let x_off = (x + 0.5) * self.pixel_size;
-        let y_off = (y + 0.5) * self.pixel_size;
+    fn ray(&self, x: f32, y: f32, xoff: f32, yoff: f32) -> Ray {
+        let x_off = (x + xoff) * self.pixel_size;
+        let y_off = (y + yoff) * self.pixel_size;
 
         let world_x = self.half_width - x_off;
         let world_y = self.half_height - y_off;
@@ -81,8 +83,30 @@ impl Camera {
         }
 
         locations.par_iter_mut().for_each(|(x, y, tx)| {
-            let p = w.color_at(&self.ray(*x as f32, *y as f32), reflection_limit);
-            tx.send(Pixel { x: *x, y: *y, p }).unwrap();
+            let pixel = match self.antialias {
+                0 | 1 => {
+                    w.color_at(&self.ray(*x as f32, *y as f32, 0.5, 0.5), reflection_limit)
+                },
+                aa => {
+                    let mut p: Vec<Tup> = vec![];
+                    let step = 1.0 / aa as f32;
+                    let points = aa.pow(2);
+
+                    for xoff in 0..aa {
+                        let xoff: f32 = (xoff as f32 * step) + step/aa as f32;
+                        for yoff in 0..aa {
+                            let yoff: f32 = (yoff as f32 * step) + step/aa as f32;
+
+                            let color = w.color_at(&self.ray(*x as f32, *y as f32, xoff, yoff), reflection_limit);
+                            p.push(color / points as f32);
+                        }
+                    }
+                    
+                    p.into_iter().sum()
+                },
+            };
+
+            tx.send(Pixel { x: *x, y: *y, p: pixel }).unwrap();
         });
     }
 }
@@ -94,19 +118,19 @@ mod tests {
 
     #[test]
     fn pixel_size_horizontal_camera() {
-        let c = Camera::new(200.0, 125.0, std::f32::consts::PI / 2.0);
+        let c = Camera::new(200.0, 125.0, std::f32::consts::PI / 2.0, 1);
         assert!((c.pixel_size - 0.01).abs() <= std::f32::EPSILON);
     }
 
     #[test]
     fn pixel_size_vertical_camera() {
-        let c = Camera::new(125.0, 200.0, std::f32::consts::PI / 2.0);
+        let c = Camera::new(125.0, 200.0, std::f32::consts::PI / 2.0, 1);
         assert!((c.pixel_size - 0.01).abs() <= std::f32::EPSILON);
     }
 
     #[test]
     fn ray_through_center_of_canvas() {
-        let c = Camera::new(201.0, 101.0, std::f32::consts::PI / 2.0);
+        let c = Camera::new(201.0, 101.0, std::f32::consts::PI / 2.0, 1);
         let r = c.ray(100.0, 50.0);
 
         assert_eq!(point(0.0, 0.0, 0.0), r.origin);
@@ -118,7 +142,7 @@ mod tests {
 
     #[test]
     fn ray_through_corner_of_canvas() {
-        let c = Camera::new(201.0, 101.0, std::f32::consts::PI / 2.0);
+        let c = Camera::new(201.0, 101.0, std::f32::consts::PI / 2.0, 1);
         let r = c.ray(0.0, 0.0);
 
         assert_eq!(point(0.0, 0.0, 0.0), r.origin);
@@ -130,7 +154,7 @@ mod tests {
 
     #[test]
     fn ray_when_camera_is_transformed() {
-        let mut c = Camera::new(201.0, 101.0, std::f32::consts::PI / 2.0);
+        let mut c = Camera::new(201.0, 101.0, std::f32::consts::PI / 2.0, 1);
         c.set_transform(&rotate_y(std::f32::consts::PI / 4.0) * &translation(0.0, -2.0, 5.0));
         let r = c.ray(100.0, 50.0);
 
