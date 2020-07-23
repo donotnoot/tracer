@@ -51,13 +51,14 @@ impl World {
     }
 
     fn intersect(&self, r: &Ray) -> Intersections {
-        let mut i: Intersections = vec![];
+        // Generally, objects will return at most 2 intersections, so make space for them.
+        let mut i: Intersections = Vec::with_capacity(self.objects.len() * 2);
 
         for elem in self.objects.iter() {
             i.append(&mut (*elem).intersect(r));
         }
 
-        i.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap_or(std::cmp::Ordering::Less));
+        i.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
 
         i
     }
