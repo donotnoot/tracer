@@ -72,6 +72,7 @@ pub enum LightKindSpec {
 pub struct RenderingSpec {
     pub max_bounces: u64,
     pub randomize_rays: bool,
+    pub antialias: u32,
 }
 
 impl Default for RenderingSpec {
@@ -79,6 +80,7 @@ impl Default for RenderingSpec {
         RenderingSpec {
             max_bounces: 64,
             randomize_rays: false,
+            antialias: 0,
         }
     }
 }
@@ -241,6 +243,7 @@ pub fn stdin_world() -> Result<(World, Camera, RenderingSpec), Box<dyn Error>> {
         scene.camera.width,
         scene.camera.height,
         deg2rad(scene.camera.fov),
+        scene.rendering.antialias,
     );
     camera.set_transform(view(
         point(
