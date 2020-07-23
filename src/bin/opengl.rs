@@ -3,9 +3,10 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 
 use rstracer::tracer::*;
+use rstracer::tracer::canvas::Pixel;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let (world, camera, rendering_spec) = scene_parser::stdin_world()?;
+    let (world, camera, rendering_spec) = scene_parser::from_reader(std::io::stdin())?;
 
     let mut canvas = canvas::OpenGLCanvas::new(
         camera.h_size as u32,
@@ -14,14 +15,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         world.background_color.clone(),
     );
 
-    let (tx, rx): (Sender<canvas::Pixel>, Receiver<canvas::Pixel>) = mpsc::channel();
+    let (tx, rx): (Sender<Pixel>, Receiver<Pixel>) = mpsc::channel();
 
     thread::spawn(move || {
         camera.render(
             world,
             tx,
             rendering_spec.randomize_rays,
-            rendering_spec.max_bounces,
         );
     });
 
