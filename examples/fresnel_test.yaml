@@ -1,47 +1,80 @@
 background_color: "black"
 rendering:
-  randomize_rays: true
+  randomize_rays: false
+  max_bounces: 256
+  antialias: 6
+light:
+  position: [0, 5.0, -5.0]
+  intensity: "white"
+  kind: null
 camera:
   width: 1280
   height: 800
-  fov: 90
-  from: [0, 5, 0]
+  fov: 30
+  from: [-5, 2, -5]
   to: [0, 0, 0]
-  up: [1, 0, 0]
+  up: [0, 1, 0]
 colors:
   black: 0
   white: 0xFFFFFF
+materials:
+  bw_checker:
+    color: "black"
+    pattern:
+      type: "Checker"
+      color_a: "black"
+      color_b: "white"
+  blue:
+    color: [100, 100, 255]
+    ambient: 0.2
+    diffuse: 0.8
+    specular: 1
+    reflectiveness: 0.3
+  glass:
+    color: "white"
+    ambient: 0.05
+    diffuse: 0
+    specular: 1
+    reflectiveness: 1
+    transparency: .7
+    shininess: 400
+    refractive_index: 1.4
 objects:
+  # Floor
+  - shape: "Plane"
+    material: "bw_checker"
+    transform:
+      - Translation: [0, -10.0, 0]
+
+  # # Ceiling
+  # - shape: "Plane"
+  #   material: "bw_checker"
+  #   transform:
+  #     - RotateY: 180
+  #     - Translation: [0, 10.0, 0]
+
+  # Left wall
+  - shape: "Plane"
+    material: "bw_checker"
+    transform:
+      - RotateX: 90
+      - Translation: [2, 10.0, 0]
+
+  # Right wall
+  - shape: "Plane"
+    material: "bw_checker"
+    transform:
+      - RotateY: 90
+      - RotateX: 90
+      - Translation: [2, 10.0, 0]
+
+  # Glass ball
   - shape: "Sphere"
     transform: []
-    material: 
-      color: "black"
-      ambient: 0
-      diffuse: 0
-      specular: 0
-      reflectiveness: 0.0
-      transparency: 1
-      refractive_index: 1.8
+    material: "glass"
+
   - shape: "Sphere"
     transform:
-      - Scaling: [ 0.4, 0.4, 0.4 ]
-    material: 
-      color: "black"
-      ambient: 0
-      diffuse: 0
-      specular: 0
-      reflectiveness: 0.0
-      transparency: 1
-      refractive_index: 1.2
-  - shape: "Plane"
-    transform:
-      - Translation: [0, -6.0, 0]
-    material:
-      ambient: 0.3
-      diffuse: 0.8
-      specular: 1.0
-      shininess: 200
-      pattern:
-        type: "Checker"
-        color_a: "black"
-        color_b: "white"
+      - Translation: [ 3., 0, 3. ]
+      # - Scaling: [ .5, .5, .5 ]
+    material: "blue"
