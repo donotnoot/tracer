@@ -210,7 +210,7 @@ impl OpenGLCanvas {
                 } else {
                     pixels_received as i32
                 };
-                eta = (total_pixels as i64 - pixels_received) as i32 / pixels_s;
+                eta = (total_pixels as i64 - pixels_received) as i32 / (pixels_s+1);
                 update_counter = 0;
             }
             update_counter += 1;
