@@ -20,6 +20,7 @@ pub struct Camera {
     pub half_height: f32,
     pub pixel_size: f32,
     pub antialias: u32,
+    pub reflection_limit: u64,
 
     transform: Mat,
     transform_inverse: Mat,
@@ -47,6 +48,7 @@ impl Camera {
             transform: identity(4),
             transform_inverse: identity(4),
             antialias: aa,
+            reflection_limit: 64,
         }
     }
 
@@ -69,7 +71,36 @@ impl Camera {
         Ray { origin, direction }
     }
 
-    pub fn render(&self, w: World, tx: Sender<Pixel>, shuffle: bool, reflection_limit: u64) {
+    pub fn render_pixel(&self, w: &World, x: u32, y: u32) -> Tup {
+        match self.antialias {
+            0 | 1 => w.color_at(
+                &self.ray(x as f32, y as f32, 0.5, 0.5),
+                self.reflection_limit,
+            ),
+            aa => {
+                let mut p: Vec<Tup> = vec![];
+                let step = 1.0 / aa as f32;
+                let points = aa.pow(2);
+
+                for xoff in 0..aa {
+                    let xoff: f32 = (xoff as f32 * step) + step / aa as f32;
+                    for yoff in 0..aa {
+                        let yoff: f32 = (yoff as f32 * step) + step / aa as f32;
+
+                        let color = w.color_at(
+                            &self.ray(x as f32, y as f32, xoff, yoff),
+                            self.reflection_limit,
+                        );
+                        p.push(color / points as f32);
+                    }
+                }
+
+                p.into_iter().sum()
+            }
+        }
+    }
+
+    pub fn render(&self, w: World, tx: Sender<Pixel>, shuffle: bool) {
         let mut locations: Vec<(u32, u32, Sender<Pixel>)> = vec![];
 
         for y in 0..self.v_size as u32 {
@@ -83,30 +114,12 @@ impl Camera {
         }
 
         locations.par_iter_mut().for_each(|(x, y, tx)| {
-            let pixel = match self.antialias {
-                0 | 1 => {
-                    w.color_at(&self.ray(*x as f32, *y as f32, 0.5, 0.5), reflection_limit)
-                },
-                aa => {
-                    let mut p: Vec<Tup> = vec![];
-                    let step = 1.0 / aa as f32;
-                    let points = aa.pow(2);
-
-                    for xoff in 0..aa {
-                        let xoff: f32 = (xoff as f32 * step) + step/aa as f32;
-                        for yoff in 0..aa {
-                            let yoff: f32 = (yoff as f32 * step) + step/aa as f32;
-
-                            let color = w.color_at(&self.ray(*x as f32, *y as f32, xoff, yoff), reflection_limit);
-                            p.push(color / points as f32);
-                        }
-                    }
-                    
-                    p.into_iter().sum()
-                },
-            };
-
-            tx.send(Pixel { x: *x, y: *y, p: pixel }).unwrap();
+            tx.send(Pixel {
+                x: *x,
+                y: *y,
+                p: self.render_pixel(&w, *x, *y),
+            })
+            .unwrap();
         });
     }
 }
