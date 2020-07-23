@@ -41,7 +41,7 @@ impl Light {
         }
     }
 
-    pub fn point_on(&self, u: u32, v: u32) -> Tup {
+    pub fn point_on(&self, u: u32, v: u32, off_u: f32, off_v: f32) -> Tup {
         match &self.kind {
             LightKind::Point => self.position.clone(),
             LightKind::Area {
@@ -51,7 +51,7 @@ impl Light {
                 uvec,
                 usteps: _,
                 samples: _,
-            } => corner + &(uvec * (u as f32 * 0.5)) + (vvec * (v as f32 * 0.5)),
+            } => corner + &(uvec * (u as f32 * off_u)) + (vvec * (v as f32 * off_v)),
         }
     }
 }

@@ -4,6 +4,7 @@ use super::objects::{Object, Sphere};
 use super::ray::Ray;
 use super::transformations::scaling;
 use super::tuple::{color, dot, point, vector, Tup};
+use rand::Rng;
 
 pub struct World {
     pub objects: Vec<Object>,
@@ -62,23 +63,20 @@ impl World {
     }
 
     fn shadow_at_point(&self, p: &Tup) -> f32 {
-        match self.is_point_shadowed(&self.light.position, &p) {
-            false => 0.0,
-            true => match &self.light.kind {
-                LightKind::Point => 1.0,
-                LightKind::Area {
-                    corner,
-                    vvec,
-                    vsteps,
-                    uvec,
-                    usteps,
-                    samples,
-                } => self.area_light_shadow_intensity(p, *vsteps, *usteps, *samples),
-            },
+        match &self.light.kind {
+            LightKind::Point => self.point_shadow_intensity(&self.light.position, p),
+            LightKind::Area {
+                corner: _,
+                vvec: _,
+                vsteps,
+                uvec: _,
+                usteps,
+                samples,
+            } => self.area_light_shadow_intensity(p, *vsteps, *usteps, *samples),
         }
     }
 
-    fn is_point_shadowed(&self, light: &Tup, p: &Tup) -> bool {
+    fn point_shadow_intensity(&self, light: &Tup, p: &Tup) -> f32 {
         let v = light - p;
         let distance = v.magnitude();
         let direction = v.normalize();
@@ -88,26 +86,36 @@ impl World {
             direction,
         };
 
-        match hit(&self.intersect(&ray)) {
-            (hit, _, true) => hit < distance,
-            _ => false,
+        let intersections = &self.intersect(&ray);
+
+        match hit(intersections) {
+            (hit, idx, true) => {
+                if hit < distance {
+                    // Make the intensity of the shadow dependant on how transparent the object is.
+                    1.0 - intersections[idx].object.material().transparency
+                } else {
+                    0.0
+                }
+            }
+            _ => 0.0,
         }
     }
 
     fn area_light_shadow_intensity(&self, p: &Tup, vsteps: u32, usteps: u32, samples: u32) -> f32 {
         let mut total = 0.0;
+        let mut rng = rand::thread_rng();
 
-        for v in 0..vsteps{
+        for v in 0..vsteps {
             for u in 0..usteps {
-                let light_position = self.light.point_on(u, v);
+                let light_position =
+                    self.light
+                        .point_on(u, v, rng.gen_range(0., 1.), rng.gen_range(0., 1.));
 
-                if !self.is_point_shadowed(&light_position, p) {
-                    total += 1.0;
-                }
+                total += self.point_shadow_intensity(&light_position, p)
             }
         }
 
-        1.0 - (total / samples as f32)
+        total / samples as f32
     }
 
     pub fn color_at(&self, r: &Ray, depth_remaining: u64) -> Tup {
@@ -123,7 +131,17 @@ impl World {
     }
 
     fn shade_hit(&self, c: &Computations, depth_remaining: u64) -> Tup {
-        let shadow_strength = self.shadow_at_point(&c.over_point);
+        let reflectiveness = c.object.material().reflectiveness;
+        let transparency = c.object.material().transparency;
+
+        let shadow_strength = self.shadow_at_point(&c.over_point) - transparency;
+        let shadow_strength = if shadow_strength > 1.0 {
+            1.0
+        } else if shadow_strength < 0.0 {
+            0.0
+        } else {
+            shadow_strength
+        };
 
         let surface = c.object.material().lighting(
             &(*c.object),
@@ -137,7 +155,7 @@ impl World {
         let refracted = self.refracted_color(&c, depth_remaining);
         let reflected = self.reflected_color(&c, depth_remaining);
 
-        if c.object.material().reflectiveness > 0.0 && c.object.material().transparency > 0.0 {
+        if reflectiveness > 0.0 && transparency > 0.0 {
             let reflectance = c.schlick();
             surface + (reflected * reflectance) + (refracted * (1.0 - reflectance))
         } else {
@@ -164,7 +182,7 @@ impl World {
 
     fn refracted_color(&self, c: &Computations, depth_remaining: u64) -> Tup {
         if depth_remaining == 0 {
-            return self.background_color.clone();
+            return color(0.0, 0.0, 0.0);
         }
         if c.object.material().transparency == 0.0 {
             return color(0.0, 0.0, 0.0);
