@@ -1,4 +1,5 @@
 use super::tuple::{color, Tup};
+use raylib::color::Color;
 use raylib::prelude::*;
 use std::convert::TryInto;
 
@@ -181,11 +182,38 @@ impl OpenGLCanvas {
             .title(&self.title)
             .build();
 
+        let mut show_hud = false;
+        let total_pixels = self.width * self.height;
+        let mut update_counter = 60;
+        let mut pixels_received: i64 = 0;
+        let mut pixels_s: i32 = 0;
+        let mut eta: i32 = 0;
+
+        let stats_bg_color = Color::new(20, 20, 20, 230);
+        let stats_fg_color = Color::new(255, 255, 255, 255);
+
         while !rl.window_should_close() {
             // Get as many pixels as possible.
             while let Ok(pixel) = rx.try_recv() {
                 self.write_pixel(pixel.x, pixel.y, pixel.p);
+                pixels_received += 1;
             }
+
+            if rl.is_key_pressed(KeyboardKey::KEY_S) {
+                show_hud = !show_hud;
+            }
+
+            if update_counter == 60 {
+                let t = rl.get_time() as i64;
+                pixels_s = if t != 0 {
+                    (pixels_received / t) as i32
+                } else {
+                    pixels_received as i32
+                };
+                eta = (total_pixels as i64 - pixels_received) as i32 / pixels_s;
+                update_counter = 0;
+            }
+            update_counter += 1;
 
             let mut d = rl.begin_drawing(&thread);
             d.clear_background(Color::BLACK);
@@ -198,6 +226,31 @@ impl OpenGLCanvas {
                         self.tup_to_rl_color(self.pixel_at(x as u32, y as u32)),
                     )
                 }
+            }
+
+            if show_hud {
+                let progress_ratio = pixels_received as f32 / total_pixels as f32;
+                let progress_percent = progress_ratio * 100.;
+
+                d.draw_rectangle(
+                    5,
+                    5,
+                    5 + ((self.width - 15) as f32 * progress_ratio) as i32,
+                    10,
+                    raylib::color::Color::BLUE,
+                );
+                d.draw_rectangle(5, 15, 200, 100, &stats_bg_color);
+                d.draw_text(
+                    &format!(
+                        "progress: {:.1}%\npixels/s: {}\nETA: {}s",
+                        progress_percent, pixels_s, eta
+                    )
+                    .to_owned(),
+                    10,
+                    20,
+                    20,
+                    &stats_fg_color,
+                );
             }
         }
     }
