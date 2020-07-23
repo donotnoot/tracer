@@ -1,9 +1,3 @@
-use core::arch::x86_64::{
-    _mm256_hsub_ps, _mm256_mul_ps, _mm256_set1_ps, _mm256_set_ps, _mm256_shuffle_ps,
-    _mm256_store_ps, _mm256_storeu_ps, _mm256_sub_ps, _mm_add_ps, _mm_div_ps, _mm_mul_ps,
-    _mm_set1_ps, _mm_set_ps, _mm_store_ps, _mm_storeu_ps, _mm_sub_ps,
-};
-
 #[derive(Default, Debug, Clone)]
 #[repr(C)]
 pub struct Tup {
@@ -87,28 +81,35 @@ impl Tup {
     }
 
     pub fn magnitude(&self) -> f32 {
-        unsafe {
-            let mul = _mm_mul_ps(
-                _mm_set_ps(self.x, self.y, self.z, self.w),
-                _mm_set_ps(self.x, self.y, self.z, self.w),
-            );
-            let mut unpacked: [f32; 4] = [0.0, 0.0, 0.0, 0.0];
-            _mm_storeu_ps(&mut unpacked[0], mul);
-            unpacked
-        }
-        .iter()
-        .sum::<f32>()
-        .sqrt()
+        unsafe { Tup::magnitude_avx2(self) }
+    }
+
+    #[target_feature(enable = "avx2")]
+    unsafe fn magnitude_avx2(t: &Tup) -> f32 {
+        use core::arch::x86_64::*;
+        let mul = _mm_mul_ps(
+            _mm_set_ps(t.x, t.y, t.z, t.w),
+            _mm_set_ps(t.x, t.y, t.z, t.w),
+        );
+        let mut unpacked: [f32; 4] = [0.0, 0.0, 0.0, 0.0];
+        _mm_storeu_ps(&mut unpacked[0], mul);
+        unpacked.iter().sum::<f32>().sqrt()
     }
 
     pub fn normalize(&self) -> Tup {
-        let mag = self.magnitude();
-        unsafe {
-            let mut t = Tup::new();
-            let div = _mm_div_ps(_mm_set_ps(self.w, self.z, self.y, self.x), _mm_set1_ps(mag));
-            _mm_storeu_ps(&mut t.x as *mut f32, div);
-            t
-        }
+        unsafe { Tup::normalize_avx2(self) }
+    }
+
+    #[target_feature(enable = "avx2")]
+    unsafe fn normalize_avx2(t: &Tup) -> Tup {
+        use core::arch::x86_64::*;
+
+        let mag = Tup::magnitude_avx2(t);
+        let div = _mm_div_ps(_mm_set_ps(t.w, t.z, t.y, t.x), _mm_set1_ps(mag));
+
+        let mut result = Tup::new();
+        _mm_storeu_ps(&mut result.x as *mut f32, div);
+        result
     }
 
     pub fn cmp_epsilon(&self, x: f32, y: f32, z: f32, w: f32) -> bool {
@@ -124,17 +125,7 @@ impl<'a, 'b> std::ops::Add<&'b Tup> for &'a Tup {
     type Output = Tup;
 
     fn add(self, r: &'b Tup) -> Tup {
-        unsafe {
-            let mut t = Tup::new();
-            _mm_storeu_ps(
-                &mut t.x as *mut f32,
-                _mm_add_ps(
-                    _mm_set_ps(self.w, self.z, self.y, self.x),
-                    _mm_set_ps(r.w, r.z, r.y, r.x),
-                ),
-            );
-            t
-        }
+        unsafe { add_avx2(self, r) }
     }
 }
 
@@ -147,20 +138,39 @@ impl std::ops::Add<Tup> for Tup {
     }
 }
 
+#[target_feature(enable = "avx2")]
+unsafe fn add_avx2(lhs: &Tup, rhs: &Tup) -> Tup {
+    use core::arch::x86_64::*;
+    let mut t = Tup::new();
+    _mm_storeu_ps(
+        &mut t.x as *mut f32,
+        _mm_add_ps(
+            _mm_set_ps(lhs.w, lhs.z, lhs.y, lhs.x),
+            _mm_set_ps(rhs.w, rhs.z, rhs.y, rhs.x),
+        ),
+    );
+    t
+}
+
 /// Scalar division
 impl<'a> std::ops::Div<f32> for &'a Tup {
     type Output = Tup;
 
     fn div(self, f: f32) -> Tup {
-        unsafe {
-            let mut t = Tup::new();
-            _mm_storeu_ps(
-                &mut t.x as *mut f32,
-                _mm_div_ps(_mm_set_ps(self.w, self.z, self.y, self.x), _mm_set1_ps(f)),
-            );
-            t
-        }
+        unsafe { div_avx2(self, f) }
     }
+}
+
+#[target_feature(enable = "avx2")]
+unsafe fn div_avx2(lhs: &Tup, rhs: f32) -> Tup {
+    use core::arch::x86_64::*;
+
+    let mut t = Tup::new();
+    _mm_storeu_ps(
+        &mut t.x as *mut f32,
+        _mm_div_ps(_mm_set_ps(lhs.w, lhs.z, lhs.y, lhs.x), _mm_set1_ps(rhs)),
+    );
+    t
 }
 
 /// Scalar multiplication
@@ -168,14 +178,7 @@ impl<'a> std::ops::Mul<f32> for &'a Tup {
     type Output = Tup;
 
     fn mul(self, f: f32) -> Tup {
-        unsafe {
-            let mut t = Tup::new();
-            _mm_storeu_ps(
-                &mut t.x as *mut f32,
-                _mm_mul_ps(_mm_set_ps(self.w, self.z, self.y, self.x), _mm_set1_ps(f)),
-            );
-            t
-        }
+        unsafe { mul_scalar_avx2(self, f) }
     }
 }
 
@@ -188,42 +191,63 @@ impl std::ops::Mul<f32> for Tup {
     }
 }
 
+#[target_feature(enable = "avx2")]
+unsafe fn mul_scalar_avx2(lhs: &Tup, rhs: f32) -> Tup {
+    use core::arch::x86_64::*;
+
+    let mut t = Tup::new();
+    _mm_storeu_ps(
+        &mut t.x as *mut f32,
+        _mm_mul_ps(_mm_set_ps(lhs.w, lhs.z, lhs.y, lhs.x), _mm_set1_ps(rhs)),
+    );
+    t
+}
+
 /// Hadamard product
 impl<'a, 'b> std::ops::Mul<&'b Tup> for &'a Tup {
     type Output = Tup;
 
-    fn mul(self, r: &'b Tup) -> Tup {
-        unsafe {
-            let mut t = Tup::new();
-            _mm_storeu_ps(
-                &mut t.x as *mut f32,
-                _mm_mul_ps(
-                    _mm_set_ps(self.w, self.z, self.y, self.x),
-                    _mm_set_ps(r.w, r.z, r.y, r.x),
-                ),
-            );
-            t
-        }
+    fn mul(self, rhs: &'b Tup) -> Tup {
+        unsafe { hadamard_avx2(self, rhs) }
     }
+}
+
+#[target_feature(enable = "avx2")]
+unsafe fn hadamard_avx2(lhs: &Tup, rhs: &Tup) -> Tup {
+    use core::arch::x86_64::*;
+    let mut t = Tup::new();
+    _mm_storeu_ps(
+        &mut t.x as *mut f32,
+        _mm_mul_ps(
+            _mm_set_ps(lhs.w, lhs.z, lhs.y, lhs.x),
+            _mm_set_ps(rhs.w, rhs.z, rhs.y, rhs.x),
+        ),
+    );
+    t
 }
 
 /// Subtracts two tuples
 impl<'a, 'b> std::ops::Sub<&'b Tup> for &'a Tup {
     type Output = Tup;
 
-    fn sub(self, r: &'b Tup) -> Tup {
-        unsafe {
-            let mut t = Tup::new();
-            _mm_storeu_ps(
-                &mut t.x as *mut f32,
-                _mm_sub_ps(
-                    _mm_set_ps(self.w, self.z, self.y, self.x),
-                    _mm_set_ps(r.w, r.z, r.y, r.x),
-                ),
-            );
-            t
-        }
+    fn sub(self, rhs: &'b Tup) -> Tup {
+        unsafe { sub_avx2(self, rhs) }
     }
+}
+
+#[target_feature(enable = "avx2")]
+unsafe fn sub_avx2(lhs: &Tup, rhs: &Tup) -> Tup {
+    use core::arch::x86_64::*;
+
+    let mut t = Tup::new();
+    _mm_storeu_ps(
+        &mut t.x as *mut f32,
+        _mm_sub_ps(
+            _mm_set_ps(lhs.w, lhs.z, lhs.y, lhs.x),
+            _mm_set_ps(rhs.w, rhs.z, rhs.y, rhs.x),
+        ),
+    );
+    t
 }
 
 /// Negates a tuple
@@ -258,7 +282,14 @@ impl std::fmt::Display for Tup {
 
 /// Cross product
 pub fn cross(a: &Tup, b: &Tup) -> Tup {
-    let (x, y, z) = unsafe {
+    unsafe { cross_avx2(a, b) }
+}
+
+#[target_feature(enable = "avx2")]
+unsafe fn cross_avx2(a: &Tup, b: &Tup) -> Tup {
+    use core::arch::x86_64::*;
+
+    let (x, y, z) = {
         let mul = _mm256_mul_ps(
             _mm256_set_ps(a.z, a.y, a.x, a.z, a.y, a.x, 0.0, 0.0),
             _mm256_set_ps(b.y, b.z, b.z, b.x, b.x, b.y, 0.0, 0.0),
@@ -273,17 +304,19 @@ pub fn cross(a: &Tup, b: &Tup) -> Tup {
 
 /// Dot product
 pub fn dot(a: &Tup, b: &Tup) -> f32 {
-    unsafe {
-        let mul = _mm_mul_ps(
-            _mm_set_ps(a.x, a.y, a.z, a.w),
-            _mm_set_ps(b.x, b.y, b.z, b.w),
-        );
-        let mut unpacked: [f32; 4] = [0.0, 0.0, 0.0, 0.0];
-        _mm_storeu_ps(&mut unpacked[0], mul);
-        unpacked
-    }
-    .iter()
-    .sum::<f32>()
+    unsafe { dot_avx2(a, b) }
+}
+
+#[target_feature(enable = "avx2")]
+unsafe fn dot_avx2(a: &Tup, b: &Tup) -> f32 {
+    use core::arch::x86_64::*;
+    let mul = _mm_mul_ps(
+        _mm_set_ps(a.x, a.y, a.z, a.w),
+        _mm_set_ps(b.x, b.y, b.z, b.w),
+    );
+    let mut unpacked: [f32; 4] = [0.0, 0.0, 0.0, 0.0];
+    _mm_storeu_ps(&mut unpacked[0], mul);
+    unpacked.iter().sum::<f32>() // TODO: hadd?
 }
 
 #[cfg(test)]
@@ -467,6 +500,7 @@ mod tests {
 
     vector_normalizing! {
         vector_normalizing_400: (vector(4.0, 0.0,0.0), vector(1.0,0.0,0.0)),
+        vector_normalizing_004: (vector(0.0, 0.0,4.0), vector(0.0,0.0,1.0)),
     }
 
     #[test]
