@@ -73,6 +73,7 @@ pub struct RenderingSpec {
     pub max_bounces: u64,
     pub randomize_rays: bool,
     pub antialias: u32,
+    pub partial_render: Option<Vec<(u32, u32)>>,
 }
 
 impl Default for RenderingSpec {
@@ -81,6 +82,7 @@ impl Default for RenderingSpec {
             max_bounces: 64,
             randomize_rays: false,
             antialias: 0,
+            partial_render: None,
         }
     }
 }
@@ -203,9 +205,8 @@ enum TransformSpec {
     Shearing(f32, f32, f32, f32, f32, f32),
 }
 
-pub fn stdin_world() -> Result<(World, Camera, RenderingSpec), Box<dyn Error>> {
-    let scene: SceneFile = serde_yaml::from_reader(io::stdin())?;
-    println!("Scene:\n{:#?}", scene);
+pub fn from_reader(r: impl std::io::Read) -> Result<(World, Camera, RenderingSpec), Box<dyn Error>> {
+    let scene: SceneFile = serde_yaml::from_reader(r)?;
 
     let mut world = World::new();
 
