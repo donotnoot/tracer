@@ -384,7 +384,7 @@ dependencies = [
 [[package]]
 name = "raylib"
 version = "1.0.1"
-source = "git+https://github.com/deltaphc/raylib-rs#731b0c4700bdce7b2552a70a9abdcdef4de35aa8"
+source = "git+https://github.com/deltaphc/raylib-rs#417841a2bc04661cc3a6f38da03f6c476c604076"
 dependencies = [
  "lazy_static",
  "libc",
@@ -394,7 +394,7 @@ dependencies = [
 [[package]]
 name = "raylib-sys"
 version = "1.0.0"
-source = "git+https://github.com/deltaphc/raylib-rs#731b0c4700bdce7b2552a70a9abdcdef4de35aa8"
+source = "git+https://github.com/deltaphc/raylib-rs#417841a2bc04661cc3a6f38da03f6c476c604076"
 dependencies = [
  "cc",
  "cmake",
