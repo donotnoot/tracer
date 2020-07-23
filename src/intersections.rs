@@ -25,6 +25,7 @@ pub fn hit(i: &Intersections) -> (f32, usize, bool) {
     (min, index, hit)
 }
 
+#[derive(Debug)]
 pub struct Computations {
     pub t: f32,
     pub object: Arc<Object>,
@@ -44,7 +45,13 @@ impl Computations {
         let mut cos = dot(&self.eye, &self.normal);
 
         if self.n1 > self.n2 {
+            // don't let n be inf
+            if self.n2 == 0.0 {
+                return 1.0;
+            }
+
             let n = self.n1 / self.n2;
+
             let sin2_t = n.powi(2) * (1.0 - cos.powi(2));
             if sin2_t > 1.0 {
                 return 1.0;
@@ -509,7 +516,6 @@ mod tests {
     fn schlick_small_angle_n2_gt_n1() {
         let shape = glass_sphere();
         let shape = Arc::new(Object::Sphere(shape));
-        let p = 2f32.sqrt() / 2.0;
         let ray = Ray {
             origin: point(0.0, 0.99, -2.0),
             direction: vector(0.0, 0.0, 1.0),
@@ -521,5 +527,24 @@ mod tests {
         let comps = xs[0].computations(&ray, Some(&xs));
         let reflectance = comps.schlick();
         assert!((reflectance - 0.48873).abs() < 10e-4);
+    }
+
+    #[test]
+    fn schlick_when_n2_eq_0_must_be_1() {
+        let comps = Computations{
+            t: 0.0,
+            object: Arc::new(Object::Sphere(Sphere::new())),
+            inside: false,
+            point: point(0.,0.,0.),
+            eye: vector(-1.,0.,0.),
+            normal: vector(1.,0.,0.),
+            reflection: vector(-1.,0.,0.),
+            over_point: point(0.001,0.001,0.001),
+            under_point: point(-0.001,-0.001,-0.001),
+            n1: 1.0,
+            n2: 0.0,
+        };
+        let reflectance = comps.schlick();
+        assert_eq!(reflectance, 1.0);
     }
 }
