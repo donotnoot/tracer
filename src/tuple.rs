@@ -161,6 +161,15 @@ impl<'a> std::ops::Div<f32> for &'a Tup {
     }
 }
 
+/// Scalar division (move)
+impl std::ops::Div<f32> for Tup {
+    type Output = Tup;
+
+    fn div(self, f: f32) -> Tup {
+        unsafe { div_avx2(&self, f) }
+    }
+}
+
 #[target_feature(enable = "avx2")]
 unsafe fn div_avx2(lhs: &Tup, rhs: f32) -> Tup {
     use core::arch::x86_64::*;
@@ -277,6 +286,19 @@ impl std::fmt::Display for Tup {
             1 => write!(f, "Vector({}, {}, {})", self.x, self.y, self.z),
             _ => write!(f, "Tuple({}, {}, {}, {})", self.x, self.y, self.z, self.w),
         }
+    }
+}
+
+impl std::iter::Sum<Tup> for Tup {
+    fn sum<I>(iter: I) -> Tup
+    where
+        I: Iterator<Item = Tup>,
+    {
+        let mut result = Tup::new();
+        for v in iter {
+            result = result + v;
+        }
+        result
     }
 }
 
