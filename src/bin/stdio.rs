@@ -27,6 +27,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .for_each(|(x, y)| locations.push((x, y, tx.clone())));
         }
     }
+    let num_pixels = locations.len();
 
     thread::spawn(move || {
         locations.par_iter_mut().for_each(|(x, y, tx)| {
@@ -39,8 +40,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
     });
 
+    let mut completed = 0;
     while let Ok(px) = rx.recv() {
         println!("{} {} {} {} {}", px.x, px.y, px.p.x, px.p.y, px.p.z);
+        completed += 1;
+        if completed == num_pixels {
+            break
+        }
     }
 
     Ok(())
