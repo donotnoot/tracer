@@ -94,7 +94,7 @@ impl World {
             (hit, idx, true) => {
                 if hit < distance {
                     // Make the intensity of the shadow dependant on how transparent the object is.
-                    1.0 - intersections[idx].object.material().transparency
+                    1.0 - intersections[idx].object.material_transparency()
                 } else {
                     0.0
                 }

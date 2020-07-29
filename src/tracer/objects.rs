@@ -29,20 +29,26 @@ impl Object {
         world_normal.normalize()
     }
 
-    pub fn material(&self) -> material::Material {
+    pub fn material(&self) -> Material {
         match self {
             Object::Sphere(o) => o.material(),
             Object::Plane(o) => o.material(),
         }
     }
 
+    // returns the transparency of the material
+    pub fn material_transparency(&self) -> f32 {
     pub fn intersect(&self, r: &Ray) -> Intersections {
         let common = |ray: &Ray, transform: &Mat| ray.transform(&transform.inverse());
 
         match self {
             Object::Sphere(o) => o.intersect(&common(r, &o.transform)),
             Object::Plane(o) => o.intersect(&common(r, &o.transform)),
+            Object::Sphere(o) => o.material.transparency,
+            Object::Plane(o) => o.material.transparency,
         }
+    }
+
     }
 
     pub fn transformation(&self) -> Mat {
