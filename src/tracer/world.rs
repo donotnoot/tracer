@@ -56,7 +56,7 @@ impl World {
         let mut i: Intersections = Vec::with_capacity(self.objects.len() * 2);
 
         for elem in self.objects.iter() {
-            i.append(&mut (*elem).intersect(r));
+            i.append(&mut Object::intersect(&elem, r));
         }
 
         i.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
