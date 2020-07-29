@@ -1,6 +1,6 @@
 background_color: "black"
 rendering:
-  randomize_rays: false
+  randomize_rays: true
   max_bounces: 256
   antialias: 6
 light:
