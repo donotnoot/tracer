@@ -8,7 +8,13 @@ use super::tuple::{dot, point, vector, Tup};
 use std::rc::Rc;
 
 #[derive(Debug, Clone)]
-pub enum Object {
+pub struct Object {
+    pub geometry: Geometry,
+    pub material: Material,
+}
+
+#[derive(Debug, Clone)]
+pub enum Geometry {
     Sphere(Sphere),
     Plane(Plane),
 }
@@ -17,30 +23,15 @@ impl Object {
     pub fn normal(&self, p: &Tup) -> Tup {
         let local_point = |transform: &Mat| &transform.inverse() * p;
 
-        let (local_normal, shape_transform) = match self {
-            Object::Sphere(o) => (o.normal(&local_point(&o.transform)), &o.transform),
-            Object::Plane(o) => (o.normal(&local_point(&o.transform)), &o.transform),
+        let (local_normal, shape_transform) = match &self.geometry {
+            Geometry::Sphere(o) => (o.normal(&local_point(&o.transform)), &o.transform),
+            Geometry::Plane(o) => (o.normal(&local_point(&o.transform)), &o.transform),
         };
 
         let mut world_normal = &shape_transform.inverse().transpose() * &local_normal;
         world_normal.w = 0.0;
 
         world_normal.normalize()
-    }
-
-    pub fn material(&self) -> Material {
-        match self {
-            Object::Sphere(o) => o.material(),
-            Object::Plane(o) => o.material(),
-        }
-    }
-
-    // returns the transparency of the material
-    pub fn material_transparency(&self) -> f32 {
-        match self {
-            Object::Sphere(o) => o.material.transparency,
-            Object::Plane(o) => o.material.transparency,
-        }
     }
 
     pub fn intersect(object: &Self, r: &Ray) -> Intersections {
@@ -50,8 +41,8 @@ impl Object {
 
         let ref_clone = Rc::new(object.clone());
 
-        match object {
-            Object::Sphere(o) => match o.intersect(&common(r, &o.transform)) {
+        match &object.geometry {
+            Geometry::Sphere(o) => match o.intersect(&common(r, &o.transform)) {
                 Some((t1, t2)) => {
                     v.push(Intersection {
                         t: t1,
@@ -64,7 +55,7 @@ impl Object {
                 }
                 None => (),
             },
-            Object::Plane(o) => match o.intersect(&common(r, &o.transform)) {
+            Geometry::Plane(o) => match o.intersect(&common(r, &o.transform)) {
                 Some(t1) => {
                     v.push(Intersection {
                         t: t1,
@@ -79,9 +70,9 @@ impl Object {
     }
 
     pub fn transformation(&self) -> Mat {
-        match self {
-            Object::Sphere(o) => o.transform.clone(),
-            Object::Plane(o) => o.transform.clone(),
+        match &self.geometry {
+            Geometry::Sphere(o) => o.transform.clone(),
+            Geometry::Plane(o) => o.transform.clone(),
         }
     }
 }
@@ -89,33 +80,27 @@ impl Object {
 #[derive(Debug, Clone)]
 pub struct Sphere {
     pub transform: Mat,
-    pub material: Material,
 }
 
 impl Sphere {
     pub fn new() -> Self {
         Sphere {
             transform: identity(4),
-            material: Material::new(),
         }
     }
 
-    /// Creates a new sphere with a material that resembles glass.
-    pub fn new_glass() -> Self {
-        Sphere {
-            transform: identity(4),
-            material: {
-                let mut m = Material::new();
-                m.transparency = 1.0;
-                m.refractive_index = 1.5;
-                m
-            },
-        }
-    }
-
-    fn material(&self) -> Material {
-        self.material.clone()
-    }
+    // /// Creates a new sphere with a material that resembles glass.
+    // pub fn new_glass() -> Self {
+    //     Sphere {
+    //         transform: identity(4),
+    //         material: {
+    //             let mut m = Material::new();
+    //             m.transparency = 1.0;
+    //             m.refractive_index = 1.5;
+    //             m
+    //         },
+    //     }
+    // }
 
     fn normal(&self, p: &Tup) -> Tup {
         p - &point(0.0, 0.0, 0.0)
@@ -148,19 +133,13 @@ impl Sphere {
 #[derive(Debug, Clone)]
 pub struct Plane {
     pub transform: Mat,
-    pub material: Material,
 }
 
 impl Plane {
     pub fn new() -> Self {
         Plane {
             transform: identity(4),
-            material: Material::new(),
         }
-    }
-
-    fn material(&self) -> Material {
-        self.material.clone()
     }
 
     fn normal(&self, _: &Tup) -> Tup {
