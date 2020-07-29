@@ -3,7 +3,7 @@ PROTOC_INCLUDES= -I. \
 
 GO_MODULE_ROOT=github.com/donotnoot/tracer
 
-default: netcode/pkg/pb/streaming.pb.go
+default: netcode/pkg/pb/net_render.pb.go
 
 clean:
 	rm -rf netcode/bin netcode/pkg/pb
