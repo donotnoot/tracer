@@ -233,10 +233,10 @@ pub fn from_reader(r: impl std::io::Read) -> Result<(World, Camera, RenderingSpe
             vsteps,
         } => Light::new_area(
             &light_intensity,
-            &f32x3toPoint(corner),
-            &f32x3toVec(uvec),
+            &f32x3_to_point(corner),
+            &f32x3_to_vec(uvec),
             usteps,
-            &f32x3toVec(vvec),
+            &f32x3_to_vec(vvec),
             vsteps,
         ),
     };
@@ -414,10 +414,10 @@ fn deg2rad(a: f32) -> f32 {
     a * std::f32::consts::PI / 180.
 }
 
-fn f32x3toPoint(i: [f32; 3]) -> Tup {
+fn f32x3_to_point(i: [f32; 3]) -> Tup {
     point(i[0], i[1], i[2])
 }
 
-fn f32x3toVec(i: [f32; 3]) -> Tup {
+fn f32x3_to_vec(i: [f32; 3]) -> Tup {
     vector(i[0], i[1], i[2])
 }
