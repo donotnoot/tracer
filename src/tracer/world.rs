@@ -6,6 +6,7 @@ use super::transformations::scaling;
 use super::tuple::{color, dot, point, vector, Tup};
 use rand::Rng;
 
+#[derive(Debug)]
 pub struct World {
     pub objects: Vec<Object>,
     pub light: Light,

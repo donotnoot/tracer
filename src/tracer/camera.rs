@@ -11,6 +11,7 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 use rayon::prelude::*;
 
+#[derive(Debug)]
 pub struct Camera {
     pub aspect_ratio: f32,
     pub fov: f32,

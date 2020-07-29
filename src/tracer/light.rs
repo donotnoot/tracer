@@ -1,5 +1,6 @@
 use super::tuple::Tup;
 
+#[derive(Debug)]
 pub enum LightKind {
     Point,
     Area {
@@ -12,6 +13,7 @@ pub enum LightKind {
     },
 }
 
+#[derive(Debug)]
 pub struct Light {
     pub position: Tup,
     pub intensity: Tup,
