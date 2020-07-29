@@ -1,12 +1,11 @@
 use super::intersections::{Intersect, Intersection, Intersections};
-use super::material;
-use super::material::HasMaterial;
+use super::material::Material;
 use super::matrix::{identity, Mat};
 use super::ray::Ray;
 
 use super::tuple::{dot, point, vector, Tup};
 
-use std::sync::Arc;
+use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub enum Object {
@@ -38,17 +37,45 @@ impl Object {
 
     // returns the transparency of the material
     pub fn material_transparency(&self) -> f32 {
-    pub fn intersect(&self, r: &Ray) -> Intersections {
-        let common = |ray: &Ray, transform: &Mat| ray.transform(&transform.inverse());
-
         match self {
-            Object::Sphere(o) => o.intersect(&common(r, &o.transform)),
-            Object::Plane(o) => o.intersect(&common(r, &o.transform)),
             Object::Sphere(o) => o.material.transparency,
             Object::Plane(o) => o.material.transparency,
         }
     }
 
+    pub fn intersect(object: &Self, r: &Ray) -> Intersections {
+        let common = |ray: &Ray, transform: &Mat| ray.transform(&transform.inverse());
+
+        let mut v: Vec<Intersection> = Vec::with_capacity(2);
+
+        let ref_clone = Rc::new(object.clone());
+
+        match object {
+            Object::Sphere(o) => match o.intersect(&common(r, &o.transform)) {
+                Some((t1, t2)) => {
+                    v.push(Intersection {
+                        t: t1,
+                        object: Rc::clone(&ref_clone),
+                    });
+                    v.push(Intersection {
+                        t: t2,
+                        object: Rc::clone(&ref_clone),
+                    });
+                }
+                None => (),
+            },
+            Object::Plane(o) => match o.intersect(&common(r, &o.transform)) {
+                Some(t1) => {
+                    v.push(Intersection {
+                        t: t1,
+                        object: Rc::clone(&ref_clone),
+                    });
+                }
+                None => (),
+            },
+        };
+
+        v
     }
 
     pub fn transformation(&self) -> Mat {
@@ -62,14 +89,14 @@ impl Object {
 #[derive(Debug, Clone)]
 pub struct Sphere {
     pub transform: Mat,
-    pub material: material::Material,
+    pub material: Material,
 }
 
 impl Sphere {
     pub fn new() -> Self {
         Sphere {
             transform: identity(4),
-            material: material::Material::new(),
+            material: Material::new(),
         }
     }
 
@@ -78,7 +105,7 @@ impl Sphere {
         Sphere {
             transform: identity(4),
             material: {
-                let mut m = material::Material::new();
+                let mut m = Material::new();
                 m.transparency = 1.0;
                 m.refractive_index = 1.5;
                 m
@@ -86,7 +113,7 @@ impl Sphere {
         }
     }
 
-    fn material(&self) -> material::Material {
+    fn material(&self) -> Material {
         self.material.clone()
     }
 
@@ -94,7 +121,7 @@ impl Sphere {
         p - &point(0.0, 0.0, 0.0)
     }
 
-    fn intersect(&self, ray: &Ray) -> Intersections {
+    fn intersect(&self, ray: &Ray) -> Option<(f32, f32)> {
         let sphere_to_ray = &ray.origin - &point(0.0, 0.0, 0.0);
 
         let a = dot(&ray.direction, &ray.direction);
@@ -104,8 +131,7 @@ impl Sphere {
         let discriminant = b.powi(2) - 4.0 * a * c;
 
         if discriminant < 0.0 {
-            let v: Vec<Intersection> = vec![];
-            return v;
+            return None;
         }
 
         let mut t1 = (-b - discriminant.sqrt()) / (2.0 * a);
@@ -115,37 +141,25 @@ impl Sphere {
             std::mem::swap(&mut t2, &mut t1);
         }
 
-        let arc = Arc::new(Object::Sphere(self.clone()));
-
-        let v: Vec<Intersection> = vec![
-            Intersection {
-                t: t1,
-                object: Arc::clone(&arc),
-            },
-            Intersection {
-                t: t2,
-                object: Arc::clone(&arc),
-            },
-        ];
-        v
+        Some((t1, t2))
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Plane {
     pub transform: Mat,
-    pub material: material::Material,
+    pub material: Material,
 }
 
 impl Plane {
     pub fn new() -> Self {
         Plane {
             transform: identity(4),
-            material: material::Material::new(),
+            material: Material::new(),
         }
     }
 
-    fn material(&self) -> material::Material {
+    fn material(&self) -> Material {
         self.material.clone()
     }
 
@@ -153,15 +167,11 @@ impl Plane {
         vector(0.0, 1.0, 0.0)
     }
 
-    fn intersect(&self, ray: &Ray) -> Intersections {
+    fn intersect(&self, ray: &Ray) -> Option<f32> {
         if ray.direction.y.abs() < 10e-5 {
-            let v: Vec<Intersection> = vec![];
-            v
+            None
         } else {
-            vec![Intersection {
-                object: Arc::new(Object::Plane(self.clone())),
-                t: (-ray.origin.y) / ray.direction.y,
-            }]
+            Some((-ray.origin.y) / ray.direction.y)
         }
     }
 }
