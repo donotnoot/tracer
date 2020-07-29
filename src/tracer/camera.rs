@@ -102,7 +102,8 @@ impl Camera {
     }
 
     pub fn render(&self, w: World, tx: Sender<Pixel>, shuffle: bool) {
-        let mut locations: Vec<(u32, u32, Sender<Pixel>)> = vec![];
+        let mut locations: Vec<(u32, u32, Sender<Pixel>)> =
+            Vec::with_capacity((self.h_size * self.v_size) as usize);
 
         for y in 0..self.v_size as u32 {
             for x in 0..self.h_size as u32 {
@@ -114,14 +115,17 @@ impl Camera {
             locations.shuffle(&mut thread_rng());
         }
 
-        locations.par_iter_mut().for_each(|(x, y, tx)| {
-            tx.send(Pixel {
-                x: *x,
-                y: *y,
-                p: self.render_pixel(&w, *x, *y),
-            })
-            .unwrap();
-        });
+        locations
+            .into_par_iter()
+            .with_max_len(1)
+            .for_each(|(x, y, tx)| {
+                tx.send(Pixel {
+                    x,
+                    y,
+                    p: self.render_pixel(&w, x, y),
+                })
+                .unwrap();
+            });
     }
 }
 
