@@ -22,6 +22,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             world,
             tx,
             rendering_spec.randomize_rays,
+            10,
         );
     });
 
