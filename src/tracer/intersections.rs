@@ -2,6 +2,7 @@ use super::objects::Object;
 use super::ray::Ray;
 
 use super::tuple::{dot, Tup};
+use std::rc::Rc;
 use std::sync::Arc;
 
 pub type Intersections = Vec<Intersection>;
@@ -28,7 +29,7 @@ pub fn hit(i: &Intersections) -> (f32, usize, bool) {
 #[derive(Debug)]
 pub struct Computations {
     pub t: f32,
-    pub object: Arc<Object>,
+    pub object: Rc<Object>,
     pub inside: bool,
     pub point: Tup,
     pub eye: Tup,
@@ -69,7 +70,7 @@ impl Computations {
 #[derive(Debug)]
 pub struct Intersection {
     pub t: f32,
-    pub object: Arc<Object>,
+    pub object: Rc<Object>,
 }
 
 impl Intersection {
@@ -119,7 +120,7 @@ impl Intersection {
         }
 
         // todo: what if no hit?
-        let mut containers: Vec<&Arc<Object>> = vec![];
+        let mut containers: Vec<&Rc<Object>> = vec![];
 
         for i in xs.iter() {
             let is_hit = std::ptr::eq(self, i);
@@ -132,7 +133,7 @@ impl Intersection {
                 }
             }
 
-            if let Some(idx) = containers.iter().position(|&e| Arc::ptr_eq(e, &i.object)) {
+            if let Some(idx) = containers.iter().position(|&e| Rc::ptr_eq(e, &i.object)) {
                 containers.remove(idx);
             } else {
                 containers.push(&i.object);
