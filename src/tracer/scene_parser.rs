@@ -3,7 +3,7 @@ use super::light::{Light, LightKind};
 use super::material::Material;
 use super::matrix;
 use super::matrix::Mat;
-use super::objects::{Object, Plane, Sphere};
+use super::objects::{Geometry, Object, Plane, Sphere};
 use super::patterns::*;
 use super::transformations::*;
 use super::tuple::{color, color_u8, point, vector, Tup};
@@ -11,6 +11,7 @@ use super::world::World;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::error::Error;
+use std::sync::Arc;
 use std::io;
 
 #[derive(Debug, Deserialize)]
@@ -261,15 +262,22 @@ pub fn from_reader(r: impl std::io::Read) -> Result<(World, Camera, RenderingSpe
     scene.objects.iter().for_each(|spec| match spec {
         ObjectSpec::Sphere(spec) => {
             let mut sphere = Sphere::new();
-            sphere.material = scene.process_material(&spec.material);
             sphere.transform = scene.process_transformations(&spec.transform);
-            world.objects.push(Object::Sphere(sphere));
+
+            world.objects.push(Object {
+                geometry: Geometry::Sphere(sphere),
+                material: scene.process_material(&spec.material),
+            });
+
         }
         ObjectSpec::Plane(spec) => {
             let mut plane = Plane::new();
-            plane.material = scene.process_material(&spec.material);
             plane.transform = scene.process_transformations(&spec.transform);
-            world.objects.push(Object::Plane(plane));
+
+            world.objects.push(Object {
+                geometry: Geometry::Plane(plane),
+                material: scene.process_material(&spec.material),
+            });
         }
     });
 

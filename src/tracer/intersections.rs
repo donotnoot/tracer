@@ -129,7 +129,7 @@ impl Intersection {
                 if containers.is_empty() {
                     n1 = 1.0;
                 } else {
-                    n1 = containers.last().unwrap().material().refractive_index;
+                    n1 = containers.last().unwrap().material.refractive_index;
                 }
             }
 
@@ -143,7 +143,7 @@ impl Intersection {
                 if containers.is_empty() {
                     n2 = 1.0;
                 } else {
-                    n2 = containers.last().unwrap().material().refractive_index;
+                    n2 = containers.last().unwrap().material.refractive_index;
                 }
                 break;
             }

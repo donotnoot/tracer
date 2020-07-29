@@ -1,6 +1,7 @@
 use super::intersections::{hit, Computations, Intersect, Intersections};
 use super::light::*;
-use super::objects::{Object, Sphere};
+use super::material::Material;
+use super::objects::{Geometry, Object, Sphere};
 use super::ray::Ray;
 use super::transformations::scaling;
 use super::tuple::{color, dot, point, vector, Tup};
@@ -30,16 +31,22 @@ impl World {
         World {
             objects: vec![
                 {
-                    let mut s = Sphere::new();
-                    s.material.color = color(0.8, 1.0, 0.6);
-                    s.material.diffuse = 0.7;
-                    s.material.specular = 0.2;
-                    Object::Sphere(s)
+                    let mut object = Object {
+                        geometry: Geometry::Sphere(Sphere::new()),
+                        material: Material::new(),
+                    };
+                    object.material.color = color(0.8, 1.0, 0.6);
+                    object.material.diffuse = 0.7;
+                    object.material.specular = 0.2;
+                    object
                 },
                 {
-                    let mut s = Sphere::new();
-                    s.transform = scaling(0.5, 0.5, 0.5);
-                    Object::Sphere(s)
+                    let mut geometry = Sphere::new();
+                    geometry.transform = scaling(0.5, 0.5, 0.5);
+                    Object {
+                        geometry: Geometry::Sphere(geometry),
+                        material: Material::new(),
+                    }
                 },
             ],
             light: Light {
@@ -94,7 +101,7 @@ impl World {
             (hit, idx, true) => {
                 if hit < distance {
                     // Make the intensity of the shadow dependant on how transparent the object is.
-                    1.0 - intersections[idx].object.material_transparency()
+                    1.0 - intersections[idx].object.material.transparency
                 } else {
                     0.0
                 }
@@ -133,8 +140,8 @@ impl World {
     }
 
     fn shade_hit(&self, c: &Computations, depth_remaining: u64) -> Tup {
-        let reflectiveness = c.object.material().reflectiveness;
-        let transparency = c.object.material().transparency;
+        let reflectiveness = c.object.material.reflectiveness;
+        let transparency = c.object.material.transparency;
 
         let shadow_strength = self.shadow_at_point(&c.over_point) - transparency;
         let shadow_strength = if shadow_strength > 1.0 {
@@ -145,7 +152,7 @@ impl World {
             shadow_strength
         };
 
-        let surface = c.object.material().lighting(
+        let surface = c.object.material.lighting(
             &(*c.object),
             &self.light,
             c.over_point.clone(),
@@ -169,7 +176,7 @@ impl World {
         if depth_remaining == 0 {
             return color(0.0, 0.0, 0.0);
         }
-        if (*c.object).material().reflectiveness < std::f32::EPSILON {
+        if (*c.object).material.reflectiveness < std::f32::EPSILON {
             return color(0.0, 0.0, 0.0);
         }
 
@@ -179,14 +186,14 @@ impl World {
         };
         let color = self.color_at(&reflect_ray, depth_remaining - 1);
 
-        &color * (*c.object).material().reflectiveness
+        &color * (*c.object).material.reflectiveness
     }
 
     fn refracted_color(&self, c: &Computations, depth_remaining: u64) -> Tup {
         if depth_remaining == 0 {
             return color(0.0, 0.0, 0.0);
         }
-        if c.object.material().transparency == 0.0 {
+        if c.object.material.transparency == 0.0 {
             return color(0.0, 0.0, 0.0);
         }
 
@@ -211,7 +218,7 @@ impl World {
             direction,
         };
 
-        &self.color_at(&refracted_ray, depth_remaining - 1) * c.object.material().transparency
+        &self.color_at(&refracted_ray, depth_remaining - 1) * c.object.material.transparency
     }
 }
 
@@ -242,7 +249,7 @@ mod tests {
     #[test]
     fn reflection_of_non_reflective_material() {
         let mut w = World::new_with_stuff();
-        w.objects[1].material().ambient = 1.0;
+        w.objects[1].material.ambient = 1.0;
         let r = Ray {
             origin: point(0.0, 0.0, 0.0),
             direction: vector(0.0, 0.0, 1.0),
