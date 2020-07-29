@@ -169,8 +169,11 @@ mod tests {
         let mut s = Sphere::new();
         s.transform = scaling(2.0, 2.0, 2.0);
 
-        let obj = Object::Sphere(s);
-        let ixs = obj.intersect(&r);
+        let obj = Object{
+            geometry: Geometry::Sphere(s),
+            material: Material::new(),
+        };
+        let ixs = Object::intersect(&obj, &r);
 
         assert_eq!(3.0, ixs[0].t);
         assert_eq!(7.0, ixs[1].t);
@@ -185,8 +188,11 @@ mod tests {
         let mut s = Sphere::new();
         s.transform = translation(5.0, 2.0, 2.0);
 
-        let obj = Object::Sphere(s);
-        let ixs = obj.intersect(&r);
+        let obj = Object{
+            geometry: Geometry::Sphere(s),
+            material: Material::new(),
+        };
+        let ixs = Object::intersect(&obj, &r);
 
         assert_eq!(ixs.len(), 0);
     }
@@ -223,7 +229,10 @@ mod tests {
             let mut s = Sphere::new();
             s.transform = translation(0.0, 1.0, 0.0);
 
-            let obj = Object::Sphere(s);
+            let obj = Object{
+                geometry: Geometry::Sphere(s),
+                material: Material::new(),
+            };
             let normal = obj.normal(&point(0.0, 1.70711, -0.70711));
 
             assert_eq!(0.0, normal.x);
@@ -236,7 +245,10 @@ mod tests {
             s.transform = scaling(1.0, 0.5, 1.0) * rotate_z(std::f32::consts::PI / 5.0);
 
             let p = 2.0_f32.sqrt() / 2.0;
-            let obj = Object::Sphere(s);
+            let obj = Object{
+                geometry: Geometry::Sphere(s),
+                material: Material::new(),
+            };
             let normal = obj.normal(&point(0.0, p, -p));
 
             assert!(normal.x.abs() < 10e-5);
@@ -276,7 +288,11 @@ mod tests {
                 direction: vector(0.0, 0.0, 1.0),
             };
             let xs = p.intersect(&r);
-            assert_eq!(xs.len(), 0);
+
+            assert!(match xs {
+                None => true,
+                _ => false,
+            });
         }
         {
             // coplanar
@@ -286,7 +302,11 @@ mod tests {
                 direction: vector(0.0, 0.0, 1.0),
             };
             let xs = p.intersect(&r);
-            assert_eq!(xs.len(), 0);
+
+            assert!(match xs {
+                None => true,
+                _ => false,
+            });
         }
         {
             // from above
@@ -296,8 +316,11 @@ mod tests {
                 direction: vector(0.0, -1.0, 0.0),
             };
             let xs = p.intersect(&r);
-            assert_eq!(xs.len(), 1);
-            assert_eq!(xs[0].t, 1.0);
+
+            assert!(match xs {
+                Some(1.0) => true,
+                _ => false,
+            });
         }
         {
             // from below
@@ -307,8 +330,11 @@ mod tests {
                 direction: vector(0.0, 1.0, 0.0),
             };
             let xs = p.intersect(&r);
-            assert_eq!(xs.len(), 1);
-            assert_eq!(xs[0].t, 1.0);
+
+            assert!(match xs {
+                Some(1.0) => true,
+                _ => false,
+            });
         }
     }
 }

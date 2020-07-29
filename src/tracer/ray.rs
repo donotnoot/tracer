@@ -23,7 +23,8 @@ impl Ray {
 
 #[cfg(test)]
 mod tests {
-    use super::super::objects::{Object, Sphere};
+    use super::super::objects::{Geometry, Object, Sphere};
+    use super::super::material::Material;
     use super::super::transformations::{scaling, translation};
     use super::super::tuple::{point, vector};
     use super::*;
@@ -46,8 +47,11 @@ mod tests {
             origin: point(0.0, 0.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let s = Object::Sphere(Sphere::new());
-        let ixs = s.intersect(&r);
+        let s = Object{
+            geometry: Geometry::Sphere(Sphere::new()),
+            material: Material::new(),
+        };
+        let ixs = Object::intersect(&s, &r);
 
         assert_eq!(ixs[0].t, 4.0);
         assert_eq!(ixs[1].t, 6.0);
@@ -59,8 +63,11 @@ mod tests {
             origin: point(0.0, 1.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let s = Object::Sphere(Sphere::new());
-        let ixs = s.intersect(&r);
+        let s = Object{
+            geometry: Geometry::Sphere(Sphere::new()),
+            material: Material::new(),
+        };
+        let ixs = Object::intersect(&s, &r);
 
         assert_eq!(ixs[0].t, 5.0);
         assert_eq!(ixs[1].t, 5.0);
@@ -72,8 +79,11 @@ mod tests {
             origin: point(0.0, 2.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let s = Object::Sphere(Sphere::new());
-        let ixs = s.intersect(&r);
+        let s = Object{
+            geometry: Geometry::Sphere(Sphere::new()),
+            material: Material::new(),
+        };
+        let ixs = Object::intersect(&s, &r);
 
         assert_eq!(ixs.len(), 0);
     }
@@ -84,8 +94,11 @@ mod tests {
             origin: point(0.0, 0.0, 0.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let s = Object::Sphere(Sphere::new());
-        let ixs = s.intersect(&r);
+        let s = Object{
+            geometry: Geometry::Sphere(Sphere::new()),
+            material: Material::new(),
+        };
+        let ixs = Object::intersect(&s, &r);
 
         assert_eq!(ixs[0].t, -1.0);
         assert_eq!(ixs[1].t, 1.0);
@@ -97,8 +110,11 @@ mod tests {
             origin: point(0.0, 0.0, 5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let s = Object::Sphere(Sphere::new());
-        let ixs = s.intersect(&r);
+        let s = Object{
+            geometry: Geometry::Sphere(Sphere::new()),
+            material: Material::new(),
+        };
+        let ixs = Object::intersect(&s, &r);
 
         assert_eq!(ixs[0].t, -6.0);
         assert_eq!(ixs[1].t, -4.0);

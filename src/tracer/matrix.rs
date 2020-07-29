@@ -148,7 +148,7 @@ impl Mat {
     fn inverse_general(&self) -> Mat {
         let (det, is_inversible) = self.is_inversible();
         if !is_inversible {
-            std::panic!("cannot inverse matrix");
+            std::panic!("cannot inverse matrix: {:?}", self);
         }
 
         let mut res = self.clone();

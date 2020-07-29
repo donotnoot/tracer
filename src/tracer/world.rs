@@ -228,7 +228,7 @@ mod tests {
     use super::super::objects::Plane;
     use super::super::transformations::translation;
     use super::*;
-    use std::sync::Arc;
+    use std::rc::Rc;
 
     #[test]
     fn intersecting_world_with_ray() {
@@ -256,7 +256,7 @@ mod tests {
         };
         let i = Intersection {
             t: 1.0,
-            object: Arc::new(w.objects[1].clone()),
+            object: Rc::new(w.objects[1].clone()),
         };
         let c = i.computations(&r, None);
         let color = w.reflected_color(&c, 10);
@@ -270,10 +270,14 @@ mod tests {
     fn reflection_color_of_reflective_material() {
         let mut w = World::new_with_stuff();
 
-        let mut p = Plane::new();
-        p.material.reflectiveness = 0.5;
-        p.transform = translation(0.0, -1.0, 0.0);
-        let s = Object::Plane(p);
+        let mut plane = Plane::new();
+        plane.transform = translation(0.0, -1.0, 0.0);
+        let mut material = Material::new();
+        material.reflectiveness = 0.5;
+        let s = Object {
+            geometry: Geometry::Plane(plane),
+            material,
+        };
         w.objects.push(s.clone());
 
         let p = 2.0f32.sqrt() / 2.0;
@@ -283,7 +287,7 @@ mod tests {
         };
         let i = Intersection {
             t: 2.0f32.sqrt(),
-            object: Arc::new(s),
+            object: Rc::new(s),
         };
         let c = i.computations(&r, None);
         let color = w.reflected_color(&c, 10);
@@ -298,10 +302,14 @@ mod tests {
     fn shade_hit_with_reflective_material() {
         let mut w = World::new_with_stuff();
 
-        let mut p = Plane::new();
-        p.material.reflectiveness = 0.5;
-        p.transform = translation(0.0, -1.0, 0.0);
-        let s = Object::Plane(p);
+        let mut plane = Plane::new();
+        plane.transform = translation(0.0, -1.0, 0.0);
+        let mut material = Material::new();
+        material.reflectiveness = 0.5;
+        let s = Object {
+            geometry: Geometry::Plane(plane),
+            material,
+        };
         w.objects.push(s.clone());
 
         let p = 2.0f32.sqrt() / 2.0;
@@ -311,7 +319,7 @@ mod tests {
         };
         let i = Intersection {
             t: 2.0f32.sqrt(),
-            object: Arc::new(s),
+            object: Rc::new(s),
         };
         let c = i.computations(&r, None);
         let color = w.shade_hit(&c, 10);
@@ -326,10 +334,14 @@ mod tests {
     fn the_reflected_color_at_the_maximum_recursive_depth() {
         let mut w = World::new_with_stuff();
 
-        let mut p = Plane::new();
-        p.material.reflectiveness = 0.5;
-        p.transform = translation(0.0, -1.0, 0.0);
-        let s = Object::Plane(p);
+        let mut plane = Plane::new();
+        plane.transform = translation(0.0, -1.0, 0.0);
+        let mut material = Material::new();
+        material.reflectiveness = 0.5;
+        let s = Object {
+            geometry: Geometry::Plane(plane),
+            material,
+        };
         w.objects.push(s.clone());
 
         let p = 2.0f32.sqrt() / 2.0;
@@ -339,7 +351,7 @@ mod tests {
         };
         let i = Intersection {
             t: 2.0f32.sqrt(),
-            object: Arc::new(s),
+            object: Rc::new(s),
         };
         let c = i.computations(&r, None);
         let color = w.reflected_color(&c, 0);
@@ -351,7 +363,7 @@ mod tests {
     #[test]
     fn the_refracted_color_with_opaque_surface() {
         let w = World::new_with_stuff();
-        let shape = Arc::new(w.objects[0].clone());
+        let shape = Rc::new(w.objects[0].clone());
         let r = Ray {
             origin: point(0.0, 0.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
@@ -359,11 +371,11 @@ mod tests {
         let xs: Intersections = vec![
             Intersection {
                 t: 4.0,
-                object: Arc::clone(&shape),
+                object: Rc::clone(&shape),
             },
             Intersection {
                 t: 6.0,
-                object: Arc::clone(&shape),
+                object: Rc::clone(&shape),
             },
         ];
         let comps = xs[0].computations(&r, Some(&xs));
@@ -378,7 +390,7 @@ mod tests {
     #[test]
     fn refracted_color_at_max_recursive_depth() {
         let w = World::new_with_stuff();
-        let shape = Arc::new(w.objects[0].clone());
+        let shape = Rc::new(w.objects[0].clone());
         let r = Ray {
             origin: point(0.0, 0.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
@@ -386,11 +398,11 @@ mod tests {
         let xs: Intersections = vec![
             Intersection {
                 t: 4.0,
-                object: Arc::clone(&shape),
+                object: Rc::clone(&shape),
             },
             Intersection {
                 t: 6.0,
-                object: Arc::clone(&shape),
+                object: Rc::clone(&shape),
             },
         ];
         let comps = xs[0].computations(&r, Some(&xs));
@@ -406,13 +418,16 @@ mod tests {
     fn refracted_color_total_internal_reflection() {
         let mut w = World::new_with_stuff();
         w.objects[0] = {
-            let mut o = Sphere::new();
-            o.material.transparency = 1.0;
-            o.material.refractive_index = 1.5;
-            Object::Sphere(o)
+            let mut material = Material::new();
+            material.transparency = 1.0;
+            material.refractive_index = 1.5;
+            Object {
+                geometry: Geometry::Sphere(Sphere::new()),
+                material
+            }
         };
 
-        let shape = Arc::new(w.objects[0].clone());
+        let shape = Rc::new(w.objects[0].clone());
         let p = 2f32.sqrt() / 2.0;
         let r = Ray {
             origin: point(0.0, 0.0, p),
@@ -421,11 +436,11 @@ mod tests {
         let xs: Intersections = vec![
             Intersection {
                 t: -p,
-                object: Arc::clone(&shape),
+                object: Rc::clone(&shape),
             },
             Intersection {
                 t: p,
-                object: Arc::clone(&shape),
+                object: Rc::clone(&shape),
             },
         ];
         let comps = xs[1].computations(&r, Some(&xs));
@@ -442,22 +457,30 @@ mod tests {
         let mut w = World::new_with_stuff();
 
         let mut floor = Plane::new();
-        floor.transform = translation(0., -1., 0.);
-        floor.material.reflectiveness = 0.5;
-        floor.material.transparency = 0.5;
-        floor.material.refractive_index = 1.5;
-        w.objects.push(Object::Plane(floor.clone()));
-        let floor = Arc::new(Object::Plane(floor));
+        floor.transform = translation(0.0, -1.0, 0.0);
+        let mut material = Material::new();
+        material.reflectiveness = 0.5;
+        material.transparency = 0.5;
+        material.refractive_index = 1.5;
+        let s = Object {
+            geometry: Geometry::Plane(floor),
+            material,
+        };
+        w.objects.push(s.clone());
 
         let mut ball = Sphere::new();
-        ball.material.color = color(1.0, 0., 0.);
-        ball.material.ambient = 0.5;
         ball.transform = translation(0., -3.5, -0.5);
-        w.objects.push(Object::Sphere(ball));
+        let mut material = Material::new();
+        material.color = color(1.0, 0., 0.);
+        material.ambient = 0.5;
+        w.objects.push(Object {
+            geometry: Geometry::Sphere(ball),
+            material,
+        });
 
         let xs: Intersections = vec![Intersection {
             t: 2.0f32.sqrt(),
-            object: floor.clone(),
+            object: Rc::new(s.clone()),
         }];
 
         let p = (2f32).sqrt() / 2.;

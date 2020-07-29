@@ -120,7 +120,7 @@ impl Intersection {
         }
 
         // todo: what if no hit?
-        let mut containers: Vec<&Rc<Object>> = vec![];
+        let mut containers: Vec<&Rc<Object>> = Vec::with_capacity(xs.len());
 
         for i in xs.iter() {
             let is_hit = std::ptr::eq(self, i);
@@ -159,21 +159,39 @@ pub trait Intersect {
 
 #[cfg(test)]
 mod tests {
-    use super::super::objects::{Object, Plane, Sphere};
+    use super::super::material::Material;
+    use super::super::objects::{Geometry, Object, Plane, Sphere};
     use super::super::transformations::{scaling, translation};
     use super::super::tuple::{point, vector};
     use super::*;
+
+    fn make_sphere() -> Object {
+        Object {
+            geometry: Geometry::Sphere(Sphere::new()),
+            material: Material::new(),
+        }
+    }
+
+    fn make_glass_sphere() -> Object {
+        let mut material = Material::new();
+        material.transparency = 1.0;
+        material.refractive_index = 1.5;
+        Object {
+            geometry: Geometry::Sphere(Sphere::new()),
+            material,
+        }
+    }
 
     #[test]
     fn getting_the_hit_when_all_are_positive() {
         let ixs: Intersections = vec![
             Intersection {
                 t: 1.0,
-                object: Arc::new(Object::Sphere(Sphere::new())),
+                object: Rc::new(make_sphere()),
             },
             Intersection {
                 t: 2.0,
-                object: Arc::new(Object::Sphere(Sphere::new())),
+                object: Rc::new(make_sphere()),
             },
         ];
 
@@ -189,15 +207,15 @@ mod tests {
         let ixs: Intersections = vec![
             Intersection {
                 t: -1.0,
-                object: Arc::new(Object::Sphere(Sphere::new())),
+                object: Rc::new(make_sphere()),
             },
             Intersection {
                 t: 1.0,
-                object: Arc::new(Object::Sphere(Sphere::new())),
+                object: Rc::new(make_sphere()),
             },
             Intersection {
                 t: 2.0,
-                object: Arc::new(Object::Sphere(Sphere::new())),
+                object: Rc::new(make_sphere()),
             },
         ];
 
@@ -213,11 +231,11 @@ mod tests {
         let ixs: Intersections = vec![
             Intersection {
                 t: -1.0,
-                object: Arc::new(Object::Sphere(Sphere::new())),
+                object: Rc::new(make_sphere()),
             },
             Intersection {
                 t: -2.0,
-                object: Arc::new(Object::Sphere(Sphere::new())),
+                object: Rc::new(make_sphere()),
             },
         ];
 
@@ -233,19 +251,19 @@ mod tests {
         let ixs: Intersections = vec![
             Intersection {
                 t: -1.0,
-                object: Arc::new(Object::Sphere(Sphere::new())),
+                object: Rc::new(make_sphere()),
             },
             Intersection {
                 t: 1.0,
-                object: Arc::new(Object::Sphere(Sphere::new())),
+                object: Rc::new(make_sphere()),
             },
             Intersection {
                 t: -2.0,
-                object: Arc::new(Object::Sphere(Sphere::new())),
+                object: Rc::new(make_sphere()),
             },
             Intersection {
                 t: 2.0,
-                object: Arc::new(Object::Sphere(Sphere::new())),
+                object: Rc::new(make_sphere()),
             },
         ];
 
@@ -262,10 +280,9 @@ mod tests {
             origin: point(0.0, 0.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let s = Object::Sphere(Sphere::new());
         let i = Intersection {
             t: 4.0,
-            object: Arc::new(s),
+            object: Rc::new(make_sphere()),
         };
 
         let c = i.computations(&r, None);
@@ -291,10 +308,9 @@ mod tests {
             origin: point(0.0, 0.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let s = Object::Sphere(Sphere::new());
         let i = Intersection {
             t: 4.0,
-            object: Arc::new(s),
+            object: Rc::new(make_sphere()),
         };
         let c = i.computations(&r, None);
 
@@ -307,10 +323,9 @@ mod tests {
             origin: point(0.0, 0.0, 0.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let s = Object::Sphere(Sphere::new());
         let i = Intersection {
             t: 1.0,
-            object: Arc::new(s),
+            object: Rc::new(make_sphere()),
         };
         let c = i.computations(&r, None);
 
@@ -337,10 +352,12 @@ mod tests {
         };
         let mut s = Sphere::new();
         s.transform = translation(0.0, 0.0, 1.0);
-        let s = Object::Sphere(s);
         let i = Intersection {
             t: 5.0,
-            object: Arc::new(s),
+            object: Rc::new(Object{
+                geometry: Geometry::Sphere(s),
+                material: Material::new(),
+            }),
         };
         let c = i.computations(&r, None);
 
@@ -356,10 +373,12 @@ mod tests {
         };
         let mut s = Sphere::new();
         s.transform = translation(0.0, 0.0, 1.0);
-        let s = Object::Sphere(s);
         let i = Intersection {
             t: 5.0,
-            object: Arc::new(s),
+            object: Rc::new(Object{
+                geometry: Geometry::Sphere(s),
+                material: Material::new(),
+            }),
         };
         let c = i.computations(&r, None);
 
@@ -369,7 +388,10 @@ mod tests {
 
     #[test]
     fn reflection_vector() {
-        let s = Object::Plane(Plane::new());
+        let plane = Object {
+            geometry: Geometry::Plane(Plane::new()),
+            material: Material::new(),
+        };
         let p = 2.0f32.sqrt() / 2.0;
         let r = Ray {
             origin: point(0.0, 1.0, -1.0),
@@ -377,7 +399,7 @@ mod tests {
         };
         let i = Intersection {
             t: p,
-            object: Arc::new(s),
+            object: Rc::new(plane),
         };
         let c = i.computations(&r, None);
 
@@ -389,22 +411,34 @@ mod tests {
     #[test]
     fn finding_n1_and_n2_at_various_intersections() {
         let a = {
-            let mut sphere = Sphere::new_glass();
-            sphere.transform = scaling(2.0, 2.0, 2.0);
-            sphere.material.refractive_index = 1.5;
-            Arc::new(Object::Sphere(sphere))
+            let mut s = Sphere::new();
+            s.transform = scaling(2.0, 2.0, 2.0);
+            let mut s = Object {
+                geometry: Geometry::Sphere(s),
+                material: Material::new(),
+            };
+            s.material.refractive_index = 1.5;
+            Rc::new(s)
         };
         let b = {
-            let mut sphere = Sphere::new_glass();
-            sphere.transform = translation(0.0, 0.0, -0.25);
-            sphere.material.refractive_index = 2.0;
-            Arc::new(Object::Sphere(sphere))
+            let mut s = Sphere::new();
+            s.transform = translation(0.0, 0.0, -0.25);
+            let mut s = Object {
+                geometry: Geometry::Sphere(s),
+                material: Material::new(),
+            };
+            s.material.refractive_index = 2.0;
+            Rc::new(s)
         };
         let c = {
-            let mut sphere = Sphere::new_glass();
-            sphere.transform = translation(0.0, 0.0, 0.25);
-            sphere.material.refractive_index = 2.5;
-            Arc::new(Object::Sphere(sphere))
+            let mut s = Sphere::new();
+            s.transform = translation(0.0, 0.0, 0.25);
+            let mut s = Object {
+                geometry: Geometry::Sphere(s),
+                material: Material::new(),
+            };
+            s.material.refractive_index = 2.5;
+            Rc::new(s)
         };
 
         let r = Ray {
@@ -414,27 +448,27 @@ mod tests {
         let xs: Intersections = vec![
             Intersection {
                 t: 2.0,
-                object: Arc::clone(&a),
+                object: Rc::clone(&a),
             },
             Intersection {
                 t: 2.75,
-                object: Arc::clone(&b),
+                object: Rc::clone(&b),
             },
             Intersection {
                 t: 3.25,
-                object: Arc::clone(&c),
+                object: Rc::clone(&c),
             },
             Intersection {
                 t: 4.75,
-                object: Arc::clone(&b),
+                object: Rc::clone(&b),
             },
             Intersection {
                 t: 5.25,
-                object: Arc::clone(&c),
+                object: Rc::clone(&c),
             },
             Intersection {
                 t: 6.0,
-                object: Arc::clone(&a),
+                object: Rc::clone(&a),
             },
         ];
 
@@ -459,17 +493,19 @@ mod tests {
         });
     }
 
-    fn glass_sphere() -> Sphere {
-        let mut s = Sphere::new();
-        s.material.transparency = 1.0;
-        s.material.refractive_index = 1.5;
-        s
+    fn glass_sphere() -> Object {
+        let mut material = Material::new();
+        material.transparency = 1.0;
+        material.refractive_index = 1.5;
+        Object {
+            geometry: Geometry::Sphere(Sphere::new()),
+            material,
+        }
     }
 
     #[test]
     fn schlick_total_internal_reflection() {
-        let shape = glass_sphere();
-        let shape = Arc::new(Object::Sphere(shape));
+        let shape = Rc::new(make_sphere());
         let p = 2f32.sqrt() / 2.0;
         let ray = Ray {
             origin: point(0.0, 0.0, p),
@@ -492,8 +528,7 @@ mod tests {
 
     #[test]
     fn schlick_perpendicular_angle() {
-        let shape = glass_sphere();
-        let shape = Arc::new(Object::Sphere(shape));
+        let shape = Rc::new(make_glass_sphere());
         let ray = Ray {
             origin: point(0.0, 0.0, 0.0),
             direction: vector(0.0, 1.0, 0.0),
@@ -510,13 +545,13 @@ mod tests {
         ];
         let comps = xs[1].computations(&ray, Some(&xs));
         let reflectance = comps.schlick();
+        println!("{}", reflectance);
         assert!((reflectance - 0.04).abs() < 10e-4);
     }
 
     #[test]
     fn schlick_small_angle_n2_gt_n1() {
-        let shape = glass_sphere();
-        let shape = Arc::new(Object::Sphere(shape));
+        let shape = Rc::new(make_glass_sphere());
         let ray = Ray {
             origin: point(0.0, 0.99, -2.0),
             direction: vector(0.0, 0.0, 1.0),
@@ -532,16 +567,16 @@ mod tests {
 
     #[test]
     fn schlick_when_n2_eq_0_must_be_1() {
-        let comps = Computations{
+        let comps = Computations {
             t: 0.0,
-            object: Arc::new(Object::Sphere(Sphere::new())),
+            object: Rc::new(make_glass_sphere()),
             inside: false,
-            point: point(0.,0.,0.),
-            eye: vector(-1.,0.,0.),
-            normal: vector(1.,0.,0.),
-            reflection: vector(-1.,0.,0.),
-            over_point: point(0.001,0.001,0.001),
-            under_point: point(-0.001,-0.001,-0.001),
+            point: point(0., 0., 0.),
+            eye: vector(-1., 0., 0.),
+            normal: vector(1., 0., 0.),
+            reflection: vector(-1., 0., 0.),
+            over_point: point(0.001, 0.001, 0.001),
+            under_point: point(-0.001, -0.001, -0.001),
             n1: 1.0,
             n2: 0.0,
         };

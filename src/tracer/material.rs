@@ -89,7 +89,7 @@ pub trait HasMaterial {
 mod test {
     use super::super::light::*;
     use super::super::material::Material;
-    use super::super::objects::{Object, Sphere};
+    use super::super::objects::{Geometry, Object, Sphere};
     use super::super::patterns::Pattern;
     use super::super::tuple::{color, point, vector};
 
@@ -106,7 +106,10 @@ mod test {
             kind: LightKind::Point,
         };
         let result = mat.lighting(
-            &Object::Sphere(Sphere::new()),
+            &Object {
+                geometry: Geometry::Sphere(Sphere::new()),
+                material: Material::new(),
+            },
             &light,
             pos,
             eyev,
@@ -133,7 +136,10 @@ mod test {
             kind: LightKind::Point,
         };
         let result = mat.lighting(
-            &Object::Sphere(Sphere::new()),
+            &Object {
+                geometry: Geometry::Sphere(Sphere::new()),
+                material: Material::new(),
+            },
             &light,
             pos,
             eyev,
@@ -161,7 +167,10 @@ mod test {
             kind: LightKind::Point,
         };
         let result = mat.lighting(
-            &Object::Sphere(Sphere::new()),
+            &Object {
+                geometry: Geometry::Sphere(Sphere::new()),
+                material: Material::new(),
+            },
             &light,
             pos,
             eyev,
@@ -190,7 +199,10 @@ mod test {
             kind: LightKind::Point,
         };
         let result = mat.lighting(
-            &Object::Sphere(Sphere::new()),
+            &Object {
+                geometry: Geometry::Sphere(Sphere::new()),
+                material: Material::new(),
+            },
             &light,
             pos,
             eyev,
@@ -217,7 +229,10 @@ mod test {
             kind: LightKind::Point,
         };
         let result = mat.lighting(
-            &Object::Sphere(Sphere::new()),
+            &Object {
+                geometry: Geometry::Sphere(Sphere::new()),
+                material: Material::new(),
+            },
             &light,
             pos,
             eyev,
@@ -243,7 +258,10 @@ mod test {
             kind: LightKind::Point,
         };
         let result = mat.lighting(
-            &Object::Sphere(Sphere::new()),
+            &Object {
+                geometry: Geometry::Sphere(Sphere::new()),
+                material: Material::new(),
+            },
             &light,
             pos,
             eyev,
@@ -277,7 +295,10 @@ mod test {
         };
 
         let c1 = mat.lighting(
-            &Object::Sphere(Sphere::new()),
+            &Object {
+                geometry: Geometry::Sphere(Sphere::new()),
+                material: Material::new(),
+            },
             &light,
             point(0.9, 0.0, 0.0),
             eyev.clone(),
@@ -285,7 +306,10 @@ mod test {
             0.0,
         );
         let c2 = mat.lighting(
-            &Object::Sphere(Sphere::new()),
+            &Object {
+                geometry: Geometry::Sphere(Sphere::new()),
+                material: Material::new(),
+            },
             &light,
             point(1.0, 0.0, 0.0),
             eyev,
