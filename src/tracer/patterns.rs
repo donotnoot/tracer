@@ -14,19 +14,33 @@ pub enum Pattern {
     Mandelbrot(Tup, Option<Mat>),
 }
 
+#[derive(Debug)]
+enum TwoColors {
+    ColorA,
+    ColorB,
+}
+
 impl Pattern {
     pub fn at(&self, p: &Tup) -> Tup {
         match self {
-            Pattern::Stripe(a, b, _) => Pattern::stripe(p, a.clone(), b.clone()),
-            Pattern::Gradient(a, b, _) => Pattern::gradient(p, a.clone(), b.clone()),
-            Pattern::Checker(a, b, _) => Pattern::checker(p, a.clone(), b.clone()),
-            Pattern::Ring(a, b, _) => Pattern::ring(p, a.clone(), b.clone()),
+            Pattern::Stripe(a, b, _) => match Pattern::stripe(p) {
+                TwoColors::ColorA => a.clone(),
+                TwoColors::ColorB => b.clone(),
+            },
+            Pattern::Gradient(a, b, _) => Pattern::gradient(p, a, b),
+            Pattern::Checker(a, b, _) => match Pattern::checker(p) {
+                TwoColors::ColorA => a.clone(),
+                TwoColors::ColorB => b.clone(),
+            },
+            Pattern::Ring(a, b, _) => match Pattern::ring(p) {
+                TwoColors::ColorA => a.clone(),
+                TwoColors::ColorB => b.clone(),
+            },
             Pattern::Mandelbrot(a, _) => Pattern::mandelbrot(p, a.clone()),
         }
     }
 
     pub fn at_object(&self, o: &Object, p: &Tup) -> Tup {
-        // TODO: avoid all the .clones() with closure for common opearation
         let object_space = &o.transformation().inverse() * p;
         let transform = match self {
             Pattern::Stripe(_, _, Some(t)) => t.clone(),
@@ -38,13 +52,7 @@ impl Pattern {
         };
         let pattern_space = &transform.inverse() * &object_space;
 
-        match self {
-            Pattern::Stripe(a, b, _) => Pattern::stripe(&pattern_space, a.clone(), b.clone()),
-            Pattern::Gradient(a, b, _) => Pattern::gradient(&pattern_space, a.clone(), b.clone()),
-            Pattern::Checker(a, b, _) => Pattern::checker(&pattern_space, a.clone(), b.clone()),
-            Pattern::Ring(a, b, _) => Pattern::ring(&pattern_space, a.clone(), b.clone()),
-            Pattern::Mandelbrot(a, _) => Pattern::mandelbrot(&pattern_space, a.clone()),
-        }
+        self.at(&pattern_space)
     }
 
     fn mandelbrot(p: &Tup, a: Tup) -> Tup {
@@ -79,34 +87,34 @@ impl Pattern {
         }
     }
 
-    fn stripe(p: &Tup, a: Tup, b: Tup) -> Tup {
+    fn stripe(p: &Tup) -> TwoColors {
         if p.x.floor() as i64 % 2 == 0 {
-            a
+            TwoColors::ColorA
         } else {
-            b
+            TwoColors::ColorB
         }
     }
 
-    fn checker(p: &Tup, a: Tup, b: Tup) -> Tup {
+    fn checker(p: &Tup) -> TwoColors {
         if (p.x.floor() + p.y.floor() + p.z.floor()) as i64 % 2 == 0 {
-            a
+            TwoColors::ColorA
         } else {
-            b
+            TwoColors::ColorB
         }
     }
 
-    fn ring(p: &Tup, a: Tup, b: Tup) -> Tup {
+    fn ring(p: &Tup) -> TwoColors {
         if ((p.x.powi(2) + p.z.powi(2)).sqrt()).floor() as i64 % 2 == 0 {
-            a
+            TwoColors::ColorA
         } else {
-            b
+            TwoColors::ColorB
         }
     }
 
-    fn gradient(p: &Tup, a: Tup, b: Tup) -> Tup {
-        let dist = &b - &a;
+    fn gradient(p: &Tup, a: &Tup, b: &Tup) -> Tup {
+        let dist = b - a;
         let frac = p.x - p.x.floor();
-        &a + &(&dist * frac)
+        a + &(dist * frac)
     }
 }
 
