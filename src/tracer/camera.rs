@@ -101,21 +101,32 @@ impl Camera {
         }
     }
 
-    pub fn render(&self, w: World, tx: Sender<Pixel>, shuffle: bool) {
-        let mut locations: Vec<(u32, u32, Sender<Pixel>)> =
-            Vec::with_capacity((self.h_size * self.v_size) as usize);
+    pub fn render(&self, w: World, tx: Sender<Pixel>, shuffle: bool, tile_size: u32) {
+        let mut tiles: Vec<(u32, u32)> =
+            Vec::with_capacity((self.h_size * self.v_size) as usize / tile_size as usize);
 
-        for y in 0..self.v_size as u32 {
-            for x in 0..self.h_size as u32 {
-                locations.push((x, y, tx.clone()));
+        for y in (0..self.v_size as u32).step_by(tile_size as usize) {
+            for x in (0..self.h_size as u32).step_by(tile_size as usize) {
+                tiles.push((x,y));
             }
         }
 
         if shuffle {
-            locations.shuffle(&mut thread_rng());
+            tiles.shuffle(&mut thread_rng());
         }
 
-        locations
+        let mut pixels: Vec<(u32, u32, Sender<Pixel>)> =
+            Vec::with_capacity((self.h_size * self.v_size) as usize);
+
+        tiles.into_iter().for_each(|(x, y)| {
+            for y in y..(y+tile_size) {
+                for x in x..(x+tile_size) {
+                    pixels.push((x, y, tx.clone()));
+                }
+            }
+        });
+
+        pixels
             .into_par_iter()
             .with_max_len(1)
             .for_each(|(x, y, tx)| {
