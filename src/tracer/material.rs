@@ -92,7 +92,8 @@ pub trait HasMaterial {
     fn material(&self) -> Material;
 }
 
-mod test {
+#[cfg(test)]
+mod tests {
     use super::super::light::*;
     use super::super::material::Material;
     use super::super::objects::{Geometry, Object, Sphere};
