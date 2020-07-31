@@ -82,6 +82,12 @@ impl Material {
     }
 }
 
+impl Default for Material {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub trait HasMaterial {
     fn material(&self) -> Material;
 }

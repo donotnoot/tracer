@@ -55,7 +55,7 @@ impl Pattern {
         self.at(&pattern_space)
     }
 
-    fn mandelbrot(p: &Tup, a: Tup) -> Tup {
+    fn mandelbrot(point: &Tup, a: Tup) -> Tup {
         let max_iterations = 256u16;
         let img_side = 800u32;
         let cxmin = -2f32;
@@ -65,22 +65,22 @@ impl Pattern {
         let _scalex = (cxmax - cxmin) / img_side as f32;
         let _scaley = (cymax - cymin) / img_side as f32;
 
-        let cx = cxmin + p.x as f32;
-        let cy = cymin + p.z as f32;
+        let cx = cxmin + point.x as f32;
+        let cy = cymin + point.z as f32;
 
-        let c = Complex::new(cx, cy);
+        let complex = Complex::new(cx, cy);
         let mut z = Complex::new(0f32, 0f32);
 
-        let mut i = 0;
+        let mut escape_t = 0;
         for t in 0..max_iterations {
             if z.norm() > 2.0 {
                 break;
             }
-            z = z * z + c;
-            i = t;
+            z = z * z + complex;
+            escape_t = t;
         }
 
-        if i >= max_iterations - 1 {
+        if escape_t >= max_iterations - 1 {
             color(0.0, 0.0, 0.0)
         } else {
             a

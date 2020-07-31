@@ -1,4 +1,4 @@
-use super::intersections::{hit, Computations, Intersect, Intersections};
+use super::intersections::{hit, Computations, Intersections};
 use super::light::*;
 use super::material::Material;
 use super::objects::{Geometry, Object, Sphere};
@@ -219,6 +219,12 @@ impl World {
         };
 
         &self.color_at(&refracted_ray, depth_remaining - 1) * c.object.material.transparency
+    }
+}
+
+impl Default for World {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

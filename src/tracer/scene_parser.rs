@@ -11,8 +11,8 @@ use super::world::World;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::error::Error;
-use std::sync::Arc;
-use std::io;
+
+
 
 #[derive(Debug, Deserialize)]
 struct SceneFile {
@@ -285,7 +285,7 @@ pub fn from_reader(r: impl std::io::Read) -> Result<(World, Camera, RenderingSpe
 }
 
 impl SceneFile {
-    fn process_transformations(&self, t: &Vec<TransformSpec>) -> Mat {
+    fn process_transformations(&self, t: &[TransformSpec]) -> Mat {
         let mut m = matrix::identity(4);
 
         for transform in t.iter() {

@@ -22,9 +22,9 @@ pub enum Kind {
 impl Kind {
     fn worst(&self, rhs: &Kind) -> Kind {
         if (*self) as i32 > (*rhs) as i32 {
-            rhs.clone()
+            *rhs
         } else {
-            self.clone()
+            *self
         }
     }
 }

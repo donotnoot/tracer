@@ -48,7 +48,7 @@ impl Worker for WorkerService {
             None => {
                 return Err(Status::new(
                     Code::InvalidArgument,
-                    format!("invalid rendering spec"),
+                    "invalid rendering spec".to_string(),
                 ))
             }
         };
@@ -113,14 +113,11 @@ impl Worker for WorkerService {
                         pixels: batch.clone(),
                     });
 
-                    match tx.send(job).await {
-                        Err(err) => {
-                            return Err(Status::new(
-                                Code::Internal,
-                                format!("could not send pixel batch to client: {}", err),
-                            ))
-                        }
-                        _ => (),
+                    if let Err(err) = tx.send(job).await {
+                        return Err(Status::new(
+                            Code::Internal,
+                            format!("could not send pixel batch to client: {}", err),
+                        ));
                     }
                     batch = vec![];
                 }
@@ -130,14 +127,11 @@ impl Worker for WorkerService {
                 pixels: batch.clone(),
             });
 
-            match tx.send(job).await {
-                Err(err) => {
-                    return Err(Status::new(
-                        Code::Internal,
-                        format!("could not send pixel batch to client: {}", err),
-                    ))
-                }
-                _ => (),
+            if let Err(err) = tx.send(job).await {
+                return Err(Status::new(
+                    Code::Internal,
+                    format!("could not send pixel batch to client: {}", err),
+                ));
             }
 
             println!("done!");

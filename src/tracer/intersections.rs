@@ -3,11 +3,11 @@ use super::ray::Ray;
 
 use super::tuple::{dot, Tup};
 use std::rc::Rc;
-use std::sync::Arc;
+
 
 pub type Intersections = Vec<Intersection>;
 
-pub fn hit(i: &Intersections) -> (f32, usize, bool) {
+pub fn hit(i: &[Intersection]) -> (f32, usize, bool) {
     let mut min = std::f32::INFINITY;
     let mut index: usize = 0;
     let mut hit = false;
@@ -111,7 +111,7 @@ impl Intersection {
         }
     }
 
-    fn calculate_refractions(&self, xs: &Intersections) -> (f32, f32) {
+    fn calculate_refractions(&self, xs: &[Intersection]) -> (f32, f32) {
         let mut n1: f32 = 1.0;
         let mut n2: f32 = 1.0;
 

@@ -1,4 +1,4 @@
-use super::intersections::{Intersect, Intersection, Intersections};
+use super::intersections::{Intersection, Intersections};
 use super::material::Material;
 use super::matrix::{identity, Mat};
 use super::ray::Ray;
@@ -42,8 +42,8 @@ impl Object {
         let ref_clone = Rc::new(object.clone());
 
         match &object.geometry {
-            Geometry::Sphere(o) => match o.intersect(&common(r, &o.transform)) {
-                Some((t1, t2)) => {
+            Geometry::Sphere(o) => {
+                if let Some((t1, t2)) = o.intersect(&common(r, &o.transform)) {
                     v.push(Intersection {
                         t: t1,
                         object: Rc::clone(&ref_clone),
@@ -53,17 +53,15 @@ impl Object {
                         object: Rc::clone(&ref_clone),
                     });
                 }
-                None => (),
-            },
-            Geometry::Plane(o) => match o.intersect(&common(r, &o.transform)) {
-                Some(t1) => {
+            }
+            Geometry::Plane(o) => {
+                if let Some(t1) = o.intersect(&common(r, &o.transform)) {
                     v.push(Intersection {
                         t: t1,
                         object: Rc::clone(&ref_clone),
                     });
                 }
-                None => (),
-            },
+            }
         };
 
         v
@@ -88,19 +86,6 @@ impl Sphere {
             transform: identity(4),
         }
     }
-
-    // /// Creates a new sphere with a material that resembles glass.
-    // pub fn new_glass() -> Self {
-    //     Sphere {
-    //         transform: identity(4),
-    //         material: {
-    //             let mut m = Material::new();
-    //             m.transparency = 1.0;
-    //             m.refractive_index = 1.5;
-    //             m
-    //         },
-    //     }
-    // }
 
     fn normal(&self, p: &Tup) -> Tup {
         p - &point(0.0, 0.0, 0.0)
@@ -130,6 +115,12 @@ impl Sphere {
     }
 }
 
+impl Default for Sphere {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Plane {
     pub transform: Mat,
@@ -155,6 +146,12 @@ impl Plane {
     }
 }
 
+impl Default for Plane {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::super::transformations::{rotate_z, scaling, translation};
@@ -169,7 +166,7 @@ mod tests {
         let mut s = Sphere::new();
         s.transform = scaling(2.0, 2.0, 2.0);
 
-        let obj = Object{
+        let obj = Object {
             geometry: Geometry::Sphere(s),
             material: Material::new(),
         };
@@ -188,7 +185,7 @@ mod tests {
         let mut s = Sphere::new();
         s.transform = translation(5.0, 2.0, 2.0);
 
-        let obj = Object{
+        let obj = Object {
             geometry: Geometry::Sphere(s),
             material: Material::new(),
         };
@@ -229,7 +226,7 @@ mod tests {
             let mut s = Sphere::new();
             s.transform = translation(0.0, 1.0, 0.0);
 
-            let obj = Object{
+            let obj = Object {
                 geometry: Geometry::Sphere(s),
                 material: Material::new(),
             };
@@ -245,7 +242,7 @@ mod tests {
             s.transform = scaling(1.0, 0.5, 1.0) * rotate_z(std::f32::consts::PI / 5.0);
 
             let p = 2.0_f32.sqrt() / 2.0;
-            let obj = Object{
+            let obj = Object {
                 geometry: Geometry::Sphere(s),
                 material: Material::new(),
             };
