@@ -1,0 +1,182 @@
+use std::convert::TryInto;
+use std::sync::mpsc;
+use std::sync::mpsc::{Receiver, Sender};
+use std::thread;
+
+use raylib::color::Color;
+use raylib::prelude::*;
+use rstracer::tracer::canvas::{Canvas, Pixel};
+use rstracer::tracer::tuple::{color, Tup};
+use rstracer::tracer::*;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let (world, camera, rendering_spec) = scene_parser::from_reader(std::io::stdin())?;
+
+    let mut canvas = OpenGLCanvas::new(
+        camera.h_size as u32,
+        camera.v_size as u32,
+        "OpenGL Canvas".to_string(),
+        world.background_color.clone(),
+    );
+
+    let (tx, rx): (Sender<Pixel>, Receiver<Pixel>) = mpsc::channel();
+
+    thread::spawn(move || {
+        camera.render(world, tx, rendering_spec.randomize_rays, 10);
+    });
+
+    canvas.run(rx);
+
+    Ok(())
+}
+
+pub struct OpenGLCanvas {
+    pub pixels: Vec<Pixel>,
+    pub height: u32,
+    pub width: u32,
+    pub title: String,
+}
+
+impl OpenGLCanvas {
+    pub fn new(width: u32, height: u32, title: String, background_color: Tup) -> Self {
+        let mut pixels = vec![];
+
+        for x in 0..width {
+            for y in 0..height {
+                pixels.push(Pixel {
+                    x,
+                    y,
+                    p: background_color.clone(),
+                })
+            }
+        }
+
+        OpenGLCanvas {
+            pixels,
+            height,
+            width,
+            title,
+        }
+    }
+
+    fn offset(&self, x: u32, y: u32) -> usize {
+        (y * self.width + x).try_into().unwrap()
+    }
+
+    fn tup_to_rl_color(&self, t: Tup) -> raylib::color::Color {
+        fn s(f: f32) -> u8 {
+            let n = (255.0 * f).ceil() as i16;
+            if n > 255 {
+                return 255 as u8;
+            }
+            if n < 0 {
+                return 0 as u8;
+            }
+            n as u8
+        }
+        raylib::color::Color {
+            r: s(t.x),
+            g: s(t.y),
+            b: s(t.z),
+            a: 255,
+        }
+    }
+
+    pub fn run(&mut self, rx: Receiver<Pixel>) {
+        let (mut rl, thread) = raylib::init()
+            .size(self.width as i32, self.height as i32)
+            .title(&self.title)
+            .build();
+
+        let mut show_hud = false;
+        let total_pixels = self.width * self.height;
+        let mut update_counter = 60;
+        let mut pixels_received: i64 = 0;
+        let mut pixels_s: i32 = 0;
+        let mut eta: i32 = 0;
+
+        let stats_bg_color = Color::new(20, 20, 20, 230);
+        let stats_fg_color = Color::new(255, 255, 255, 255);
+
+        while !rl.window_should_close() {
+            // Get as many pixels as possible.
+            while let Ok(pixel) = rx.try_recv() {
+                self.write_pixel(pixel.x, pixel.y, pixel.p);
+                pixels_received += 1;
+            }
+
+            if rl.is_key_pressed(KeyboardKey::KEY_S) {
+                show_hud = !show_hud;
+            }
+
+            if update_counter == 60 {
+                let t = rl.get_time() as i64;
+                pixels_s = if t != 0 {
+                    (pixels_received / t) as i32
+                } else {
+                    pixels_received as i32
+                };
+                eta = (total_pixels as i64 - pixels_received) as i32 / (pixels_s + 1);
+                update_counter = 0;
+            }
+            update_counter += 1;
+
+            let mut d = rl.begin_drawing(&thread);
+            d.clear_background(Color::BLACK);
+
+            for x in 0..self.width as i32 {
+                for y in 0..self.height as i32 {
+                    d.draw_pixel(
+                        x,
+                        y,
+                        self.tup_to_rl_color(self.pixel_at(x as u32, y as u32)),
+                    )
+                }
+            }
+
+            if show_hud {
+                let progress_ratio = pixels_received as f32 / total_pixels as f32;
+                let progress_percent = progress_ratio * 100.;
+
+                d.draw_rectangle(
+                    5,
+                    5,
+                    5 + ((self.width - 15) as f32 * progress_ratio) as i32,
+                    10,
+                    raylib::color::Color::BLUE,
+                );
+                d.draw_rectangle(5, 15, 200, 100, &stats_bg_color);
+                d.draw_text(
+                    &format!(
+                        "progress: {:.1}%\npixels/s: {}\nETA: {}s",
+                        progress_percent, pixels_s, eta
+                    )
+                    .to_owned(),
+                    10,
+                    20,
+                    20,
+                    &stats_fg_color,
+                );
+            }
+        }
+    }
+}
+
+impl Canvas for OpenGLCanvas {
+    fn pixels(&mut self) -> &mut Vec<Pixel> {
+        &mut self.pixels
+    }
+
+    fn write_pixel(&mut self, x: u32, y: u32, color: Tup) {
+        let offset = self.offset(x, y);
+        let l = (self.height * self.width) - 1;
+        if offset as u32 > l {
+            return;
+        }
+        self.pixels[offset] = Pixel { x, y, p: color };
+    }
+
+    fn pixel_at(&self, x: u32, y: u32) -> Tup {
+        self.pixels[self.offset(x, y)].p.clone()
+    }
+}
