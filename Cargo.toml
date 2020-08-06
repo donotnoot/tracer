@@ -18,6 +18,8 @@ serde_yaml = "0.8"
 tokio = { version = "0.2", features = ["macros", "sync", "stream", "time"] }
 tonic = "0.3"
 async-stream = "0.2"
+log = "0.4"
+pretty_env_logger = "0.4"
 
 [build-dependencies]
 tonic-build = "0.3"
@@ -26,5 +28,5 @@ tonic-build = "0.3"
 debug = true
 
 [profile.release]
-debug = true
+# debug = true
 lto = true
