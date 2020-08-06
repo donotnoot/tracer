@@ -1,25 +1,8 @@
 syntax = "proto3";
 
-import "google/protobuf/empty.proto";
-
 option go_package = "github.com/donotnoot/tracer/netcode/pkg/pb";
 
 package net_render;
-
-// Spec represents the spec for a scene.
-message Spec {
-	string id = 1;
-	string spec = 2;
-}
-
-// Job is a single job for a worker.
-message Job {
-	// Spec id for the scene.
-	string scene_id = 1;
-
-	// The pixel tiles that are supposed to be rendered.
-	repeated Tile tiles = 2;
-}
 
 // A tile represents a single renderable tile of pixels. Starts at (x,y), ends
 // at (x+size, y+size).
@@ -29,8 +12,8 @@ message Tile {
 	uint32 size = 3;
 }
 
-// JobResult is the result of a single job processed by a worker.
-message JobResult {
+// Pixels is the result of a single job processed by a worker.
+message Pixels {
 	repeated Pixel pixels = 1;
 }
 
@@ -38,10 +21,20 @@ message JobResult {
 message Pixel {
 	uint32 x = 1;
 	uint32 y = 2;
-	uint32 color = 3; // color in 4 bit RGBA packed format.
+	fixed32 color = 3; // color in 4 byte RGBA packed format.
 }
 
+// Job is the stream of messgaes for the server to consume. Scene will be sent
+// once, on the first message. The rest of the messages will all be of type
+// Tile, asking for a tile to be rendered.
+message Job {
+	oneof request {
+		string scene = 1;
+		Tile tile = 2;
+	}
+}
+
+// Worker is a worker server for Distracer.
 service Worker {
-	rpc Scene(Spec) returns (google.protobuf.Empty);
-	rpc Work(Job) returns (stream JobResult);
+	rpc Render(stream Job) returns (stream Pixels);
 }
