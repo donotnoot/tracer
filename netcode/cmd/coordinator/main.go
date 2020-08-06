@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 	"flag"
+	"io"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/donotnoot/tracer/netcode/pkg/pb"
@@ -24,6 +26,7 @@ type Network struct {
 
 type WorkerSpec struct {
 	Address string `yaml:"address"`
+	Name    string `yaml:"name"`
 }
 
 type TilingSpec struct {
@@ -42,12 +45,20 @@ type CameraSpec struct {
 	Height float32 `yaml:"height"`
 }
 
+type Worker struct {
+	Address        string
+	Name           string
+	Client         pb.Worker_RenderClient
+	CompletedTiles int32
+}
+
 var (
 	networkFile = flag.String("network", "", "network specification file")
 	sceneFile   = flag.String("scene", "", "scene specification file")
 )
 
 func main() {
+	ctx := context.Background()
 	rand.Seed(time.Now().UnixNano())
 	flag.Parse()
 
@@ -81,95 +92,119 @@ func main() {
 		log.Println("network spec OK")
 	}
 
-	connections := make([]pb.WorkerClient, 0, len(network.Workers))
-	for _, workerSpec := range network.Workers {
-		log.Println("dialling...", workerSpec.Address)
-		connection, err := grpc.Dial(workerSpec.Address, grpc.WithInsecure())
+	workers := make([]*Worker, 0, len(network.Workers))
+	for _, worker := range network.Workers {
+		worker := worker
+
+		log.Println("dialling", worker.Address)
+		connection, err := grpc.Dial(worker.Address, grpc.WithInsecure())
 		if err != nil {
 			log.Fatalf("fail to dial: %v", err)
 		}
-		defer connection.Close()
+		defer func() {
+			log.Println("closing connection to", worker.Address, connection.Close())
+		}()
 		client := pb.NewWorkerClient(connection)
-		log.Println("sending spec to worker...", scene.id)
-		_, err = client.Scene(context.Background(), &pb.Spec{
-			Id:   scene.id,
-			Spec: sceneRaw,
-		})
+
+		renderClient, err := client.Render(ctx)
 		if err != nil {
-			log.Fatal("could not send scene to worker", err)
+			log.Fatalf("could not establish render connection with %s: %s", worker.Address, err)
 		}
-		connections = append(connections, client)
+		defer func() {
+			log.Println("closing render client stream from", worker.Address, renderClient.CloseSend())
+		}()
+
+		if err := renderClient.Send(&pb.Job{
+			Request: &pb.Job_Scene{
+				Scene: sceneRaw,
+			},
+		}); err != nil {
+			log.Fatalf("could not send the spec to %s: %s", worker.Address, err)
+		}
+		log.Printf("scene sent to %s successfully", worker.Address)
+
+		workers = append(workers, &Worker{
+			Address:        worker.Address,
+			Client:         renderClient,
+			Name:           worker.Name,
+			CompletedTiles: 0,
+		})
 	}
 
-	tiles := make([]*pb.Tile, 0)
-	{
+	// Make sure all the tiles are dealt with, exactly once.
+	tiles := make(chan *pb.Tile)
+	tileList := make([]*pb.Tile, 0, int(width*height))
+	go func() {
+		defer close(tiles)
+
 		for x := int32(0); x < width; x += int32(network.Tiling.Size) {
 			for y := int32(0); y < height; y += int32(network.Tiling.Size) {
-				tiles = append(tiles, &pb.Tile{X: uint32(x), Y: uint32(y), Size: uint32(network.Tiling.Size)})
+				tileList = append(tileList, &pb.Tile{X: uint32(x), Y: uint32(y), Size: uint32(network.Tiling.Size)})
 			}
 		}
-	}
-	tilesPerWorker := len(tiles) / len(network.Workers)
-	rand.Shuffle(len(tiles), func(a, b int) { tiles[a], tiles[b] = tiles[b], tiles[a] })
 
-	jobs := make(map[string]*pb.Job)
-	workerAddresses := make([]string, 0, len(network.Workers))
-	for _, worker := range network.Workers {
-		jobs[worker.Address] = &pb.Job{
-			SceneId: scene.id,
-			Tiles:   make([]*pb.Tile, 0, tilesPerWorker),
+		rand.Shuffle(len(tileList), func(a, b int) { tileList[a], tileList[b] = tileList[b], tileList[a] })
+
+		for _, tile := range tileList {
+			tiles <- tile
 		}
-		workerAddresses = append(workerAddresses, worker.Address)
-	}
-
-	currentWorker := 0
-	for _, tile := range tiles {
-		jobs[workerAddresses[currentWorker]].Tiles = append(jobs[workerAddresses[currentWorker]].Tiles, tile)
-		if len(jobs[workerAddresses[currentWorker]].Tiles) >= tilesPerWorker {
-			currentWorker++
-		}
-	}
-
-	startedAt := time.Now()
-
-	pixels := make(chan *pb.Pixel)
-	wg := &sync.WaitGroup{}
-	wg.Add(len(network.Workers))
-	for i, client := range connections {
-		go func(i int, client pb.WorkerClient) {
-			defer wg.Done()
-
-			stream, err := client.Work(context.Background(), jobs[workerAddresses[i]])
-			if err != nil {
-				panic(err)
-			}
-
-			for {
-				jobResult, err := stream.Recv()
-				if err != nil {
-					log.Println(err)
-					break
-				}
-				for _, pixel := range jobResult.Pixels {
-					pixels <- pixel
-				}
-			}
-		}(i, client)
-	}
-
-	buffer := make([]*pb.Pixel, 0)
-
-	go func() {
-		wg.Wait()
-		close(pixels)
-		log.Println("completed in", time.Since(startedAt))
 	}()
 
+	wg := &sync.WaitGroup{}
+	pixels := make(chan *pb.Pixel)
+	startedAt := time.Now()
+	go func() {
+		wg.Wait()
+
+		close(pixels)
+		log.Println("completed in", time.Since(startedAt))
+		for _, worker := range workers {
+			percentage := float64(worker.CompletedTiles) / float64(len(tileList)) * 100
+			log.Printf("%q completed %d tiles, that's %.2f%%", worker.Name, worker.CompletedTiles, percentage)
+		}
+	}()
+
+	// Read from the pixels channel and append them to the buffer, to later
+	// draw them.
+	buffer := make([]*pb.Pixel, 0)
 	go func() {
 		for pixel := range pixels {
 			buffer = append(buffer, pixel)
 		}
 	}()
+
+	// Finally, send the work to the workers!
+	wg.Add(len(workers))
+	for _, client := range workers {
+		go func(worker *Worker) {
+			defer wg.Done()
+
+			for tile := range tiles {
+				if err := worker.Client.Send(&pb.Job{
+					Request: &pb.Job_Tile{
+						Tile: tile,
+					},
+				}); err != nil {
+					log.Fatal(err)
+				}
+				sentAt := time.Now()
+
+				// Wait for the result...
+				recv, err := worker.Client.Recv()
+				if err != nil {
+					if err == io.EOF {
+						break
+					}
+					log.Fatal(err)
+				}
+				log.Printf("%q processed tile in %v", worker.Name, time.Since(sentAt))
+				atomic.AddInt32(&worker.CompletedTiles, 1)
+				for _, pixel := range recv.Pixels {
+					pixels <- pixel
+				}
+			}
+		}(client)
+	}
 
 	rl.InitWindow(width, height, "Distracer!")
 	defer rl.CloseWindow()
