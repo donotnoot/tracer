@@ -7,7 +7,6 @@ import (
 	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -25,104 +24,6 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// Spec represents the spec for a scene.
-type Spec struct {
-	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Spec                 string   `protobuf:"bytes,2,opt,name=spec,proto3" json:"spec,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *Spec) Reset()         { *m = Spec{} }
-func (m *Spec) String() string { return proto.CompactTextString(m) }
-func (*Spec) ProtoMessage()    {}
-func (*Spec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9ea114fcbf489839, []int{0}
-}
-
-func (m *Spec) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Spec.Unmarshal(m, b)
-}
-func (m *Spec) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Spec.Marshal(b, m, deterministic)
-}
-func (m *Spec) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Spec.Merge(m, src)
-}
-func (m *Spec) XXX_Size() int {
-	return xxx_messageInfo_Spec.Size(m)
-}
-func (m *Spec) XXX_DiscardUnknown() {
-	xxx_messageInfo_Spec.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Spec proto.InternalMessageInfo
-
-func (m *Spec) GetId() string {
-	if m != nil {
-		return m.Id
-	}
-	return ""
-}
-
-func (m *Spec) GetSpec() string {
-	if m != nil {
-		return m.Spec
-	}
-	return ""
-}
-
-// Job is a single job for a worker.
-type Job struct {
-	// Spec id for the scene.
-	SceneId string `protobuf:"bytes,1,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`
-	// The pixel tiles that are supposed to be rendered.
-	Tiles                []*Tile  `protobuf:"bytes,2,rep,name=tiles,proto3" json:"tiles,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *Job) Reset()         { *m = Job{} }
-func (m *Job) String() string { return proto.CompactTextString(m) }
-func (*Job) ProtoMessage()    {}
-func (*Job) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9ea114fcbf489839, []int{1}
-}
-
-func (m *Job) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Job.Unmarshal(m, b)
-}
-func (m *Job) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Job.Marshal(b, m, deterministic)
-}
-func (m *Job) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Job.Merge(m, src)
-}
-func (m *Job) XXX_Size() int {
-	return xxx_messageInfo_Job.Size(m)
-}
-func (m *Job) XXX_DiscardUnknown() {
-	xxx_messageInfo_Job.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Job proto.InternalMessageInfo
-
-func (m *Job) GetSceneId() string {
-	if m != nil {
-		return m.SceneId
-	}
-	return ""
-}
-
-func (m *Job) GetTiles() []*Tile {
-	if m != nil {
-		return m.Tiles
-	}
-	return nil
-}
-
 // A tile represents a single renderable tile of pixels. Starts at (x,y), ends
 // at (x+size, y+size).
 type Tile struct {
@@ -138,7 +39,7 @@ func (m *Tile) Reset()         { *m = Tile{} }
 func (m *Tile) String() string { return proto.CompactTextString(m) }
 func (*Tile) ProtoMessage()    {}
 func (*Tile) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9ea114fcbf489839, []int{2}
+	return fileDescriptor_9ea114fcbf489839, []int{0}
 }
 
 func (m *Tile) XXX_Unmarshal(b []byte) error {
@@ -180,40 +81,40 @@ func (m *Tile) GetSize() uint32 {
 	return 0
 }
 
-// JobResult is the result of a single job processed by a worker.
-type JobResult struct {
+// Pixels is the result of a single job processed by a worker.
+type Pixels struct {
 	Pixels               []*Pixel `protobuf:"bytes,1,rep,name=pixels,proto3" json:"pixels,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *JobResult) Reset()         { *m = JobResult{} }
-func (m *JobResult) String() string { return proto.CompactTextString(m) }
-func (*JobResult) ProtoMessage()    {}
-func (*JobResult) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9ea114fcbf489839, []int{3}
+func (m *Pixels) Reset()         { *m = Pixels{} }
+func (m *Pixels) String() string { return proto.CompactTextString(m) }
+func (*Pixels) ProtoMessage()    {}
+func (*Pixels) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9ea114fcbf489839, []int{1}
 }
 
-func (m *JobResult) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_JobResult.Unmarshal(m, b)
+func (m *Pixels) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Pixels.Unmarshal(m, b)
 }
-func (m *JobResult) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_JobResult.Marshal(b, m, deterministic)
+func (m *Pixels) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Pixels.Marshal(b, m, deterministic)
 }
-func (m *JobResult) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_JobResult.Merge(m, src)
+func (m *Pixels) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Pixels.Merge(m, src)
 }
-func (m *JobResult) XXX_Size() int {
-	return xxx_messageInfo_JobResult.Size(m)
+func (m *Pixels) XXX_Size() int {
+	return xxx_messageInfo_Pixels.Size(m)
 }
-func (m *JobResult) XXX_DiscardUnknown() {
-	xxx_messageInfo_JobResult.DiscardUnknown(m)
+func (m *Pixels) XXX_DiscardUnknown() {
+	xxx_messageInfo_Pixels.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_JobResult proto.InternalMessageInfo
+var xxx_messageInfo_Pixels proto.InternalMessageInfo
 
-func (m *JobResult) GetPixels() []*Pixel {
+func (m *Pixels) GetPixels() []*Pixel {
 	if m != nil {
 		return m.Pixels
 	}
@@ -224,7 +125,7 @@ func (m *JobResult) GetPixels() []*Pixel {
 type Pixel struct {
 	X                    uint32   `protobuf:"varint,1,opt,name=x,proto3" json:"x,omitempty"`
 	Y                    uint32   `protobuf:"varint,2,opt,name=y,proto3" json:"y,omitempty"`
-	Color                uint32   `protobuf:"varint,3,opt,name=color,proto3" json:"color,omitempty"`
+	Color                uint32   `protobuf:"fixed32,3,opt,name=color,proto3" json:"color,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -234,7 +135,7 @@ func (m *Pixel) Reset()         { *m = Pixel{} }
 func (m *Pixel) String() string { return proto.CompactTextString(m) }
 func (*Pixel) ProtoMessage()    {}
 func (*Pixel) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9ea114fcbf489839, []int{4}
+	return fileDescriptor_9ea114fcbf489839, []int{2}
 }
 
 func (m *Pixel) XXX_Unmarshal(b []byte) error {
@@ -276,39 +177,118 @@ func (m *Pixel) GetColor() uint32 {
 	return 0
 }
 
+// Job is the stream of messgaes for the server to consume. Scene will be sent
+// once, on the first message. The rest of the messages will all be of type
+// Tile, asking for a tile to be rendered.
+type Job struct {
+	// Types that are valid to be assigned to Request:
+	//	*Job_Scene
+	//	*Job_Tile
+	Request              isJob_Request `protobuf_oneof:"request"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
+}
+
+func (m *Job) Reset()         { *m = Job{} }
+func (m *Job) String() string { return proto.CompactTextString(m) }
+func (*Job) ProtoMessage()    {}
+func (*Job) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9ea114fcbf489839, []int{3}
+}
+
+func (m *Job) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Job.Unmarshal(m, b)
+}
+func (m *Job) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Job.Marshal(b, m, deterministic)
+}
+func (m *Job) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Job.Merge(m, src)
+}
+func (m *Job) XXX_Size() int {
+	return xxx_messageInfo_Job.Size(m)
+}
+func (m *Job) XXX_DiscardUnknown() {
+	xxx_messageInfo_Job.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Job proto.InternalMessageInfo
+
+type isJob_Request interface {
+	isJob_Request()
+}
+
+type Job_Scene struct {
+	Scene string `protobuf:"bytes,1,opt,name=scene,proto3,oneof"`
+}
+
+type Job_Tile struct {
+	Tile *Tile `protobuf:"bytes,2,opt,name=tile,proto3,oneof"`
+}
+
+func (*Job_Scene) isJob_Request() {}
+
+func (*Job_Tile) isJob_Request() {}
+
+func (m *Job) GetRequest() isJob_Request {
+	if m != nil {
+		return m.Request
+	}
+	return nil
+}
+
+func (m *Job) GetScene() string {
+	if x, ok := m.GetRequest().(*Job_Scene); ok {
+		return x.Scene
+	}
+	return ""
+}
+
+func (m *Job) GetTile() *Tile {
+	if x, ok := m.GetRequest().(*Job_Tile); ok {
+		return x.Tile
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*Job) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*Job_Scene)(nil),
+		(*Job_Tile)(nil),
+	}
+}
+
 func init() {
-	proto.RegisterType((*Spec)(nil), "net_render.Spec")
-	proto.RegisterType((*Job)(nil), "net_render.Job")
 	proto.RegisterType((*Tile)(nil), "net_render.Tile")
-	proto.RegisterType((*JobResult)(nil), "net_render.JobResult")
+	proto.RegisterType((*Pixels)(nil), "net_render.Pixels")
 	proto.RegisterType((*Pixel)(nil), "net_render.Pixel")
+	proto.RegisterType((*Job)(nil), "net_render.Job")
 }
 
 func init() { proto.RegisterFile("proto/net_render.proto", fileDescriptor_9ea114fcbf489839) }
 
 var fileDescriptor_9ea114fcbf489839 = []byte{
-	// 336 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x51, 0xcf, 0x4b, 0xf3, 0x40,
-	0x10, 0x25, 0x69, 0xd2, 0xef, 0xeb, 0x68, 0xfd, 0xb1, 0x68, 0x89, 0xf5, 0x52, 0x72, 0x90, 0x5a,
-	0x24, 0xa9, 0x15, 0x0a, 0x5e, 0x05, 0x41, 0x7b, 0x92, 0x54, 0x10, 0xbc, 0x14, 0xb3, 0x19, 0xe3,
-	0xd2, 0x34, 0xb3, 0x6c, 0xb6, 0xd0, 0xfa, 0xd7, 0xcb, 0x6e, 0xaa, 0x56, 0x0f, 0xde, 0xe6, 0xbd,
-	0x99, 0xd9, 0x37, 0xef, 0x2d, 0x74, 0xa4, 0x22, 0x4d, 0x71, 0x89, 0x7a, 0xa6, 0xb0, 0xcc, 0x50,
-	0x45, 0x96, 0x60, 0xf0, 0xcd, 0x74, 0x4f, 0x73, 0xa2, 0xbc, 0xc0, 0xd8, 0x76, 0xd2, 0xe5, 0x6b,
-	0x8c, 0x0b, 0xa9, 0xd7, 0xf5, 0x60, 0x38, 0x00, 0x6f, 0x2a, 0x91, 0xb3, 0x3d, 0x70, 0x45, 0x16,
-	0x38, 0x3d, 0xa7, 0xdf, 0x4a, 0x5c, 0x91, 0x31, 0x06, 0x5e, 0x25, 0x91, 0x07, 0xae, 0x65, 0x6c,
-	0x1d, 0xde, 0x41, 0x63, 0x42, 0x29, 0x3b, 0x81, 0xff, 0x15, 0xc7, 0x12, 0x67, 0x5f, 0x0b, 0xff,
-	0x2c, 0xbe, 0xcf, 0xd8, 0x19, 0xf8, 0x5a, 0x14, 0x58, 0x05, 0x6e, 0xaf, 0xd1, 0xdf, 0x19, 0x1d,
-	0x44, 0x5b, 0x87, 0x3d, 0x8a, 0x02, 0x93, 0xba, 0x1d, 0x8e, 0xc1, 0x33, 0x90, 0xed, 0x82, 0xb3,
-	0xb2, 0x6f, 0xb4, 0x13, 0x67, 0x65, 0xd0, 0xda, 0x0a, 0xb6, 0x13, 0x67, 0x6d, 0x2f, 0x10, 0xef,
-	0x18, 0x34, 0x2c, 0x61, 0xeb, 0x70, 0x0c, 0xad, 0x09, 0xa5, 0x09, 0x56, 0xcb, 0x42, 0xb3, 0x73,
-	0x68, 0x4a, 0xb1, 0xc2, 0xa2, 0x0a, 0x1c, 0xab, 0x76, 0xb8, 0xad, 0xf6, 0x60, 0x3a, 0xc9, 0x66,
-	0x20, 0xbc, 0x06, 0xdf, 0x12, 0x7f, 0x0a, 0x1e, 0x81, 0xcf, 0xa9, 0x20, 0xb5, 0x51, 0xac, 0xc1,
-	0x68, 0x01, 0xcd, 0x27, 0x52, 0x73, 0x54, 0xec, 0x12, 0xfc, 0xa9, 0xf1, 0xc9, 0x7e, 0xd8, 0x32,
-	0xe9, 0x75, 0x3b, 0x51, 0x9d, 0x71, 0xf4, 0x99, 0x71, 0x74, 0x6b, 0x32, 0x66, 0x43, 0xf0, 0xcc,
-	0x32, 0xdb, 0xdf, 0xde, 0x98, 0x50, 0xda, 0x3d, 0xfe, 0x45, 0xd4, 0x96, 0x86, 0xce, 0xcd, 0xc5,
-	0xf3, 0x20, 0x17, 0xfa, 0x6d, 0x99, 0x46, 0x9c, 0x16, 0x71, 0x46, 0x25, 0xe9, 0x92, 0x48, 0xc7,
-	0x5a, 0xbd, 0x70, 0x54, 0xe6, 0xa3, 0x39, 0x65, 0x18, 0xcb, 0x79, 0x1e, 0xcb, 0x34, 0x6d, 0x5a,
-	0xbd, 0xab, 0x8f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x2d, 0x90, 0x2b, 0xd6, 0x07, 0x02, 0x00, 0x00,
+	// 277 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x90, 0xcf, 0x4b, 0xfb, 0x40,
+	0x10, 0xc5, 0xbb, 0xdf, 0xfc, 0x28, 0x9d, 0x7e, 0x45, 0x5d, 0xa4, 0x04, 0x4f, 0x25, 0x07, 0x89,
+	0x22, 0x89, 0xa6, 0x20, 0x88, 0xb7, 0x9e, 0x4a, 0x4f, 0x65, 0x11, 0x04, 0x2f, 0x62, 0x92, 0xa1,
+	0x86, 0xc6, 0x4c, 0xdc, 0xdd, 0x42, 0xea, 0x5f, 0x2f, 0x99, 0x08, 0x06, 0x04, 0x6f, 0xf3, 0x3e,
+	0xfb, 0x66, 0xdf, 0xcc, 0xc0, 0xac, 0xd1, 0x64, 0x29, 0xa9, 0xd1, 0xbe, 0x68, 0xac, 0x0b, 0xd4,
+	0x31, 0x03, 0x09, 0x3f, 0x24, 0xbc, 0x03, 0xf7, 0xb1, 0xac, 0x50, 0xfe, 0x07, 0xd1, 0x06, 0x62,
+	0x2e, 0xa2, 0x23, 0x25, 0xda, 0x4e, 0x1d, 0x82, 0x7f, 0xbd, 0x3a, 0x48, 0x09, 0xae, 0x29, 0x3f,
+	0x31, 0x70, 0x18, 0x70, 0x1d, 0x2e, 0xc0, 0xdf, 0x94, 0x2d, 0x56, 0x46, 0x5e, 0x82, 0xdf, 0x70,
+	0x15, 0x88, 0xb9, 0x13, 0x4d, 0xd3, 0xd3, 0x78, 0x10, 0xc8, 0x1e, 0xf5, 0x6d, 0x08, 0xef, 0xc1,
+	0x63, 0xf0, 0x67, 0xda, 0x19, 0x78, 0x39, 0x55, 0xa4, 0x39, 0x6e, 0xac, 0x7a, 0x11, 0x6e, 0xc0,
+	0x59, 0x53, 0x26, 0x67, 0xe0, 0x99, 0x1c, 0x6b, 0xe4, 0xe6, 0xc9, 0x6a, 0xa4, 0x7a, 0x29, 0x2f,
+	0xc0, 0xb5, 0x65, 0x85, 0xfc, 0xcb, 0x34, 0x3d, 0x19, 0x8e, 0xd0, 0xad, 0xb7, 0x1a, 0x29, 0x7e,
+	0x5f, 0x4e, 0x60, 0xac, 0xf1, 0x63, 0x8f, 0xc6, 0xa6, 0x0f, 0xe0, 0x3f, 0x91, 0xde, 0xa1, 0x96,
+	0xb7, 0xe0, 0x2b, 0xf6, 0xca, 0xe3, 0x61, 0xe3, 0x9a, 0xb2, 0x73, 0xf9, 0x6b, 0x19, 0x13, 0x89,
+	0x1b, 0xb1, 0xbc, 0x7e, 0xbe, 0xda, 0x96, 0xf6, 0x6d, 0x9f, 0xc5, 0x39, 0xbd, 0x27, 0x05, 0xd5,
+	0x64, 0x6b, 0x22, 0x9b, 0x58, 0xfd, 0x9a, 0xa3, 0xee, 0x4e, 0x9e, 0x53, 0x81, 0x49, 0xb3, 0xdb,
+	0x26, 0x4d, 0x96, 0xf9, 0x7c, 0xf7, 0xc5, 0x57, 0x00, 0x00, 0x00, 0xff, 0xff, 0xeb, 0xdb, 0x2d,
+	0xc0, 0x91, 0x01, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -323,8 +303,7 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type WorkerClient interface {
-	Scene(ctx context.Context, in *Spec, opts ...grpc.CallOption) (*empty.Empty, error)
-	Work(ctx context.Context, in *Job, opts ...grpc.CallOption) (Worker_WorkClient, error)
+	Render(ctx context.Context, opts ...grpc.CallOption) (Worker_RenderClient, error)
 }
 
 type workerClient struct {
@@ -335,41 +314,31 @@ func NewWorkerClient(cc grpc.ClientConnInterface) WorkerClient {
 	return &workerClient{cc}
 }
 
-func (c *workerClient) Scene(ctx context.Context, in *Spec, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, "/net_render.Worker/Scene", in, out, opts...)
+func (c *workerClient) Render(ctx context.Context, opts ...grpc.CallOption) (Worker_RenderClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_Worker_serviceDesc.Streams[0], "/net_render.Worker/Render", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
-}
-
-func (c *workerClient) Work(ctx context.Context, in *Job, opts ...grpc.CallOption) (Worker_WorkClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Worker_serviceDesc.Streams[0], "/net_render.Worker/Work", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &workerWorkClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
+	x := &workerRenderClient{stream}
 	return x, nil
 }
 
-type Worker_WorkClient interface {
-	Recv() (*JobResult, error)
+type Worker_RenderClient interface {
+	Send(*Job) error
+	Recv() (*Pixels, error)
 	grpc.ClientStream
 }
 
-type workerWorkClient struct {
+type workerRenderClient struct {
 	grpc.ClientStream
 }
 
-func (x *workerWorkClient) Recv() (*JobResult, error) {
-	m := new(JobResult)
+func (x *workerRenderClient) Send(m *Job) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *workerRenderClient) Recv() (*Pixels, error) {
+	m := new(Pixels)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -378,78 +347,57 @@ func (x *workerWorkClient) Recv() (*JobResult, error) {
 
 // WorkerServer is the server API for Worker service.
 type WorkerServer interface {
-	Scene(context.Context, *Spec) (*empty.Empty, error)
-	Work(*Job, Worker_WorkServer) error
+	Render(Worker_RenderServer) error
 }
 
 // UnimplementedWorkerServer can be embedded to have forward compatible implementations.
 type UnimplementedWorkerServer struct {
 }
 
-func (*UnimplementedWorkerServer) Scene(ctx context.Context, req *Spec) (*empty.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Scene not implemented")
-}
-func (*UnimplementedWorkerServer) Work(req *Job, srv Worker_WorkServer) error {
-	return status.Errorf(codes.Unimplemented, "method Work not implemented")
+func (*UnimplementedWorkerServer) Render(srv Worker_RenderServer) error {
+	return status.Errorf(codes.Unimplemented, "method Render not implemented")
 }
 
 func RegisterWorkerServer(s *grpc.Server, srv WorkerServer) {
 	s.RegisterService(&_Worker_serviceDesc, srv)
 }
 
-func _Worker_Scene_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Spec)
-	if err := dec(in); err != nil {
+func _Worker_Render_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(WorkerServer).Render(&workerRenderServer{stream})
+}
+
+type Worker_RenderServer interface {
+	Send(*Pixels) error
+	Recv() (*Job, error)
+	grpc.ServerStream
+}
+
+type workerRenderServer struct {
+	grpc.ServerStream
+}
+
+func (x *workerRenderServer) Send(m *Pixels) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *workerRenderServer) Recv() (*Job, error) {
+	m := new(Job)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
-	if interceptor == nil {
-		return srv.(WorkerServer).Scene(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/net_render.Worker/Scene",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WorkerServer).Scene(ctx, req.(*Spec))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Worker_Work_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(Job)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(WorkerServer).Work(m, &workerWorkServer{stream})
-}
-
-type Worker_WorkServer interface {
-	Send(*JobResult) error
-	grpc.ServerStream
-}
-
-type workerWorkServer struct {
-	grpc.ServerStream
-}
-
-func (x *workerWorkServer) Send(m *JobResult) error {
-	return x.ServerStream.SendMsg(m)
+	return m, nil
 }
 
 var _Worker_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "net_render.Worker",
 	HandlerType: (*WorkerServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "Scene",
-			Handler:    _Worker_Scene_Handler,
-		},
-	},
+	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "Work",
-			Handler:       _Worker_Work_Handler,
+			StreamName:    "Render",
+			Handler:       _Worker_Render_Handler,
 			ServerStreams: true,
+			ClientStreams: true,
 		},
 	},
 	Metadata: "proto/net_render.proto",
