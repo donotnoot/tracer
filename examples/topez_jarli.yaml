@@ -1,16 +1,16 @@
 background_color: "black"
 rendering:
-  randomize_rays: false
+  randomize_rays: true
   max_bounces: 256
-  antialias: 4
+  antialias: 2
 light:
   position: [0, 5.0, -5.0]
   intensity: "white"
   kind: null
 camera:
-  width: 1920
-  height: 1080
-  fov: 30
+  width: 1280
+  height: 800
+  fov: 45
   from: [-5, 2, -5]
   to: [0, 0, 0]
   up: [0, 1, 0]
@@ -21,7 +21,7 @@ materials:
   bw_checker:
     color: "black"
     pattern:
-      type: "Ring"
+      type: "Checker"
       color_a: "black"
       color_b: "white"
   blue:
@@ -46,13 +46,6 @@ objects:
     transform:
       - Translation: [0, -10.0, 0]
 
-  # # Ceiling
-  # - shape: "Plane"
-  #   material: "bw_checker"
-  #   transform:
-  #     - RotateY: 180
-  #     - Translation: [0, 10.0, 0]
-
   # Left wall
   - shape: "Plane"
     material: "bw_checker"
@@ -70,11 +63,7 @@ objects:
 
   # Glass ball
   - shape: "Sphere"
-    transform: []
-    material: "glass"
-
-  - shape: "Sphere"
     transform:
-      - Translation: [ 3., 0, 3. ]
-      # - Scaling: [ .5, .5, .5 ]
+      - Scaling: [2, 1, 1]
+      # - Shearing: [0, 0, 1, 0, 0, 0]
     material: "blue"
