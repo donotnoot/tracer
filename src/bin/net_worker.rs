@@ -1,18 +1,15 @@
 #![recursion_limit = "1024"]
 
+use clap::{App, Arg};
 use futures::{Stream, StreamExt};
 use log::*;
 use pretty_env_logger;
-use rand::seq::SliceRandom;
-use rand::thread_rng;
 use rayon::prelude::*;
 use rstracer::tracer::*;
-use std::collections::HashMap;
+use std::env;
 use std::error::Error;
+use std::net::{IpAddr, Ipv4Addr, SocketAddr, SocketAddrV4, UdpSocket};
 use std::pin::Pin;
-use std::sync::{Arc, Mutex};
-use std::thread;
-use tokio::sync::mpsc;
 use tonic::transport::Server;
 use tonic::{Code, Request, Response, Status, Streaming};
 
@@ -22,7 +19,7 @@ pub mod net_render {
 
 use net_render::job::Request as JobRequest;
 use net_render::worker_server::{Worker, WorkerServer};
-use net_render::{Job, Pixel, Pixels, Tile};
+use net_render::{Job, Pixel, Pixels};
 
 #[derive(Debug)]
 pub struct WorkerService {}
@@ -50,7 +47,7 @@ impl Worker for WorkerService {
         }?;
         info!("Received scene successfully");
 
-        let (world, camera, rendering_spec) = match scene_parser::from_reader(scene.as_bytes()) {
+        let (world, camera, _) = match scene_parser::from_reader(scene.as_bytes()) {
             Ok((world, camera, rendering_spec)) => Ok((world, camera, rendering_spec)),
             Err(err) => Err(Status::new(
                 Code::InvalidArgument,
@@ -103,15 +100,102 @@ fn tup_to_u32_color(t: tuple::Tup) -> u32 {
     ((c(t.x) as u32) << 16) + ((c(t.y) as u32) << 8) + (c(t.z) as u32)
 }
 
+fn local_ip_address() -> Option<IpAddr> {
+    let socket = match UdpSocket::bind("0.0.0.0:0") {
+        Ok(s) => s,
+        Err(_) => return None,
+    };
+
+    match socket.connect("8.8.8.8:80") {
+        Ok(()) => (),
+        Err(_) => return None,
+    };
+
+    match socket.local_addr() {
+        Ok(addr) => return Some(addr.ip()),
+        Err(_) => return None,
+    };
+}
+
+fn open_port_upnp(port: u16, seconds: u32) -> Result<SocketAddrV4, Box<dyn Error>> {
+    let local_addr = match local_ip_address().unwrap() {
+        IpAddr::V4(addr) => Ok(addr),
+        _ => Err("Address must be IP V4".to_string()),
+    }?;
+    let socket_v4 = SocketAddrV4::new(local_addr, port);
+
+    let gateway = igd::search_gateway(Default::default())?;
+    info!("Found UPnP gateway!");
+
+    gateway.remove_port(igd::PortMappingProtocol::TCP, port)?;
+    info!("Removed possible existing mapping.");
+
+    gateway.add_port(
+        igd::PortMappingProtocol::TCP,
+        port,
+        socket_v4,
+        seconds,
+        "Distracer over UPnP",
+    )?;
+    info!("Mapped port {} for {} seconds.", port, seconds);
+
+    if let Ok(external_ip) = gateway.get_external_ip() {
+        info!("External IP: {}", external_ip);
+    }
+
+    Ok(socket_v4)
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     pretty_env_logger::formatted_builder()
         .filter(None, log::LevelFilter::Info)
         .init();
 
-    let addr = "0.0.0.0:9000".parse().unwrap();
+    let matches = App::new("Distracer Worker")
+        .version("0.1.0")
+        .arg(
+            Arg::new("upnp")
+                .long("upnp")
+                .default_value("true")
+                .about("Enables opening port using UPnP."),
+        )
+        .arg(
+            Arg::new("upnp_lease_length")
+                .long("upnp-lease-length")
+                .default_value("3600")
+                .about("The lease of the UPnP port forward in seconds."),
+        )
+        .arg(
+            Arg::new("port")
+                .short('p')
+                .long("port")
+                .default_value("11811")
+                .about("Port on which to start serving"),
+        )
+        .get_matches();
+
+    let port: u16 = matches.value_of_t("port").unwrap();
+    info!("Using port {}", port);
+
+    let socket_v4 = if matches.value_of_t("upnp").unwrap_or(true) {
+        info!("Mapping port externally using UPnP");
+
+        let lease_length: u32 = matches.value_of_t("upnp_lease_length").unwrap();
+        info!("UPnP lease lenght requested: {}", lease_length);
+
+        open_port_upnp(port, lease_length)?
+    } else {
+        SocketAddrV4::new(Ipv4Addr::new(0, 0, 0, 0), port)
+    };
+
     let svc = WorkerServer::new(WorkerService {});
-    info!("Serving on {}", addr);
-    Server::builder().add_service(svc).serve(addr).await?;
+
+    info!("Serving on {}", socket_v4);
+    Server::builder()
+        .add_service(svc)
+        .serve(SocketAddr::V4(socket_v4))
+        .await?;
+
     Ok(())
 }
