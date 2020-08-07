@@ -6,7 +6,6 @@ use log::*;
 use pretty_env_logger;
 use rayon::prelude::*;
 use rstracer::tracer::*;
-use std::env;
 use std::error::Error;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, SocketAddrV4, UdpSocket};
 use std::pin::Pin;
