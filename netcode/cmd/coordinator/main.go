@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	fmt "fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -45,11 +46,18 @@ type CameraSpec struct {
 	Height float32 `yaml:"height"`
 }
 
+type TileInProgress struct {
+	Tile      *pb.Tile
+	StartedAt time.Time
+	Color     rl.Color
+}
+
 type Worker struct {
-	Address        string
-	Name           string
-	Client         pb.Worker_RenderClient
-	CompletedTiles int32
+	Address             string
+	Name                string
+	Client              pb.Worker_RenderClient
+	CompletedTiles      int32
+	TileInProgressColor rl.Color
 }
 
 var (
@@ -57,10 +65,31 @@ var (
 	sceneFile   = flag.String("scene", "", "scene specification file")
 )
 
+var RaylibColors = []rl.Color{
+	rl.LightGray,
+	rl.Gray,
+	rl.Yellow,
+	rl.Gold,
+	rl.Orange,
+	rl.Pink,
+	rl.Red,
+	rl.Green,
+	rl.Lime,
+	rl.SkyBlue,
+	rl.Blue,
+	rl.Purple,
+	rl.Violet,
+	rl.Beige,
+	rl.Brown,
+	rl.Magenta,
+}
+
 func main() {
 	ctx := context.Background()
 	rand.Seed(time.Now().UnixNano())
 	flag.Parse()
+
+	rand.Shuffle(len(RaylibColors), func(a, b int) { RaylibColors[a], RaylibColors[b] = RaylibColors[b], RaylibColors[a] })
 
 	var sceneRaw string
 	scene := &Scene{id: uuid.New().String()}
@@ -93,7 +122,7 @@ func main() {
 	}
 
 	workers := make([]*Worker, 0, len(network.Workers))
-	for _, worker := range network.Workers {
+	for i, worker := range network.Workers {
 		worker := worker
 
 		log.Println("dialling", worker.Address)
@@ -124,10 +153,11 @@ func main() {
 		log.Printf("scene sent to %s successfully", worker.Address)
 
 		workers = append(workers, &Worker{
-			Address:        worker.Address,
-			Client:         renderClient,
-			Name:           worker.Name,
-			CompletedTiles: 0,
+			Address:             worker.Address,
+			Client:              renderClient,
+			Name:                worker.Name,
+			TileInProgressColor: RaylibColors[i],
+			CompletedTiles:      0,
 		})
 	}
 
@@ -153,16 +183,6 @@ func main() {
 	wg := &sync.WaitGroup{}
 	pixels := make(chan *pb.Pixel)
 	startedAt := time.Now()
-	go func() {
-		wg.Wait()
-
-		close(pixels)
-		log.Println("completed in", time.Since(startedAt))
-		for _, worker := range workers {
-			percentage := float64(worker.CompletedTiles) / float64(len(tileList)) * 100
-			log.Printf("%q completed %d tiles, that's %.2f%%", worker.Name, worker.CompletedTiles, percentage)
-		}
-	}()
 
 	// Read from the pixels channel and append them to the buffer, to later
 	// draw them.
@@ -173,11 +193,41 @@ func main() {
 		}
 	}()
 
+	// Keep track of which tiles are being generated.
+	generating := make(map[string]*TileInProgress)
+	generatingMu := &sync.RWMutex{}
+	setGenerating := func(key string, tile *pb.Tile, startedAt time.Time, color rl.Color) {
+		generatingMu.Lock()
+		defer generatingMu.Unlock()
+		generating[key] = &TileInProgress{
+			Tile:      tile,
+			StartedAt: startedAt,
+			Color:     color,
+		}
+	}
+	unsetGenerating := func(key string) {
+		generatingMu.Lock()
+		defer generatingMu.Unlock()
+		delete(generating, key)
+	}
+	getTilesBeingGenerated := func() []*TileInProgress {
+		generatingMu.RLock()
+		defer generatingMu.RUnlock()
+		r := make([]*TileInProgress, 0, len(generating))
+		for _, v := range generating {
+			r = append(r, v)
+		}
+		return r
+	}
+
 	// Finally, send the work to the workers!
 	wg.Add(len(workers))
-	for _, client := range workers {
+	for _, worker := range workers {
 		go func(worker *Worker) {
-			defer wg.Done()
+			defer func() {
+				unsetGenerating(worker.Name)
+				wg.Done()
+			}()
 
 			for tile := range tiles {
 				if err := worker.Client.Send(&pb.Job{
@@ -188,6 +238,8 @@ func main() {
 					log.Fatal(err)
 				}
 				sentAt := time.Now()
+
+				setGenerating(worker.Name, tile, sentAt, worker.TileInProgressColor)
 
 				// Wait for the result...
 				recv, err := worker.Client.Recv()
@@ -203,8 +255,23 @@ func main() {
 					pixels <- pixel
 				}
 			}
-		}(client)
+		}(worker)
 	}
+
+	// Wait async for all the goroutines to exit. Ideally this should be in the
+	// main thread instead of a goroutine, but Raylib needs to run in the main
+	// thread because OpenGL needs thread-local state and will only run in the
+	// main thread (without bugging up, that is).
+	go func() {
+		wg.Wait()
+
+		close(pixels)
+		log.Println("completed in", time.Since(startedAt))
+		for _, worker := range workers {
+			percentage := float64(worker.CompletedTiles) / float64(len(tileList)) * 100
+			log.Printf("%q completed %d tiles, that's %.2f%%", worker.Name, worker.CompletedTiles, percentage)
+		}
+	}()
 
 	rl.InitWindow(width, height, "Distracer!")
 	defer rl.CloseWindow()
@@ -212,10 +279,18 @@ func main() {
 
 	for !rl.WindowShouldClose() {
 		rl.BeginDrawing()
-		rl.ClearBackground(rl.RayWhite)
+		rl.ClearBackground(rl.Black)
 
 		for _, p := range buffer {
 			rl.DrawPixel(int32(p.X), int32(p.Y), pixelToRlColor(p.Color))
+		}
+
+		for _, elem := range getTilesBeingGenerated() {
+			sizeDiv2 := int32(elem.Tile.Size / 2)
+			centerX := int32(elem.Tile.X) + sizeDiv2
+			centerY := int32(elem.Tile.Y) + sizeDiv2
+			rl.DrawCircle(centerX, centerY, float32(sizeDiv2), elem.Color)
+			rl.DrawText(fmt.Sprintf("%d", time.Since(elem.StartedAt).Milliseconds()), centerX-10, centerY-5, 10, rl.Black)
 		}
 
 		rl.EndDrawing()
