@@ -195,53 +195,45 @@ impl<'a, 'b> std::ops::Mul<&'b Mat> for &'a Mat {
     type Output = Mat;
 
     fn mul(self, rhs: &'b Mat) -> Mat {
-        unsafe { matrix_matrix_mul_avx2(self, rhs) }
+        mat_mat_mul_brute(self, rhs)
     }
 }
 
-#[target_feature(enable = "avx2")]
-unsafe fn matrix_matrix_mul_avx2(lhs: &Mat, rhs: &Mat) -> Mat {
-    use core::arch::x86_64::*;
+fn mat_mat_mul_brute(lhs: &Mat, rhs: &Mat) -> Mat {
+    let mut result = mat(4);
+    result.kind = lhs.kind.worst(&rhs.kind);
 
-    let mut m = mat(lhs.size);
-    m.kind = lhs.kind.worst(&rhs.kind);
-
-    for row in 0..rhs.size {
-        for col in (0..lhs.size).step_by(2) {
-            let next_col = col + 1;
-
-            let result: [f32; 8] = {
-                let lhs = _mm256_set_ps(
-                    lhs.mat[row][0],
-                    lhs.mat[row][1],
-                    lhs.mat[row][2],
-                    lhs.mat[row][3],
-                    lhs.mat[row][0],
-                    lhs.mat[row][1],
-                    lhs.mat[row][2],
-                    lhs.mat[row][3],
-                );
-                let rhs = _mm256_set_ps(
-                    rhs.mat[0][next_col],
-                    rhs.mat[1][next_col],
-                    rhs.mat[2][next_col],
-                    rhs.mat[3][next_col],
-                    rhs.mat[0][col],
-                    rhs.mat[1][col],
-                    rhs.mat[2][col],
-                    rhs.mat[3][col],
-                );
-                let result = _mm256_mul_ps(lhs, rhs);
-                let mut unpacked: [f32; 8] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
-                _mm256_storeu_ps(&mut unpacked[0], result);
-                unpacked
-            };
-            m.mat[row][col] = result[0..4].iter().sum::<f32>();
-            m.mat[row][next_col] = result[4..].iter().sum::<f32>();
+    macro_rules! mat_mul {
+        ($row: expr, $col: expr) => {
+            result.mat[$row][$col] =
+                lhs.mat[$row][0] * rhs.mat[0][$col] +
+                lhs.mat[$row][1] * rhs.mat[1][$col] +
+                lhs.mat[$row][2] * rhs.mat[2][$col] +
+                lhs.mat[$row][3] * rhs.mat[3][$col];
         }
     }
 
-    m
+    mat_mul!(0, 0);
+    mat_mul!(0, 1);
+    mat_mul!(0, 2);
+    mat_mul!(0, 3);
+
+    mat_mul!(1, 0);
+    mat_mul!(1, 1);
+    mat_mul!(1, 2);
+    mat_mul!(1, 3);
+
+    mat_mul!(2, 0);
+    mat_mul!(2, 1);
+    mat_mul!(2, 2);
+    mat_mul!(2, 3);
+
+    mat_mul!(3, 0);
+    mat_mul!(3, 1);
+    mat_mul!(3, 2);
+    mat_mul!(3, 3);
+
+    result
 }
 
 /// Matrix multiplication (move)
@@ -254,35 +246,21 @@ impl std::ops::Mul<Mat> for Mat {
 }
 
 /// Matrix multiplication by a tuple
-impl<'a, 'b> std::ops::Mul<&'b tuple::Tup> for &'a Mat {
-    type Output = tuple::Tup;
+impl<'a, 'b> std::ops::Mul<&'b Tup> for &'a Mat {
+    type Output = Tup;
 
-    fn mul(self, r: &'b tuple::Tup) -> tuple::Tup {
-        unsafe { matrix_tup_mul_avx2(self, r) }
+    fn mul(self, rhs: &'b Tup) -> Tup {
+        mat_tup_mul_brute(self, rhs)
     }
 }
 
-#[target_feature(enable = "avx2")]
-unsafe fn matrix_tup_mul_avx2(lhs: &Mat, rhs: &Tup) -> Tup {
-    use core::arch::x86_64::*;
-    let (x, y, z, w) = {
-        let rhs = _mm256_set_ps(rhs.w, rhs.z, rhs.y, rhs.x, rhs.w, rhs.z, rhs.y, rhs.x);
+pub fn mat_tup_mul_brute(lhs: &Mat, rhs: &Tup) -> Tup {
+    let x = lhs.mat[0][0] * rhs.x + lhs.mat[0][1] * rhs.y + lhs.mat[0][2] * rhs.z + lhs.mat[0][3] * rhs.w;
+    let y = lhs.mat[1][0] * rhs.x + lhs.mat[1][1] * rhs.y + lhs.mat[1][2] * rhs.z + lhs.mat[1][3] * rhs.w;
+    let z = lhs.mat[2][0] * rhs.x + lhs.mat[2][1] * rhs.y + lhs.mat[2][2] * rhs.z + lhs.mat[2][3] * rhs.w;
+    let w = lhs.mat[3][0] * rhs.x + lhs.mat[3][1] * rhs.y + lhs.mat[3][2] * rhs.z + lhs.mat[3][3] * rhs.w;
 
-        let lhs0 = _mm256_loadu_ps(&lhs.mat[0][0] as *const f32);
-        let result0 = _mm256_mul_ps(lhs0, rhs);
-
-        let lhs1 = _mm256_loadu_ps(&lhs.mat[2][0] as *const f32);
-        let result1 = _mm256_mul_ps(lhs1, rhs);
-
-        let result = _mm256_hadd_ps(result0, result1);
-        let result = _mm256_hadd_ps(result, _mm256_set1_ps(0.0));
-
-        let mut unpacked: [f32; 8] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
-        _mm256_storeu_ps(&mut unpacked[0] as *mut f32, result);
-
-        (unpacked[0], unpacked[4], unpacked[1], unpacked[5])
-    };
-    Tup { x, y, z, w }
+    Tup{x, y, z, w}
 }
 
 pub fn mat(size: usize) -> Mat {
