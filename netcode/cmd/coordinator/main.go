@@ -47,9 +47,10 @@ type CameraSpec struct {
 }
 
 type TileInProgress struct {
-	Tile      *pb.Tile
-	StartedAt time.Time
-	Color     rl.Color
+	Tile       *pb.Tile
+	StartedAt  time.Time
+	Color      rl.Color
+	WorkerName string
 }
 
 type Worker struct {
@@ -200,9 +201,10 @@ func main() {
 		generatingMu.Lock()
 		defer generatingMu.Unlock()
 		generating[key] = &TileInProgress{
-			Tile:      tile,
-			StartedAt: startedAt,
-			Color:     color,
+			Tile:       tile,
+			StartedAt:  startedAt,
+			Color:      color,
+			WorkerName: key,
 		}
 	}
 	unsetGenerating := func(key string) {
@@ -290,7 +292,7 @@ func main() {
 			centerX := int32(elem.Tile.X) + sizeDiv2
 			centerY := int32(elem.Tile.Y) + sizeDiv2
 			rl.DrawCircle(centerX, centerY, float32(sizeDiv2), elem.Color)
-			rl.DrawText(fmt.Sprintf("%d", time.Since(elem.StartedAt).Milliseconds()), centerX-10, centerY-5, 10, rl.Black)
+			rl.DrawText(fmt.Sprintf("%s", elem.WorkerName), centerX-10, centerY-5, 10, rl.Black)
 		}
 
 		rl.EndDrawing()
