@@ -17,6 +17,7 @@ pub struct Object {
 pub enum Geometry {
     Sphere(Sphere),
     Plane(Plane),
+    Cube(Cube),
 }
 
 impl Object {
@@ -26,6 +27,7 @@ impl Object {
         let (local_normal, shape_transform) = match &self.geometry {
             Geometry::Sphere(o) => (o.normal(&local_point(&o.transform)), &o.transform),
             Geometry::Plane(o) => (o.normal(&local_point(&o.transform)), &o.transform),
+            Geometry::Cube(o) => (o.normal(&local_point(&o.transform)), &o.transform),
         };
 
         let mut world_normal = &shape_transform.inverse().transpose() * &local_normal;
@@ -62,6 +64,18 @@ impl Object {
                     });
                 }
             }
+            Geometry::Cube(o) => {
+                if let Some((t1, t2)) = o.intersect(&common(r, &o.transform)) {
+                    v.push(Intersection {
+                        t: t1,
+                        object: Rc::clone(&ref_clone),
+                    });
+                    v.push(Intersection {
+                        t: t2,
+                        object: Rc::clone(&ref_clone),
+                    });
+                }
+            }
         };
 
         v
@@ -71,6 +85,7 @@ impl Object {
         match &self.geometry {
             Geometry::Sphere(o) => o.transform.clone(),
             Geometry::Plane(o) => o.transform.clone(),
+            Geometry::Cube(o) => o.transform.clone(),
         }
     }
 }
@@ -152,6 +167,82 @@ impl Default for Plane {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct Cube {
+    pub transform: Mat,
+}
+
+impl Cube {
+    pub fn new() -> Self {
+        Cube {
+            transform: identity(4),
+        }
+    }
+
+    fn normal(&self, point: &Tup) -> Tup {
+        let maxc = *[point.x.abs(), point.y.abs(), point.z.abs()]
+            .iter()
+            .max_by(|a, b| a.partial_cmp(b).unwrap())
+            .unwrap();
+
+        if maxc == point.x.abs() {
+            vector(point.x, 0., 0.)
+        } else if maxc == point.y.abs() {
+            vector(0., point.y, 0.)
+        } else {
+            vector(0., 0., point.z)
+        }
+            
+    }
+
+    fn intersect(&self, ray: &Ray) -> Option<(f32, f32)> {
+        let check_axis = |origin: f32, direction: f32| {
+            let tmin_numerator = -1. - origin;
+            let tmax_numerator = 1. - origin;
+
+            let (mut tmin, mut tmax) = if direction.abs() >= std::f32::EPSILON {
+                (tmin_numerator / direction, tmax_numerator / direction)
+            } else {
+                (
+                    tmin_numerator * std::f32::INFINITY,
+                    tmax_numerator * std::f32::INFINITY,
+                )
+            };
+
+
+            if tmin > tmax {
+                std::mem::swap(&mut tmin, &mut tmax);
+            }
+
+            (tmin, tmax)
+        };
+
+        let (xtmin, xtmax) = check_axis(ray.origin.x, ray.direction.x);
+        let (ytmin, ytmax) = check_axis(ray.origin.y, ray.direction.y);
+        let (ztmin, ztmax) = check_axis(ray.origin.z, ray.direction.z);
+
+        let tmin = *[xtmin, ytmin, ztmin]
+            .iter()
+            .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+            .unwrap_or(&0.0);
+        let tmax = *[xtmax, ytmax, ztmax]
+            .iter()
+            .min_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+            .unwrap_or(&0.0);
+
+        if tmin > tmax {
+            None
+        } else {
+            Some((tmin, tmax))
+        }
+    }
+}
+
+impl Default for Cube {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::super::transformations::{rotate_z, scaling, translation};
@@ -333,5 +424,134 @@ mod tests {
                 _ => false,
             });
         }
+    }
+
+    #[test]
+    fn ray_intersects_cube() {
+        let cube = Cube::new();
+
+        let test = |name: String, ray: Ray, expected: Option<(f32, f32)>| {
+            let result = cube.intersect(&ray);
+            println!("{:?} {:?} {:?}", name, result, expected);
+            assert_eq!(result, expected);
+        };
+
+        let cases = vec![
+            (
+                "+x",
+                Ray {
+                    origin: point(5.0, 0.5, 0.0),
+                    direction: vector(-1.0, 0.0, 0.0),
+                },
+                Some((4f32, 6f32)),
+            ),
+            (
+                "-x",
+                Ray {
+                    origin: point(-5.0, 0.5, 0.0),
+                    direction: vector(1.0, 0.0, 0.0),
+                },
+                Some((4f32, 6f32)),
+            ),
+            (
+                "+y",
+                Ray {
+                    origin: point(0.5, 5.0, 0.0),
+                    direction: vector(0.0, -1.0, 0.0),
+                },
+                Some((4f32, 6f32)),
+            ),
+            (
+                "-y",
+                Ray {
+                    origin: point(0.5, -5.0, 0.0),
+                    direction: vector(0.0, 1.0, 0.0),
+                },
+                Some((4f32, 6f32)),
+            ),
+            (
+                "+z",
+                Ray {
+                    origin: point(0.5, 0.0, 5.0),
+                    direction: vector(0.0, 0.0, -1.0),
+                },
+                Some((4f32, 6f32)),
+            ),
+            (
+                "-z",
+                Ray {
+                    origin: point(0.5, 0.0, -5.0),
+                    direction: vector(0.0, 0.0, 1.0),
+                },
+                Some((4f32, 6f32)),
+            ),
+            (
+                "inside",
+                Ray {
+                    origin: point(0.0, 0.5, 0.0),
+                    direction: vector(0.0, 0.0, 1.0),
+                },
+                Some((-1f32, 1f32)),
+            ),
+        ];
+
+        cases.into_iter().for_each(|(name, ray, expected)| {
+            test(name.to_string(), ray, expected);
+        });
+    }
+
+    #[test]
+    fn ray_misses_cube() {
+        let cube = Cube::new();
+
+        let test = |ray: Ray| {
+            let result = cube.intersect(&ray);
+            println!("{:?}", result);
+            assert_eq!(result, None);
+        };
+
+        vec![
+            Ray {
+                origin: point(2., 0., 2.),
+                direction: vector(0., 0., -1.),
+            },
+            Ray {
+                origin: point(0., 2., 2.),
+                direction: vector(0., -1., 0.),
+            },
+            Ray {
+                origin: point(2., 2., 0.),
+                direction: vector(-1., 0., 0.),
+            },
+        ]
+        .into_iter()
+        .for_each(|ray| {
+            test(ray);
+        });
+    }
+
+    #[test]
+    fn cube_normal() {
+        let cube = Cube::new();
+
+        let test = |point: Tup, expected_normal: Tup| {
+            let result = cube.normal(&point);
+            assert_eq!(result, expected_normal)
+        };
+
+        vec![
+            (point(1., 0.5, -0.8), vector(1., 0., 0.)),
+            (point(-1., -0.2, 0.9), vector(-1., 0., 0.)),
+            (point(0.4, 1., 0.6), vector(0., 1., 0.)),
+            (point(-0.5, -1., 0.7), vector(0., -1., 0.)),
+            (point(0.2, 0.8, 1.), vector(0., 0., 1.)),
+            (point(-0.7, 0.4, -1.), vector(0., 0., -1.)),
+            (point(1., 1., 1.), vector(1., 0., 0.)),
+            (point(-1., -1., -1.), vector(-1., 0., 0.)),
+        ]
+        .into_iter()
+        .for_each(|elem| {
+            test(elem.0, elem.1);
+        });
     }
 }
