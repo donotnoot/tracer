@@ -3,7 +3,7 @@ use super::light::{Light, LightKind};
 use super::material::Material;
 use super::matrix;
 use super::matrix::Mat;
-use super::objects::{Geometry, Object, Plane, Sphere};
+use super::objects::{Geometry, Object, Plane, Cube, Sphere};
 use super::patterns::*;
 use super::transformations::*;
 use super::tuple::{color, color_u8, point, vector, Tup};
@@ -11,8 +11,6 @@ use super::world::World;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::error::Error;
-
-
 
 #[derive(Debug, Deserialize)]
 struct SceneFile {
@@ -103,6 +101,7 @@ struct CameraSection {
 enum ObjectSpec {
     Sphere(SphereSpec),
     Plane(PlaneSpec),
+    Cube(CubeSpec),
 }
 
 #[derive(Debug, Deserialize)]
@@ -113,6 +112,12 @@ struct PlaneSpec {
 
 #[derive(Debug, Deserialize)]
 struct SphereSpec {
+    transform: Vec<TransformSpec>,
+    material: MaterialSpec,
+}
+
+#[derive(Debug, Deserialize)]
+struct CubeSpec {
     transform: Vec<TransformSpec>,
     material: MaterialSpec,
 }
@@ -206,7 +211,9 @@ enum TransformSpec {
     Shearing(f32, f32, f32, f32, f32, f32),
 }
 
-pub fn from_reader(r: impl std::io::Read) -> Result<(World, Camera, RenderingSpec), Box<dyn Error>> {
+pub fn from_reader(
+    r: impl std::io::Read,
+) -> Result<(World, Camera, RenderingSpec), Box<dyn Error>> {
     let scene: SceneFile = serde_yaml::from_reader(r)?;
 
     let mut world = World::new();
@@ -268,7 +275,6 @@ pub fn from_reader(r: impl std::io::Read) -> Result<(World, Camera, RenderingSpe
                 geometry: Geometry::Sphere(sphere),
                 material: scene.process_material(&spec.material),
             });
-
         }
         ObjectSpec::Plane(spec) => {
             let mut plane = Plane::new();
@@ -276,6 +282,15 @@ pub fn from_reader(r: impl std::io::Read) -> Result<(World, Camera, RenderingSpe
 
             world.objects.push(Object {
                 geometry: Geometry::Plane(plane),
+                material: scene.process_material(&spec.material),
+            });
+        }
+        ObjectSpec::Cube(spec) => {
+            let mut cube = Cube::new();
+            cube.transform = scene.process_transformations(&spec.transform);
+
+            world.objects.push(Object {
+                geometry: Geometry::Cube(cube),
                 material: scene.process_material(&spec.material),
             });
         }
