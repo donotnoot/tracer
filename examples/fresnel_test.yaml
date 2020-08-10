@@ -1,27 +1,40 @@
 background_color: "black"
 rendering:
   randomize_rays: false
-  max_bounces: 256
-  antialias: 4
+  max_bounces: 3
+  antialias: 2
 light:
-  position: [0, 5.0, -5.0]
-  intensity: "white"
-  kind: null
+  position: [-5.0, 5, -5.0]
+  intensity: [1.2, 1.2, 1.2]
+  kind:
+    corner: [-5.0, 5, -5.0]
+    uvec: [2, 0, 0]
+    vvec: [0, 2, 0]
+    usteps: 4
+    vsteps: 4
 camera:
-  width: 1920
-  height: 1080
-  fov: 30
-  from: [-5, 2, -5]
+  width: 800
+  height: 500
+  fov: 45
+  from: [-9, 1, -13]
   to: [0, 0, 0]
   up: [0, 1, 0]
 colors:
   black: 0
   white: 0xFFFFFF
+  dark_gray: 0x31393C
 materials:
+  bw_ring:
+    color: "black"
+    reflectiveness: 0.06
+    pattern:
+      type: "Ring"
+      color_a: "black"
+      color_b: "dark_gray"
   bw_checker:
     color: "black"
     pattern:
-      type: "Ring"
+      type: "Checker"
       color_a: "black"
       color_b: "white"
   blue:
@@ -30,51 +43,86 @@ materials:
     diffuse: 0.8
     specular: 1
     reflectiveness: 0.3
+  red:
+    color: [255, 100, 100]
+    ambient: 0.2
+    diffuse: 0.8
+    specular: 1
+    reflectiveness: 0.3
+  pink:
+    color: [255,105,180]
+    ambient: 0.2
+    diffuse: 0.8
+    specular: 1
+    reflectiveness: 0.1
+  green:
+    color: [100, 255, 100]
+    ambient: 0.2
+    diffuse: 0.8
+    specular: 1
+    reflectiveness: 0.3
   glass:
-    color: "white"
-    ambient: 0.05
-    diffuse: 0
+    color: white
+    ambient: 0
+    diffuse: 0.05
     specular: 1
     reflectiveness: 1
-    transparency: .7
-    shininess: 400
-    refractive_index: 1.4
+    transparency: 1
+    shininess: 500
+    refractive_index: 1.56
 objects:
   # Floor
-  - shape: "Plane"
-    material: "bw_checker"
+  - shape: Plane
+    material: bw_ring
     transform:
-      - Translation: [0, -10.0, 0]
+      - Translation: [0, -1, 0]
 
   # # Ceiling
-  # - shape: "Plane"
-  #   material: "bw_checker"
+  # - shape: Plane
+  #   material: bw_checker
   #   transform:
-  #     - RotateY: 180
-  #     - Translation: [0, 10.0, 0]
+  #     - Translation: [0, 10, 0]
 
   # Left wall
-  - shape: "Plane"
-    material: "bw_checker"
+  - shape: Plane
+    material: bw_checker
     transform:
       - RotateX: 90
       - Translation: [2, 10.0, 0]
 
   # Right wall
-  - shape: "Plane"
-    material: "bw_checker"
+  - shape: Plane
+    material: bw_checker
     transform:
       - RotateY: 90
       - RotateX: 90
       - Translation: [2, 10.0, 0]
 
-  # Glass ball
-  - shape: "Sphere"
-    transform: []
+  # Main glass ball
+  - shape: Sphere
+    transform:
+      - Translation: [-6, 0, -6]
     material: "glass"
 
   - shape: "Sphere"
     transform:
-      - Translation: [ 3., 0, 3. ]
-      # - Scaling: [ .5, .5, .5 ]
-    material: "blue"
+      - Translation: [-2.5, 0, 0]
+    material: blue
+
+  - shape: Cube
+    transform:
+      - Translation: [0, 1, -4.5]
+      - Rotate: [30, 10, 4]
+    material: red
+
+  - shape: Cube
+    transform:
+      - Translation: [2, 0, 2]
+      - Rotate: [0, 3, 0]
+    material: pink
+
+  - shape: Cube
+    transform:
+      - Translation: [-1, 2, -1]
+      - Rotate: [5, 0, 50]
+    material: green
