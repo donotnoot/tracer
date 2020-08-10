@@ -127,7 +127,7 @@ impl World {
         total / samples as f32
     }
 
-    pub fn color_at(&self, r: &Ray, depth_remaining: u64) -> Tup {
+    pub fn color_at(&self, r: &Ray, depth_remaining: u32) -> Tup {
         let intersections = self.intersect(r);
 
         match hit(&intersections) {
@@ -139,7 +139,7 @@ impl World {
         }
     }
 
-    fn shade_hit(&self, c: &Computations, depth_remaining: u64) -> Tup {
+    fn shade_hit(&self, c: &Computations, depth_remaining: u32) -> Tup {
         let reflectiveness = c.object.material.reflectiveness;
         let transparency = c.object.material.transparency;
 
@@ -172,7 +172,7 @@ impl World {
         }
     }
 
-    fn reflected_color(&self, c: &Computations, depth_remaining: u64) -> Tup {
+    fn reflected_color(&self, c: &Computations, depth_remaining: u32) -> Tup {
         if depth_remaining == 0 {
             return color(0.0, 0.0, 0.0);
         }
@@ -189,7 +189,7 @@ impl World {
         &color * (*c.object).material.reflectiveness
     }
 
-    fn refracted_color(&self, c: &Computations, depth_remaining: u64) -> Tup {
+    fn refracted_color(&self, c: &Computations, depth_remaining: u32) -> Tup {
         if depth_remaining == 0 {
             return color(0.0, 0.0, 0.0);
         }
@@ -205,7 +205,7 @@ impl World {
 
         let cos_i = dot(&c.eye, &c.normal);
         let sin2_t = n_ratio.powi(2) * (1.0 - cos_i.powi(2));
-        if sin2_t > 1.0 || sin2_t.is_nan() {
+        if sin2_t > 1.0 {
             // total internal reflection
             return color(0.0, 0.0, 0.0);
         }
