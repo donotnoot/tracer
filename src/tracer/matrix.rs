@@ -31,65 +31,6 @@ impl Kind {
 }
 
 impl Mat {
-    pub fn is_inversible(&self) -> (f32, bool) {
-        let det = self.determinant();
-        (det, det != 0.0)
-    }
-
-    pub fn cofactor(&self, row_to_remove: usize, col_to_remove: usize) -> f32 {
-        let det = self.submatrix(row_to_remove, col_to_remove).determinant();
-
-        if (row_to_remove + col_to_remove) & 1 == 0 {
-            det
-        } else {
-            -det
-        }
-    }
-
-    pub fn determinant(&self) -> f32 {
-        match self.size {
-            2 => self.mat[0][0] * self.mat[1][1] - self.mat[1][0] * self.mat[0][1],
-            3 | 4 => {
-                let mut result: f32 = 0.0;
-                for col in 0..self.size as usize {
-                    let cf = self.cofactor(0, col);
-                    result += self.mat[0][col] * cf;
-                }
-                result
-            }
-            _ => std::panic!("unsupported matrix size"),
-        }
-    }
-
-    pub fn submatrix(&self, row_to_remove: usize, col_to_remove: usize) -> Mat {
-        match self.size {
-            4 | 3 => {
-                let mut out = mat(self.size - 1);
-
-                let mut out_row: usize = 0;
-                for row in 0..self.size {
-                    if row == row_to_remove {
-                        continue;
-                    }
-
-                    let mut out_col: usize = 0;
-                    for col in 0..self.size {
-                        if col == col_to_remove {
-                            continue;
-                        }
-
-                        out.mat[out_row][out_col] = self.mat[row][col];
-                        out_col += 1;
-                    }
-                    out_row += 1;
-                }
-
-                out
-            }
-            _ => std::panic!("unsupported matrix size"),
-        }
-    }
-
     pub fn transpose(&self) -> Mat {
         let mut m = self.clone();
 
@@ -350,6 +291,7 @@ pub fn identity(size: usize) -> Mat {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::transformations::*;
 
     #[test]
     fn matrix_equality() {
@@ -485,165 +427,48 @@ mod tests {
     }
 
     #[test]
-    fn determinant_2x2_matrix() {
-        let m = Mat {
-            size: 2,
-            kind: Kind::TransformNoScale,
-            mat: [
-                [1.0, 5.0, 0.0, 0.0],
-                [-3.0, 2.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0, 0.0],
-            ],
-        };
-
-        assert_eq!(17.0, m.determinant())
-    }
-
-    #[test]
-    fn submatrices() {
+    fn inverting_matrix() {
         {
-            let m4 = Mat {
-                size: 4,
-                kind: Kind::TransformNoScale,
-                mat: [
-                    [1.0, 5.0, 0.0, 0.0],
-                    [-3.0, 2.0, 0.0, 0.0],
-                    [0.0, 0.0, 5.0, 0.0],
-                    [0.0, 0.0, 0.0, 0.0],
-                ],
-            };
-            let m4sub = m4.submatrix(0, 0);
+            let m = translation(3., 3., 3.);
+            let inv = m.inverse();
 
-            assert_eq!(3, m4sub.size);
-            assert_eq!(2.0, m4sub.mat[0][0]);
-            assert_eq!(5.0, m4sub.mat[1][1]);
+            assert_eq!(m.kind as i32, Kind::TransformNoScale as i32);
+            assert_eq!(inv.kind as i32, Kind::TransformNoScale as i32);
+            assert_eq!(inv.mat[0][0], 1.);
+            assert_eq!(inv.mat[1][1], 1.);
+            assert_eq!(inv.mat[2][2], 1.);
+            assert_eq!(inv.mat[3][3], 1.);
+            assert_eq!(inv.mat[0][3], -3.);
+            assert_eq!(inv.mat[1][3], -3.);
+            assert_eq!(inv.mat[2][3], -3.);
         }
-
         {
-            let m3 = Mat {
-                size: 3,
-                kind: Kind::TransformNoScale,
-                mat: [
-                    [1.0, 5.0, 0.0, 0.0],
-                    [-3.0, 2.0, 0.0, 0.0],
-                    [0.0, 0.0, 0.0, 0.0],
-                    [0.0, 0.0, 0.0, 0.0],
-                ],
-            };
-            let m3sub = m3.submatrix(2, 2);
+            let m = scaling(3., 3., 3.);
+            let inv = m.inverse();
 
-            assert_eq!(2, m3sub.size);
-            assert_eq!(1.0, m3sub.mat[0][0]);
-            assert_eq!(2.0, m3sub.mat[1][1]);
+            let onethird: f32 = 1./3.;
+
+            assert_eq!(m.kind as i32, Kind::Transform as i32);
+            assert_eq!(inv.kind as i32, Kind::Transform as i32);
+            assert_eq!(inv.mat[0][0], onethird);
+            assert_eq!(inv.mat[1][1], onethird);
+            assert_eq!(inv.mat[2][2], onethird);
+            assert_eq!(inv.mat[3][3], 1.);
         }
-    }
-
-    #[test]
-    fn cofactrors() {
         {
-            let m = Mat {
-                size: 3,
-                kind: Kind::TransformNoScale,
-                mat: [
-                    [3.0, 5.0, 0.0, 0.0],
-                    [2.0, -1.0, -7.0, 0.0],
-                    [6.0, -1.0, 5.0, 0.0],
-                    [0.0, 0.0, 0.0, 0.0],
-                ],
-            };
+            let mut m = identity(4);
+            m.kind = Kind::General;
+            m.mat[0][2] = 3.;
+            m.mat[3][1] = 3.;
 
-            assert_eq!(-12.0, m.cofactor(0, 0));
-            assert_eq!(-25.0, m.cofactor(1, 0));
+            let inv = m.inverse();
+            println!("{:?}", inv);
+
+            assert_eq!(m.kind as i32, Kind::General as i32);
+            assert_eq!(inv.kind as i32, Kind::General as i32);
+            assert_eq!(inv.mat[0][2], -3.);
+            assert_eq!(inv.mat[3][1], -3.);
         }
-    }
-
-    #[test]
-    fn determinants() {
-        {
-            let m = Mat {
-                size: 3,
-                kind: Kind::TransformNoScale,
-                mat: [
-                    [1.0, 2.0, 6.0, 0.0],
-                    [-5.0, 8.0, -4.0, 0.0],
-                    [2.0, 6.0, 4.0, 0.0],
-                    [0.0, 0.0, 0.0, 0.0],
-                ],
-            };
-
-            assert_eq!(-196.0, m.determinant());
-        }
-
-        {
-            let m = Mat {
-                size: 4,
-                kind: Kind::TransformNoScale,
-                mat: [
-                    [-2.0, -8.0, 3.0, 5.0],
-                    [-3.0, 1.0, 7.0, 3.0],
-                    [1.0, 2.0, -9.0, 6.0],
-                    [-6.0, 7.0, 7.0, -9.0],
-                ],
-            };
-
-            assert_eq!(-4071.0, m.determinant());
-        }
-    }
-
-    #[test]
-    fn invertability() {
-        {
-            let m = Mat {
-                size: 4,
-                kind: Kind::TransformNoScale,
-                mat: [
-                    [6.0, 4.0, 4.0, 4.0],
-                    [5.0, 5.0, 7.0, 6.0],
-                    [4.0, -9.0, 3.0, -7.0],
-                    [9.0, 1.0, 7.0, -6.0],
-                ],
-            };
-
-            assert_eq!(true, m.is_inversible().1)
-        }
-
-        {
-            let m = Mat {
-                size: 4,
-                kind: Kind::TransformNoScale,
-                mat: [
-                    [-4.0, 2.0, -2.0, -3.0],
-                    [9.0, 6.0, 2.0, 6.0],
-                    [0.0, -5.0, 1.0, -5.0],
-                    [0.0, 0.0, 0.0, 0.0],
-                ],
-            };
-
-            assert_eq!(false, m.is_inversible().1)
-        }
-    }
-
-    #[test]
-    fn inverse_of_matrix() {
-        let m = Mat {
-            size: 4,
-            kind: Kind::TransformNoScale,
-            mat: [
-                [-5.0, 2.0, 6.0, -8.0],
-                [1.0, -5.0, 1.0, 8.0],
-                [7.0, 7.0, -6.0, -7.0],
-                [1.0, -3.0, 7.0, 4.0],
-            ],
-        };
-        let det = m.determinant();
-        let cof_a = m.cofactor(2, 3);
-        let cof_b = m.cofactor(3, 2);
-
-        let inv = m.inverse();
-
-        assert_eq!(cof_a / det, inv.mat[3][2]);
-        assert_eq!(cof_b / det, inv.mat[2][3]);
     }
 
     #[test]
