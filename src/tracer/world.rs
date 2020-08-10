@@ -498,8 +498,8 @@ mod tests {
         let color = w.shade_hit(&comps, 5);
 
         println!("{}", color);
-        assert!((color.x - 0.93391).abs() < 10e-3);
-        assert!((color.y - 0.69643).abs() < 10e-3);
-        assert!((color.z - 0.69243).abs() < 10e-3);
+        assert!((color.x - 1.1149998).abs() < 10e-3);
+        assert!((color.y - 0.696432).abs() < 10e-3);
+        assert!((color.z - 0.6924281).abs() < 10e-3);
     }
 }
