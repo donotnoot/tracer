@@ -27,7 +27,7 @@ impl Material {
             reflectiveness: 0.0,
             pattern: None,
             transparency: 0.0,
-            refractive_index: 0.0,
+            refractive_index: 1.0,
         }
     }
 
