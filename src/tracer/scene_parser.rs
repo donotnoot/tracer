@@ -69,7 +69,7 @@ pub enum LightKindSpec {
 #[derive(Debug, Deserialize)]
 #[serde(default)]
 pub struct RenderingSpec {
-    pub max_bounces: u64,
+    pub max_bounces: u32,
     pub randomize_rays: bool,
     pub antialias: u32,
     pub partial_render: Option<Vec<(u32, u32)>>,
@@ -224,7 +224,7 @@ pub fn from_reader(
         scene.light.position[2],
     );
 
-    let light_intensity = scene.process_color(&scene.light.intensity);
+    let light_intensity = scene.process_color(&scene.light.intensity)?;
 
     world.light = match scene.light.kind {
         LightKindSpec::Point => Light {
@@ -253,6 +253,7 @@ pub fn from_reader(
         scene.camera.height,
         deg2rad(scene.camera.fov),
         scene.rendering.antialias,
+        scene.rendering.max_bounces,
     );
     camera.set_transform(view(
         point(
@@ -264,37 +265,46 @@ pub fn from_reader(
         vector(scene.camera.up[0], scene.camera.up[1], scene.camera.up[2]),
     ));
 
-    world.background_color = scene.process_color(&scene.background_color);
+    world.background_color = scene.process_color(&scene.background_color)?;
 
-    scene.objects.iter().for_each(|spec| match spec {
-        ObjectSpec::Sphere(spec) => {
-            let mut sphere = Sphere::new();
-            sphere.transform = scene.process_transformations(&spec.transform);
+    let results: Result<Vec<Object>, Box<dyn Error>> = scene
+        .objects
+        .iter()
+        .map(|spec| match spec {
+            ObjectSpec::Sphere(spec) => {
+                let mut sphere = Sphere::new();
+                sphere.transform = scene.process_transformations(&spec.transform);
 
-            world.objects.push(Object {
-                geometry: Geometry::Sphere(sphere),
-                material: scene.process_material(&spec.material),
-            });
-        }
-        ObjectSpec::Plane(spec) => {
-            let mut plane = Plane::new();
-            plane.transform = scene.process_transformations(&spec.transform);
+                Ok(Object {
+                    geometry: Geometry::Sphere(sphere),
+                    material: scene.process_material(&spec.material)?,
+                })
+            }
+            ObjectSpec::Plane(spec) => {
+                let mut plane = Plane::new();
+                plane.transform = scene.process_transformations(&spec.transform);
 
-            world.objects.push(Object {
-                geometry: Geometry::Plane(plane),
-                material: scene.process_material(&spec.material),
-            });
-        }
-        ObjectSpec::Cube(spec) => {
-            let mut cube = Cube::new();
-            cube.transform = scene.process_transformations(&spec.transform);
+                Ok(Object {
+                    geometry: Geometry::Plane(plane),
+                    material: scene.process_material(&spec.material)?,
+                })
+            }
+            ObjectSpec::Cube(spec) => {
+                let mut cube = Cube::new();
+                cube.transform = scene.process_transformations(&spec.transform);
 
-            world.objects.push(Object {
-                geometry: Geometry::Cube(cube),
-                material: scene.process_material(&spec.material),
-            });
-        }
-    });
+                Ok(Object {
+                    geometry: Geometry::Cube(cube),
+                    material: scene.process_material(&spec.material)?,
+                })
+            }
+        })
+        .collect();
+
+    world.objects = match results {
+        Ok(results) => Ok(results),
+        Err(error) => Err(error),
+    }?;
 
     Ok((world, camera, scene.rendering))
 }
@@ -326,101 +336,110 @@ impl SceneFile {
         }
     }
 
-    fn process_pattern(&self, spec: &PatternSpec) -> Pattern {
+    fn process_pattern(&self, spec: &PatternSpec) -> Result<Pattern, Box<dyn Error>> {
         match spec {
             PatternSpec::Stripe {
                 color_a,
                 color_b,
                 transform,
-            } => Pattern::Stripe(
-                self.process_color(color_a),
-                self.process_color(color_b),
+            } => Ok(Pattern::Stripe(
+                self.process_color(color_a)?,
+                self.process_color(color_b)?,
                 match transform {
                     Some(t) => Some(self.process_transformations(t)),
                     None => None,
                 },
-            ),
+            )),
             PatternSpec::Checker {
                 color_a,
                 color_b,
                 transform,
-            } => Pattern::Checker(
-                self.process_color(color_a),
-                self.process_color(color_b),
+            } => Ok(Pattern::Checker(
+                self.process_color(color_a)?,
+                self.process_color(color_b)?,
                 match transform {
                     Some(t) => Some(self.process_transformations(t)),
                     None => None,
                 },
-            ),
+            )),
             PatternSpec::Gradient {
                 color_a,
                 color_b,
                 transform,
-            } => Pattern::Gradient(
-                self.process_color(color_a),
-                self.process_color(color_b),
+            } => Ok(Pattern::Gradient(
+                self.process_color(color_a)?,
+                self.process_color(color_b)?,
                 match transform {
                     Some(t) => Some(self.process_transformations(t)),
                     None => None,
                 },
-            ),
+            )),
             PatternSpec::Ring {
                 color_a,
                 color_b,
                 transform,
-            } => Pattern::Ring(
-                self.process_color(color_a),
-                self.process_color(color_b),
+            } => Ok(Pattern::Ring(
+                self.process_color(color_a)?,
+                self.process_color(color_b)?,
                 match transform {
                     Some(t) => Some(self.process_transformations(t)),
                     None => None,
                 },
-            ),
-            PatternSpec::Mandelbrot { color, transform } => Pattern::Mandelbrot(
-                self.process_color(color),
+            )),
+            PatternSpec::Mandelbrot { color, transform } => Ok(Pattern::Mandelbrot(
+                self.process_color(color)?,
                 match transform {
                     Some(t) => Some(self.process_transformations(t)),
                     None => None,
                 },
-            ),
+            )),
             PatternSpec::Reference { name } => {
-                self.process_pattern(self.patterns.get(name).unwrap())
+                match self.patterns.get(name) {
+                    Some(name) => Ok(self.process_pattern(name)?),
+                    None => Err(format!("could not find pattern with name '{}'", name).into()),
+                }
             }
         }
     }
 
-    fn process_material(&self, spec: &MaterialSpec) -> Material {
+    fn process_material(&self, spec: &MaterialSpec) -> Result<Material, Box<dyn Error>> {
         match spec {
-            MaterialSpec::Phong(phong) => self.phong_to_material(phong),
-            MaterialSpec::Reference(name) => {
-                self.process_material(self.materials.get(name).unwrap())
-            }
+            MaterialSpec::Phong(phong) => Ok(self.phong_to_material(phong)?),
+            MaterialSpec::Reference(name) => match self.materials.get(name) {
+                Some(material) => Ok(self.process_material(material)?),
+                None => Err(format!("could not find material with name '{}'", name).into()),
+            },
         }
     }
 
-    fn phong_to_material(&self, p: &Phong) -> Material {
-        Material {
-            color: self.process_color(&p.color),
+    fn phong_to_material(&self, p: &Phong) -> Result<Material, Box<dyn Error>> {
+        Ok(Material {
+            color: self.process_color(&p.color)?,
             ambient: p.ambient,
             diffuse: p.diffuse,
             specular: p.specular,
             shininess: p.shininess,
             reflectiveness: p.reflectiveness,
             pattern: match &p.pattern {
-                Some(p) => Some(self.process_pattern(&p)),
+                Some(p) => Some(self.process_pattern(&p)?),
                 None => None,
             },
             transparency: p.transparency,
             refractive_index: p.refractive_index,
-        }
+        })
     }
 
-    fn process_color(&self, c: &ColorSpec) -> Tup {
+    fn process_color(&self, c: &ColorSpec) -> Result<Tup, Box<dyn Error>> {
         match c {
-            ColorSpec::Ints(r, g, b) => color_u8(*r, *g, *b),
-            ColorSpec::Floats(r, g, b) => color(*r, *g, *b),
-            ColorSpec::Reference(name) => self.process_color(self.colors.get(name).unwrap()),
-            ColorSpec::Hex(hex) => color_u8((*hex >> 16) as u8, (*hex >> 8) as u8, *hex as u8),
+            ColorSpec::Ints(r, g, b) => Ok(color_u8(*r, *g, *b)),
+            ColorSpec::Floats(r, g, b) => Ok(color(*r, *g, *b)),
+            ColorSpec::Reference(name) => {
+                match self.colors.get(name) {
+                    Some(color) => Ok(self.process_color(color)?),
+                    None => Err(format!("could not find material with name '{}'", name).into()),
+                }
+            }
+            ColorSpec::Hex(hex) => Ok(color_u8((*hex >> 16) as u8, (*hex >> 8) as u8, *hex as u8)),
         }
     }
 }
