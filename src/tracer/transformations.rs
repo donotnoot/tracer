@@ -62,7 +62,7 @@ pub fn rotate_z(rad: f32) -> Mat {
 
 pub fn shearing(xy: f32, xz: f32, yx: f32, yz: f32, zx: f32, zy: f32) -> Mat {
     let mut m = identity(4);
-    m.kind = Kind::TransformNoScale;
+    m.kind = Kind::General;
 
     m.mat[0][1] = xy;
     m.mat[0][2] = xz;
@@ -95,5 +95,3 @@ pub fn view(from: tuple::Tup, to: tuple::Tup, up: tuple::Tup) -> Mat {
 
     &m * &(translation(-from.x, -from.y, -from.z))
 }
-
-// TODO: testy times
