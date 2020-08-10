@@ -45,11 +45,6 @@ impl Computations {
         let mut cos = dot(&self.eye, &self.normal);
 
         if self.n1 > self.n2 {
-            // don't let n be inf
-            if self.n2 == 0.0 {
-                return 1.0;
-            }
-
             let n = self.n1 / self.n2;
 
             let sin2_t = n.powi(2) * (1.0 - cos.powi(2));
