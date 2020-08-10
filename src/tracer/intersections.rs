@@ -499,7 +499,7 @@ mod tests {
 
     #[test]
     fn schlick_total_internal_reflection() {
-        let shape = Rc::new(make_sphere());
+        let shape = Rc::new(glass_sphere());
         let p = 2f32.sqrt() / 2.0;
         let ray = Ray {
             origin: point(0.0, 0.0, p),
@@ -557,24 +557,5 @@ mod tests {
         let comps = xs[0].computations(&ray, Some(&xs));
         let reflectance = comps.schlick();
         assert!((reflectance - 0.48873).abs() < 10e-4);
-    }
-
-    #[test]
-    fn schlick_when_n2_eq_0_must_be_1() {
-        let comps = Computations {
-            t: 0.0,
-            object: Rc::new(make_glass_sphere()),
-            inside: false,
-            point: point(0., 0., 0.),
-            eye: vector(-1., 0., 0.),
-            normal: vector(1., 0., 0.),
-            reflection: vector(-1., 0., 0.),
-            over_point: point(0.001, 0.001, 0.001),
-            under_point: point(-0.001, -0.001, -0.001),
-            n1: 1.0,
-            n2: 0.0,
-        };
-        let reflectance = comps.schlick();
-        assert_eq!(reflectance, 1.0);
     }
 }
