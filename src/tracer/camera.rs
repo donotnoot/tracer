@@ -21,14 +21,14 @@ pub struct Camera {
     pub half_height: f32,
     pub pixel_size: f32,
     pub antialias: u32,
-    pub reflection_limit: u64,
+    pub reflection_limit: u32,
 
     transform: Mat,
     transform_inverse: Mat,
 }
 
 impl Camera {
-    pub fn new(h_size: f32, v_size: f32, fov: f32, aa: u32) -> Self {
+    pub fn new(h_size: f32, v_size: f32, fov: f32, aa: u32, max_depth: u32) -> Self {
         let aspect_ratio = h_size / v_size;
         let half = (fov / 2.0).tan();
 
@@ -49,7 +49,7 @@ impl Camera {
             transform: identity(4),
             transform_inverse: identity(4),
             antialias: aa,
-            reflection_limit: 64,
+            reflection_limit: max_depth,
         }
     }
 
