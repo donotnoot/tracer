@@ -64,6 +64,5 @@ objects:
   # Glass ball
   - shape: "Sphere"
     transform:
-      - Scaling: [2, 1, 1]
-      # - Shearing: [0, 0, 1, 0, 0, 0]
+      - Scaling: [2, 2, 2]
     material: "blue"
