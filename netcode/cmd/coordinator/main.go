@@ -89,6 +89,7 @@ func main() {
 	ctx := context.Background()
 	rand.Seed(time.Now().UnixNano())
 	flag.Parse()
+	log.SetFlags(log.LstdFlags | log.LUTC | log.Lshortfile)
 
 	rand.Shuffle(len(RaylibColors), func(a, b int) { RaylibColors[a], RaylibColors[b] = RaylibColors[b], RaylibColors[a] })
 
