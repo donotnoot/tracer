@@ -107,7 +107,7 @@ impl Camera {
 
         for y in (0..self.v_size as u32).step_by(tile_size as usize) {
             for x in (0..self.h_size as u32).step_by(tile_size as usize) {
-                tiles.push((x,y));
+                tiles.push((x, y));
             }
         }
 
@@ -119,8 +119,8 @@ impl Camera {
             Vec::with_capacity((self.h_size * self.v_size) as usize);
 
         tiles.into_iter().for_each(|(x, y)| {
-            for y in y..(y+tile_size) {
-                for x in x..(x+tile_size) {
+            for y in y..(y + tile_size) {
+                for x in x..(x + tile_size) {
                     pixels.push((x, y, tx.clone()));
                 }
             }

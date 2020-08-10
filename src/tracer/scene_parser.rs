@@ -3,7 +3,7 @@ use super::light::{Light, LightKind};
 use super::material::Material;
 use super::matrix;
 use super::matrix::Mat;
-use super::objects::{Geometry, Object, Plane, Cube, Sphere};
+use super::objects::{Cube, Geometry, Object, Plane, Sphere};
 use super::patterns::*;
 use super::transformations::*;
 use super::tuple::{color, color_u8, point, vector, Tup};

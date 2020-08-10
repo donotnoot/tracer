@@ -120,8 +120,8 @@ impl Pattern {
 
 #[cfg(test)]
 mod tests {
-    use super::super::objects::{Geometry, Object, Sphere};
     use super::super::material::Material;
+    use super::super::objects::{Geometry, Object, Sphere};
     use super::super::transformations::{scaling, translation};
     use super::super::tuple::point;
     use super::*;
@@ -159,10 +159,13 @@ mod tests {
             let mut obj = Sphere::new();
             obj.transform = scaling(2.0, 2.0, 2.0);
             let stripe = Pattern::Stripe(color(1.0, 1.0, 1.0), color(0.0, 0.0, 0.0), None);
-            let c = stripe.at_object(&Object{
-                geometry: Geometry::Sphere(obj),
-                material: Material::new(),
-            }, &point(1.5, 0.0, 0.0));
+            let c = stripe.at_object(
+                &Object {
+                    geometry: Geometry::Sphere(obj),
+                    material: Material::new(),
+                },
+                &point(1.5, 0.0, 0.0),
+            );
             assert_eq!(c, color(1.0, 1.0, 1.0));
         }
         {
@@ -173,10 +176,13 @@ mod tests {
                 color(0.0, 0.0, 0.0),
                 Some(scaling(2.0, 2.0, 2.0)),
             );
-            let c = stripe.at_object(&Object{
-                geometry: Geometry::Sphere(obj),
-                material: Material::new(),
-            }, &point(1.5, 0.0, 0.0));
+            let c = stripe.at_object(
+                &Object {
+                    geometry: Geometry::Sphere(obj),
+                    material: Material::new(),
+                },
+                &point(1.5, 0.0, 0.0),
+            );
             assert_eq!(c, color(1.0, 1.0, 1.0));
         }
         {
@@ -188,10 +194,13 @@ mod tests {
                 color(0.0, 0.0, 0.0),
                 Some(translation(0.5, 0.0, 0.0)),
             );
-            let c = stripe.at_object(&Object{
-                geometry: Geometry::Sphere(obj),
-                material: Material::new(),
-            }, &point(2.5, 0.0, 0.0));
+            let c = stripe.at_object(
+                &Object {
+                    geometry: Geometry::Sphere(obj),
+                    material: Material::new(),
+                },
+                &point(2.5, 0.0, 0.0),
+            );
             assert_eq!(c, color(1.0, 1.0, 1.0));
         }
     }

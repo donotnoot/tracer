@@ -11,5 +11,3 @@ pub mod scene_parser;
 pub mod transformations;
 pub mod tuple;
 pub mod world;
-
-pub fn kek() -> u32 { 10 }

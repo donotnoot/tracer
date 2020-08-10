@@ -66,11 +66,11 @@ impl Material {
 
             if reflect_dot_eye <= 0.0 {
                 let specular = color(0.0, 0.0, 0.0);
-            (diffuse, specular)
+                (diffuse, specular)
             } else {
                 let factor = reflect_dot_eye.powf(self.shininess);
                 let specular = &l.intensity * (self.specular * factor);
-            (diffuse, specular)
+                (diffuse, specular)
             }
         };
 

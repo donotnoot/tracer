@@ -45,7 +45,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("{} {} {} {} {}", px.x, px.y, px.p.x, px.p.y, px.p.z);
         completed += 1;
         if completed == num_pixels {
-            break
+            break;
         }
     }
 

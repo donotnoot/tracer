@@ -205,12 +205,11 @@ fn mat_mat_mul_brute(lhs: &Mat, rhs: &Mat) -> Mat {
 
     macro_rules! mat_mul {
         ($row: expr, $col: expr) => {
-            result.mat[$row][$col] =
-                lhs.mat[$row][0] * rhs.mat[0][$col] +
-                lhs.mat[$row][1] * rhs.mat[1][$col] +
-                lhs.mat[$row][2] * rhs.mat[2][$col] +
-                lhs.mat[$row][3] * rhs.mat[3][$col];
-        }
+            result.mat[$row][$col] = lhs.mat[$row][0] * rhs.mat[0][$col]
+                + lhs.mat[$row][1] * rhs.mat[1][$col]
+                + lhs.mat[$row][2] * rhs.mat[2][$col]
+                + lhs.mat[$row][3] * rhs.mat[3][$col];
+        };
     }
 
     mat_mul!(0, 0);
@@ -255,12 +254,24 @@ impl<'a, 'b> std::ops::Mul<&'b Tup> for &'a Mat {
 }
 
 pub fn mat_tup_mul_brute(lhs: &Mat, rhs: &Tup) -> Tup {
-    let x = lhs.mat[0][0] * rhs.x + lhs.mat[0][1] * rhs.y + lhs.mat[0][2] * rhs.z + lhs.mat[0][3] * rhs.w;
-    let y = lhs.mat[1][0] * rhs.x + lhs.mat[1][1] * rhs.y + lhs.mat[1][2] * rhs.z + lhs.mat[1][3] * rhs.w;
-    let z = lhs.mat[2][0] * rhs.x + lhs.mat[2][1] * rhs.y + lhs.mat[2][2] * rhs.z + lhs.mat[2][3] * rhs.w;
-    let w = lhs.mat[3][0] * rhs.x + lhs.mat[3][1] * rhs.y + lhs.mat[3][2] * rhs.z + lhs.mat[3][3] * rhs.w;
+    let x = lhs.mat[0][0] * rhs.x
+        + lhs.mat[0][1] * rhs.y
+        + lhs.mat[0][2] * rhs.z
+        + lhs.mat[0][3] * rhs.w;
+    let y = lhs.mat[1][0] * rhs.x
+        + lhs.mat[1][1] * rhs.y
+        + lhs.mat[1][2] * rhs.z
+        + lhs.mat[1][3] * rhs.w;
+    let z = lhs.mat[2][0] * rhs.x
+        + lhs.mat[2][1] * rhs.y
+        + lhs.mat[2][2] * rhs.z
+        + lhs.mat[2][3] * rhs.w;
+    let w = lhs.mat[3][0] * rhs.x
+        + lhs.mat[3][1] * rhs.y
+        + lhs.mat[3][2] * rhs.z
+        + lhs.mat[3][3] * rhs.w;
 
-    Tup{x, y, z, w}
+    Tup { x, y, z, w }
 }
 
 pub fn mat(size: usize) -> Mat {

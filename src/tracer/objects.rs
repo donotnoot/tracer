@@ -192,7 +192,6 @@ impl Cube {
         } else {
             vector(0., 0., point.z)
         }
-            
     }
 
     fn intersect(&self, ray: &Ray) -> Option<(f32, f32)> {
@@ -208,7 +207,6 @@ impl Cube {
                     tmax_numerator * std::f32::INFINITY,
                 )
             };
-
 
             if tmin > tmax {
                 std::mem::swap(&mut tmin, &mut tmax);

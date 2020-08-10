@@ -4,7 +4,6 @@ use super::ray::Ray;
 use super::tuple::{dot, Tup};
 use std::rc::Rc;
 
-
 pub type Intersections = Vec<Intersection>;
 
 pub fn hit(i: &[Intersection]) -> (f32, usize, bool) {
@@ -354,7 +353,7 @@ mod tests {
         s.transform = translation(0.0, 0.0, 1.0);
         let i = Intersection {
             t: 5.0,
-            object: Rc::new(Object{
+            object: Rc::new(Object {
                 geometry: Geometry::Sphere(s),
                 material: Material::new(),
             }),
@@ -375,7 +374,7 @@ mod tests {
         s.transform = translation(0.0, 0.0, 1.0);
         let i = Intersection {
             t: 5.0,
-            object: Rc::new(Object{
+            object: Rc::new(Object {
                 geometry: Geometry::Sphere(s),
                 material: Material::new(),
             }),

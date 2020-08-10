@@ -429,7 +429,7 @@ mod tests {
             material.refractive_index = 1.5;
             Object {
                 geometry: Geometry::Sphere(Sphere::new()),
-                material
+                material,
             }
         };
 

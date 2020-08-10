@@ -23,8 +23,8 @@ impl Ray {
 
 #[cfg(test)]
 mod tests {
-    use super::super::objects::{Geometry, Object, Sphere};
     use super::super::material::Material;
+    use super::super::objects::{Geometry, Object, Sphere};
     use super::super::transformations::{scaling, translation};
     use super::super::tuple::{point, vector};
     use super::*;
@@ -47,7 +47,7 @@ mod tests {
             origin: point(0.0, 0.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let s = Object{
+        let s = Object {
             geometry: Geometry::Sphere(Sphere::new()),
             material: Material::new(),
         };
@@ -63,7 +63,7 @@ mod tests {
             origin: point(0.0, 1.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let s = Object{
+        let s = Object {
             geometry: Geometry::Sphere(Sphere::new()),
             material: Material::new(),
         };
@@ -79,7 +79,7 @@ mod tests {
             origin: point(0.0, 2.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let s = Object{
+        let s = Object {
             geometry: Geometry::Sphere(Sphere::new()),
             material: Material::new(),
         };
@@ -94,7 +94,7 @@ mod tests {
             origin: point(0.0, 0.0, 0.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let s = Object{
+        let s = Object {
             geometry: Geometry::Sphere(Sphere::new()),
             material: Material::new(),
         };
@@ -110,7 +110,7 @@ mod tests {
             origin: point(0.0, 0.0, 5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let s = Object{
+        let s = Object {
             geometry: Geometry::Sphere(Sphere::new()),
             material: Material::new(),
         };
