@@ -11,12 +11,13 @@ pub struct Mat {
 }
 
 /// Used to determine whether the matrix can be inverted quickly ussing different approaches.
-// TODO: Turn this into a monad (View(Mat)) for maximum FP points.
+/// Ordered from slowest to fastest.
 #[derive(Copy, Debug, Clone)]
 pub enum Kind {
     General = 0,
     Transform = 1,
     TransformNoScale = 2,
+    Identity = 3,
 }
 
 impl Kind {
@@ -146,27 +147,67 @@ impl Mat {
     }
 
     fn inverse_general(&self) -> Mat {
-        let (det, is_inversible) = self.is_inversible();
-        if !is_inversible {
-            std::panic!("cannot inverse matrix: {:?}", self);
-        }
+        let s0 = self.mat[0][0] * self.mat[1][1] - self.mat[1][0] * self.mat[0][1];
+        let s1 = self.mat[0][0] * self.mat[1][2] - self.mat[1][0] * self.mat[0][2];
+        let s2 = self.mat[0][0] * self.mat[1][3] - self.mat[1][0] * self.mat[0][3];
+        let s3 = self.mat[0][1] * self.mat[1][2] - self.mat[1][1] * self.mat[0][2];
+        let s4 = self.mat[0][1] * self.mat[1][3] - self.mat[1][1] * self.mat[0][3];
+        let s5 = self.mat[0][2] * self.mat[1][3] - self.mat[1][2] * self.mat[0][3];
 
-        let mut res = self.clone();
+        let c5 = self.mat[2][2] * self.mat[3][3] - self.mat[3][2] * self.mat[2][3];
+        let c4 = self.mat[2][1] * self.mat[3][3] - self.mat[3][1] * self.mat[2][3];
+        let c3 = self.mat[2][1] * self.mat[3][2] - self.mat[3][1] * self.mat[2][2];
+        let c2 = self.mat[2][0] * self.mat[3][3] - self.mat[3][0] * self.mat[2][3];
+        let c1 = self.mat[2][0] * self.mat[3][2] - self.mat[3][0] * self.mat[2][2];
+        let c0 = self.mat[2][0] * self.mat[3][1] - self.mat[3][0] * self.mat[2][1];
 
-        for row in 0..self.size as usize {
-            for col in 0..self.size as usize {
-                let cof = self.cofactor(row, col);
-                res.mat[col][row] = cof / det;
-            }
-        }
+        let invdet = 1.0 / (s0 * c5 - s1 * c4 + s2 * c3 + s3 * c2 - s4 * c1 + s5 * c0);
 
-        res
+        let mut result = self.clone();
+
+        result.mat[0][0] =
+            (self.mat[1][1] * c5 - self.mat[1][2] * c4 + self.mat[1][3] * c3) * invdet;
+        result.mat[0][1] =
+            (-self.mat[0][1] * c5 + self.mat[0][2] * c4 - self.mat[0][3] * c3) * invdet;
+        result.mat[0][2] =
+            (self.mat[3][1] * s5 - self.mat[3][2] * s4 + self.mat[3][3] * s3) * invdet;
+        result.mat[0][3] =
+            (-self.mat[2][1] * s5 + self.mat[2][2] * s4 - self.mat[2][3] * s3) * invdet;
+
+        result.mat[1][0] =
+            (-self.mat[1][0] * c5 + self.mat[1][2] * c2 - self.mat[1][3] * c1) * invdet;
+        result.mat[1][1] =
+            (self.mat[0][0] * c5 - self.mat[0][2] * c2 + self.mat[0][3] * c1) * invdet;
+        result.mat[1][2] =
+            (-self.mat[3][0] * s5 + self.mat[3][2] * s2 - self.mat[3][3] * s1) * invdet;
+        result.mat[1][3] =
+            (self.mat[2][0] * s5 - self.mat[2][2] * s2 + self.mat[2][3] * s1) * invdet;
+
+        result.mat[2][0] =
+            (self.mat[1][0] * c4 - self.mat[1][1] * c2 + self.mat[1][3] * c0) * invdet;
+        result.mat[2][1] =
+            (-self.mat[0][0] * c4 + self.mat[0][1] * c2 - self.mat[0][3] * c0) * invdet;
+        result.mat[2][2] =
+            (self.mat[3][0] * s4 - self.mat[3][1] * s2 + self.mat[3][3] * s0) * invdet;
+        result.mat[2][3] =
+            (-self.mat[2][0] * s4 + self.mat[2][1] * s2 - self.mat[2][3] * s0) * invdet;
+
+        result.mat[3][0] =
+            (-self.mat[1][0] * c3 + self.mat[1][1] * c1 - self.mat[1][2] * c0) * invdet;
+        result.mat[3][1] =
+            (self.mat[0][0] * c3 - self.mat[0][1] * c1 + self.mat[0][2] * c0) * invdet;
+        result.mat[3][2] =
+            (-self.mat[3][0] * s3 + self.mat[3][1] * s1 - self.mat[3][2] * s0) * invdet;
+        result.mat[3][3] =
+            (self.mat[2][0] * s3 - self.mat[2][1] * s1 + self.mat[2][2] * s0) * invdet;
+
+        result
     }
 
     pub fn inverse(&self) -> Mat {
         match self.kind {
+            Kind::Identity => self.clone(),
             Kind::TransformNoScale => self.inverse_no_scale(),
-            // Kind::Transform => self.inverse_with_scale(),
             _ => self.inverse_general(),
         }
     }
@@ -294,7 +335,7 @@ pub fn identity(size: usize) -> Mat {
     match size {
         2 | 3 | 4 => Mat {
             size,
-            kind: Kind::TransformNoScale,
+            kind: Kind::Identity,
             mat: [
                 [1.0, 0.0, 0.0, 0.0],
                 [0.0, 1.0, 0.0, 0.0],
