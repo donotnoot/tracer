@@ -188,7 +188,7 @@ func main() {
 
 	// Read from the pixels channel and append them to the buffer, to later
 	// draw them.
-	buffer := make([]*pb.Pixel, 0)
+	buffer := make([]*pb.Pixel, 0, height*width)
 	go func() {
 		for pixel := range pixels {
 			buffer = append(buffer, pixel)
