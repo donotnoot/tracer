@@ -1,7 +1,7 @@
 background_color: "black"
 rendering:
   randomize_rays: false
-  max_bounces: 3
+  max_bounces: 4
   antialias: 2
 light:
   position: [-5.0, 5, -5.0]
@@ -61,6 +61,8 @@ materials:
     diffuse: 0.8
     specular: 1
     reflectiveness: 0.3
+    transparency: .85
+    refractive_index: 1.3
   glass:
     color: white
     ambient: 0
