@@ -20,8 +20,7 @@ tonic = "0.3"
 async-stream = "0.2"
 log = "0.4"
 pretty_env_logger = "0.4"
-igd = "0.11.1"
-clap = "3.0.0-beta.1"
+clap = "2.33"
 
 [build-dependencies]
 tonic-build = "0.3"
