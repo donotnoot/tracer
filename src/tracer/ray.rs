@@ -53,8 +53,8 @@ mod tests {
         };
         let ixs = Object::intersect(&s, &r);
 
-        assert_eq!(ixs[0].t, 4.0);
-        assert_eq!(ixs[1].t, 6.0);
+        assert_eq!(ixs.0.unwrap(), 4.0);
+        assert_eq!(ixs.1.unwrap(), 6.0);
     }
 
     #[test]
@@ -69,8 +69,8 @@ mod tests {
         };
         let ixs = Object::intersect(&s, &r);
 
-        assert_eq!(ixs[0].t, 5.0);
-        assert_eq!(ixs[1].t, 5.0);
+        assert_eq!(ixs.0.unwrap(), 5.0);
+        assert_eq!(ixs.1.unwrap(), 5.0);
     }
 
     #[test]
@@ -85,7 +85,7 @@ mod tests {
         };
         let ixs = Object::intersect(&s, &r);
 
-        assert_eq!(ixs.len(), 0);
+        assert_eq!(ixs, (None, None));
     }
 
     #[test]
@@ -100,8 +100,8 @@ mod tests {
         };
         let ixs = Object::intersect(&s, &r);
 
-        assert_eq!(ixs[0].t, -1.0);
-        assert_eq!(ixs[1].t, 1.0);
+        assert_eq!(ixs.0.unwrap(), -1.0);
+        assert_eq!(ixs.1.unwrap(), 1.0);
     }
 
     #[test]
@@ -116,8 +116,8 @@ mod tests {
         };
         let ixs = Object::intersect(&s, &r);
 
-        assert_eq!(ixs[0].t, -6.0);
-        assert_eq!(ixs[1].t, -4.0);
+        assert_eq!(ixs.0.unwrap(), -6.0);
+        assert_eq!(ixs.1.unwrap(), -4.0);
     }
 
     // skipped interset sets the object on the intersesectino
