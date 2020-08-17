@@ -19,33 +19,33 @@ pub enum Geometry {
 
 impl Object {
     pub fn normal(&self, p: &Tup) -> Tup {
-        let local_point = |transform: &Mat| &transform.inverse() * p;
+        let local_point = |transform_inverse: &Mat| transform_inverse * p;
 
-        let (local_normal, shape_transform) = match &self.geometry {
-            Geometry::Sphere(o) => (o.normal(&local_point(&o.transform)), &o.transform),
-            Geometry::Plane(o) => (o.normal(&local_point(&o.transform)), &o.transform),
-            Geometry::Cube(o) => (o.normal(&local_point(&o.transform)), &o.transform),
+        let (local_normal, transform_inverse) = match &self.geometry {
+            Geometry::Sphere(o) => (o.normal(&local_point(&o.transform_inverse)), &o.transform_inverse),
+            Geometry::Plane(o) => (o.normal(&local_point(&o.transform_inverse)), &o.transform_inverse),
+            Geometry::Cube(o) => (o.normal(&local_point(&o.transform_inverse)), &o.transform_inverse),
         };
 
-        let mut world_normal = &shape_transform.inverse().transpose() * &local_normal;
+        let mut world_normal = &transform_inverse.transpose() * &local_normal;
         world_normal.w = 0.0;
 
         world_normal.normalize()
     }
 
     pub fn intersect(object: &Self, r: &Ray) -> (Option<f32>, Option<f32>) {
-        let common = |ray: &Ray, transform: &Mat| ray.transform(&transform.inverse());
+        let common = |ray: &Ray, transform_inverse: &Mat| ray.transform(&transform_inverse);
 
         match &object.geometry {
-            Geometry::Sphere(o) => match o.intersect(&common(r, &o.transform)) {
+            Geometry::Sphere(o) => match o.intersect(&common(r, &o.transform_inverse)) {
                 Some((t1, t2)) => (Some(t1), Some(t2)),
                 None => (None, None),
             },
-            Geometry::Plane(o) => match o.intersect(&common(r, &o.transform)) {
+            Geometry::Plane(o) => match o.intersect(&common(r, &o.transform_inverse)) {
                 Some(t) => (Some(t), None),
                 None => (None, None),
             },
-            Geometry::Cube(o) => match o.intersect(&common(r, &o.transform)) {
+            Geometry::Cube(o) => match o.intersect(&common(r, &o.transform_inverse)) {
                 Some((t1, t2)) => (Some(t1), Some(t2)),
                 None => (None, None),
             },
@@ -63,14 +63,14 @@ impl Object {
 
 #[derive(Debug, Clone)]
 pub struct Sphere {
-    pub transform: Mat,
+    transform: Mat,
+    transform_inverse: Mat,
 }
 
 impl Sphere {
-    pub fn new() -> Self {
-        Sphere {
-            transform: identity(),
-        }
+    pub fn new(transform: Mat) -> Self {
+        let transform_inverse = transform.inverse();
+        Sphere { transform, transform_inverse }
     }
 
     fn normal(&self, p: &Tup) -> Tup {
@@ -103,20 +103,20 @@ impl Sphere {
 
 impl Default for Sphere {
     fn default() -> Self {
-        Self::new()
+        Self::new(identity())
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Plane {
-    pub transform: Mat,
+    transform: Mat,
+    transform_inverse: Mat,
 }
 
 impl Plane {
-    pub fn new() -> Self {
-        Plane {
-            transform: identity(),
-        }
+    pub fn new(transform: Mat) -> Self {
+        let transform_inverse = transform.inverse();
+        Plane { transform, transform_inverse }
     }
 
     fn normal(&self, _: &Tup) -> Tup {
@@ -134,20 +134,20 @@ impl Plane {
 
 impl Default for Plane {
     fn default() -> Self {
-        Self::new()
+        Self::new(identity())
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Cube {
-    pub transform: Mat,
+    transform: Mat,
+    transform_inverse: Mat,
 }
 
 impl Cube {
-    pub fn new() -> Self {
-        Cube {
-            transform: identity(),
-        }
+    pub fn new(transform: Mat) -> Self {
+        let transform_inverse = transform.inverse();
+        Cube { transform, transform_inverse }
     }
 
     fn normal(&self, point: &Tup) -> Tup {
@@ -209,7 +209,7 @@ impl Cube {
 
 impl Default for Cube {
     fn default() -> Self {
-        Self::new()
+        Self::new(identity())
     }
 }
 #[cfg(test)]
