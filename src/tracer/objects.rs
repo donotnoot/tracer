@@ -1,11 +1,8 @@
-use super::intersections::{Intersection, Intersections};
 use super::material::Material;
 use super::matrix::{identity, Mat};
 use super::ray::Ray;
 
 use super::tuple::{dot, point, vector, Tup};
-
-use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub struct Object {
@@ -36,49 +33,23 @@ impl Object {
         world_normal.normalize()
     }
 
-    pub fn intersect(object: &Self, r: &Ray) -> Intersections {
+    pub fn intersect(object: &Self, r: &Ray) -> (Option<f32>, Option<f32>) {
         let common = |ray: &Ray, transform: &Mat| ray.transform(&transform.inverse());
 
-        let mut v: Vec<Intersection> = Vec::with_capacity(2);
-
-        let ref_clone = Rc::new(object.clone());
-
         match &object.geometry {
-            Geometry::Sphere(o) => {
-                if let Some((t1, t2)) = o.intersect(&common(r, &o.transform)) {
-                    v.push(Intersection {
-                        t: t1,
-                        object: Rc::clone(&ref_clone),
-                    });
-                    v.push(Intersection {
-                        t: t2,
-                        object: Rc::clone(&ref_clone),
-                    });
-                }
-            }
-            Geometry::Plane(o) => {
-                if let Some(t1) = o.intersect(&common(r, &o.transform)) {
-                    v.push(Intersection {
-                        t: t1,
-                        object: Rc::clone(&ref_clone),
-                    });
-                }
-            }
-            Geometry::Cube(o) => {
-                if let Some((t1, t2)) = o.intersect(&common(r, &o.transform)) {
-                    v.push(Intersection {
-                        t: t1,
-                        object: Rc::clone(&ref_clone),
-                    });
-                    v.push(Intersection {
-                        t: t2,
-                        object: Rc::clone(&ref_clone),
-                    });
-                }
-            }
-        };
-
-        v
+            Geometry::Sphere(o) => match o.intersect(&common(r, &o.transform)) {
+                Some((t1, t2)) => (Some(t1), Some(t2)),
+                None => (None, None),
+            },
+            Geometry::Plane(o) => match o.intersect(&common(r, &o.transform)) {
+                Some(t) => (Some(t), None),
+                None => (None, None),
+            },
+            Geometry::Cube(o) => match o.intersect(&common(r, &o.transform)) {
+                Some((t1, t2)) => (Some(t1), Some(t2)),
+                None => (None, None),
+            },
+        }
     }
 
     pub fn transformation(&self) -> Mat {
@@ -261,8 +232,8 @@ mod tests {
         };
         let ixs = Object::intersect(&obj, &r);
 
-        assert_eq!(3.0, ixs[0].t);
-        assert_eq!(7.0, ixs[1].t);
+        assert_eq!(3.0, ixs.0.unwrap());
+        assert_eq!(7.0, ixs.1.unwrap());
     }
 
     #[test]
@@ -280,7 +251,7 @@ mod tests {
         };
         let ixs = Object::intersect(&obj, &r);
 
-        assert_eq!(ixs.len(), 0);
+        assert_eq!(ixs, (None, None));
     }
 
     #[test]
