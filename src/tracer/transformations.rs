@@ -1,4 +1,4 @@
-use super::matrix::{identity, Kind, Mat};
+use super::matrix::{Kind, Mat};
 use super::tuple;
 
 pub fn translation(x: f32, y: f32, z: f32) -> Mat {
