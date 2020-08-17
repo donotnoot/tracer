@@ -48,7 +48,7 @@ impl Pattern {
             Pattern::Checker(_, _, Some(t)) => t.clone(),
             Pattern::Ring(_, _, Some(t)) => t.clone(),
             Pattern::Mandelbrot(_, Some(t)) => t.clone(),
-            _ => identity(4),
+            _ => identity(),
         };
         let pattern_space = &transform.inverse() * &object_space;
 

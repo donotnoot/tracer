@@ -311,7 +311,7 @@ pub fn from_reader(
 
 impl SceneFile {
     fn process_transformations(&self, t: &[TransformSpec]) -> Mat {
-        let mut m = matrix::identity(4);
+        let mut m = matrix::identity();
 
         for transform in t.iter() {
             m = m * self.process_transform(transform);

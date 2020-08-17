@@ -69,7 +69,7 @@ pub struct Sphere {
 impl Sphere {
     pub fn new() -> Self {
         Sphere {
-            transform: identity(4),
+            transform: identity(),
         }
     }
 
@@ -115,7 +115,7 @@ pub struct Plane {
 impl Plane {
     pub fn new() -> Self {
         Plane {
-            transform: identity(4),
+            transform: identity(),
         }
     }
 
@@ -146,7 +146,7 @@ pub struct Cube {
 impl Cube {
     pub fn new() -> Self {
         Cube {
-            transform: identity(4),
+            transform: identity(),
         }
     }
 

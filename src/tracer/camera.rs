@@ -46,8 +46,8 @@ impl Camera {
             half_width,
             half_height,
             pixel_size: (half_width * 2.0) / h_size,
-            transform: identity(4),
-            transform_inverse: identity(4),
+            transform: identity(),
+            transform_inverse: identity(),
             antialias: aa,
             reflection_limit: max_depth,
         }
