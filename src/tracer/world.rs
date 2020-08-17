@@ -1,4 +1,4 @@
-use super::intersections::{hit, Computations, Intersections};
+use super::intersections::{hit, Computations, Intersection, Intersections};
 use super::light::*;
 use super::material::Material;
 use super::objects::{Geometry, Object, Sphere};
@@ -62,8 +62,18 @@ impl World {
         // Generally, objects will return at most 2 intersections, so make space for them.
         let mut i: Intersections = Vec::with_capacity(self.objects.len() * 2);
 
-        for elem in self.objects.iter() {
-            i.append(&mut Object::intersect(&elem, r));
+        for object in self.objects.iter() {
+            match Object::intersect(&object, r) {
+                (None, None) => (),
+                (Some(t1), Some(t2)) => {
+                    i.push(Intersection{t: t1, object});
+                    i.push(Intersection{t: t2, object});
+                },
+                (Some(t), None) => {
+                    i.push(Intersection{t, object});
+                },
+                _ => panic!("Object::intersect returned invalid intersections."),
+            }
         }
 
         i.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
@@ -262,7 +272,7 @@ mod tests {
         };
         let i = Intersection {
             t: 1.0,
-            object: Rc::new(w.objects[1].clone()),
+            object: &w.objects[1],
         };
         let c = i.computations(&r, None);
         let color = w.reflected_color(&c, 10);
@@ -293,7 +303,7 @@ mod tests {
         };
         let i = Intersection {
             t: 2.0f32.sqrt(),
-            object: Rc::new(s),
+            object: &s,
         };
         let c = i.computations(&r, None);
         let color = w.reflected_color(&c, 10);
@@ -325,7 +335,7 @@ mod tests {
         };
         let i = Intersection {
             t: 2.0f32.sqrt(),
-            object: Rc::new(s),
+            object: &s,
         };
         let c = i.computations(&r, None);
         let color = w.shade_hit(&c, 10);
@@ -357,7 +367,7 @@ mod tests {
         };
         let i = Intersection {
             t: 2.0f32.sqrt(),
-            object: Rc::new(s),
+            object: &s,
         };
         let c = i.computations(&r, None);
         let color = w.reflected_color(&c, 0);
@@ -369,7 +379,6 @@ mod tests {
     #[test]
     fn the_refracted_color_with_opaque_surface() {
         let w = World::new_with_stuff();
-        let shape = Rc::new(w.objects[0].clone());
         let r = Ray {
             origin: point(0.0, 0.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
@@ -377,11 +386,11 @@ mod tests {
         let xs: Intersections = vec![
             Intersection {
                 t: 4.0,
-                object: Rc::clone(&shape),
+                object: &w.objects[0],
             },
             Intersection {
                 t: 6.0,
-                object: Rc::clone(&shape),
+                object: &w.objects[0],
             },
         ];
         let comps = xs[0].computations(&r, Some(&xs));
@@ -396,7 +405,6 @@ mod tests {
     #[test]
     fn refracted_color_at_max_recursive_depth() {
         let w = World::new_with_stuff();
-        let shape = Rc::new(w.objects[0].clone());
         let r = Ray {
             origin: point(0.0, 0.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
@@ -404,11 +412,11 @@ mod tests {
         let xs: Intersections = vec![
             Intersection {
                 t: 4.0,
-                object: Rc::clone(&shape),
+                object: &w.objects[0],
             },
             Intersection {
                 t: 6.0,
-                object: Rc::clone(&shape),
+                object: &w.objects[0],
             },
         ];
         let comps = xs[0].computations(&r, Some(&xs));
@@ -433,7 +441,6 @@ mod tests {
             }
         };
 
-        let shape = Rc::new(w.objects[0].clone());
         let p = 2f32.sqrt() / 2.0;
         let r = Ray {
             origin: point(0.0, 0.0, p),
@@ -442,11 +449,11 @@ mod tests {
         let xs: Intersections = vec![
             Intersection {
                 t: -p,
-                object: Rc::clone(&shape),
+                object: &w.objects[0],
             },
             Intersection {
                 t: p,
-                object: Rc::clone(&shape),
+                object: &w.objects[0],
             },
         ];
         let comps = xs[1].computations(&r, Some(&xs));
@@ -486,7 +493,7 @@ mod tests {
 
         let xs: Intersections = vec![Intersection {
             t: 2.0f32.sqrt(),
-            object: Rc::new(s.clone()),
+            object: &s,
         }];
 
         let p = (2f32).sqrt() / 2.;
