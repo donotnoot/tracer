@@ -2,17 +2,16 @@ use super::tuple;
 use super::tuple::vector;
 use super::tuple::Tup;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[repr(C)]
 pub struct Mat {
-    size: usize,
-    pub mat: [[f32; 4]; 4],
-    pub kind: Kind,
+    mat: [[f32; 4]; 4],
+    kind: Kind,
 }
 
 /// Used to determine whether the matrix can be inverted quickly ussing different approaches.
 /// Ordered from slowest to fastest.
-#[derive(Copy, Debug, Clone)]
+#[derive(Copy, Debug, Clone, PartialEq)]
 pub enum Kind {
     General = 0,
     Transform = 1,
@@ -30,7 +29,25 @@ impl Kind {
     }
 }
 
+impl Default for Mat {
+    fn default() -> Mat {
+        Mat::new(
+            [
+                [0., 0., 0., 0.],
+                [0., 0., 0., 0.],
+                [0., 0., 0., 0.],
+                [0., 0., 0., 0.],
+            ],
+            Kind::Identity,
+        )
+    }
+}
+
 impl Mat {
+    pub fn new(mat: [[f32; 4]; 4], kind: Kind) -> Mat {
+        Mat { mat, kind }
+    }
+
     pub fn transpose(&self) -> Mat {
         let mut m = self.clone();
 
@@ -154,24 +171,6 @@ impl Mat {
     }
 }
 
-impl std::cmp::PartialEq<Mat> for Mat {
-    fn eq(&self, b: &Mat) -> bool {
-        if self.size != b.size {
-            return false;
-        }
-
-        // TODO: epsilon cmp, SIMD?
-        match self.size {
-            4 => self.mat == b.mat,
-            3 => {
-                (self.mat[0] == b.mat[0]) && (self.mat[1] == b.mat[1]) && (self.mat[2] == b.mat[2])
-            }
-            2 => (self.mat[0] == b.mat[0]) && (self.mat[1] == b.mat[1]),
-            _ => std::panic!("unsupported matrix size"),
-        }
-    }
-}
-
 /// Matrix multiplication (borrow)
 impl<'a, 'b> std::ops::Mul<&'b Mat> for &'a Mat {
     type Output = Mat;
@@ -182,7 +181,7 @@ impl<'a, 'b> std::ops::Mul<&'b Mat> for &'a Mat {
 }
 
 fn mat_mat_mul_brute(lhs: &Mat, rhs: &Mat) -> Mat {
-    let mut result = mat(4);
+    let mut result = Mat::default();
     result.kind = lhs.kind.worst(&rhs.kind);
 
     macro_rules! mat_mul {
@@ -256,47 +255,26 @@ pub fn mat_tup_mul_brute(lhs: &Mat, rhs: &Tup) -> Tup {
     Tup { x, y, z, w }
 }
 
-pub fn mat(size: usize) -> Mat {
-    match size {
-        2 | 3 | 4 => Mat {
-            size,
-            kind: Kind::TransformNoScale,
-            mat: [
-                [0.0, 0.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0, 0.0],
-            ],
-        },
-        _ => std::panic!("unsupported matrix size"),
-    }
-}
-
-pub fn identity(size: usize) -> Mat {
-    match size {
-        2 | 3 | 4 => Mat {
-            size,
-            kind: Kind::Identity,
-            mat: [
-                [1.0, 0.0, 0.0, 0.0],
-                [0.0, 1.0, 0.0, 0.0],
-                [0.0, 0.0, 1.0, 0.0],
-                [0.0, 0.0, 0.0, 1.0],
-            ],
-        },
-        _ => std::panic!("unsupported matrix size"),
+pub fn identity() -> Mat {
+    Mat {
+        kind: Kind::Identity,
+        mat: [
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ],
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::transformations::*;
+    use super::*;
 
     #[test]
     fn matrix_equality() {
         let a = Mat {
-            size: 4,
             kind: Kind::TransformNoScale,
             mat: [
                 [1.0, 0.0, 0.0, 0.0],
@@ -306,7 +284,6 @@ mod tests {
             ],
         };
         let b = Mat {
-            size: 4,
             kind: Kind::TransformNoScale,
             mat: [
                 [1.0, 0.0, 0.0, 0.0],
@@ -322,7 +299,6 @@ mod tests {
     #[test]
     fn matrix_multiplication() {
         let a = Mat {
-            size: 4,
             kind: Kind::TransformNoScale,
             mat: [
                 [1.0, 2.0, 3.0, 4.0],
@@ -332,7 +308,6 @@ mod tests {
             ],
         };
         let b = Mat {
-            size: 4,
             kind: Kind::TransformNoScale,
             mat: [
                 [-2.0, 1.0, 2.0, 3.0],
@@ -342,7 +317,6 @@ mod tests {
             ],
         };
         let r = Mat {
-            size: 4,
             kind: Kind::TransformNoScale,
             mat: [
                 [20.0, 22.0, 50.0, 48.0],
@@ -358,7 +332,6 @@ mod tests {
     #[test]
     fn matrix_tuple_multiplication() {
         let a = Mat {
-            size: 4,
             kind: Kind::TransformNoScale,
             mat: [
                 [1.0, 2.0, 3.0, 4.0],
@@ -386,7 +359,6 @@ mod tests {
     #[test]
     fn multiplying_by_the_identity_matrix_returns_the_original_matrix() {
         let m = Mat {
-            size: 4,
             kind: Kind::TransformNoScale,
             mat: [
                 [1.0, 2.0, 3.0, 4.0],
@@ -396,14 +368,13 @@ mod tests {
             ],
         };
 
-        let result = &m * &identity(4);
+        let result = &m * &identity();
         assert_eq!(result, m)
     }
 
     #[test]
     fn transposing_a_matrix() {
         let m = Mat {
-            size: 4,
             kind: Kind::TransformNoScale,
             mat: [
                 [1.0, 2.0, 3.0, 4.0],
@@ -413,7 +384,6 @@ mod tests {
             ],
         };
         let expected = Mat {
-            size: 4,
             kind: Kind::TransformNoScale,
             mat: [
                 [1.0, 5.0, 9.0, 5.0],
@@ -446,7 +416,7 @@ mod tests {
             let m = scaling(3., 3., 3.);
             let inv = m.inverse();
 
-            let onethird: f32 = 1./3.;
+            let onethird: f32 = 1. / 3.;
 
             assert_eq!(m.kind as i32, Kind::Transform as i32);
             assert_eq!(inv.kind as i32, Kind::Transform as i32);
@@ -456,7 +426,7 @@ mod tests {
             assert_eq!(inv.mat[3][3], 1.);
         }
         {
-            let mut m = identity(4);
+            let mut m = identity();
             m.kind = Kind::General;
             m.mat[0][2] = 3.;
             m.mat[3][1] = 3.;
@@ -473,10 +443,10 @@ mod tests {
 
     #[test]
     fn multiplication_keeps_kind_of_rhs() {
-        let mut lhs = identity(4);
+        let mut lhs = identity();
         lhs.kind = Kind::TransformNoScale;
 
-        let mut rhs = identity(4);
+        let mut rhs = identity();
         rhs.kind = Kind::General;
 
         {
