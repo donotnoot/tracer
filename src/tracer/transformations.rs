@@ -2,96 +2,95 @@ use super::matrix::{identity, Kind, Mat};
 use super::tuple;
 
 pub fn translation(x: f32, y: f32, z: f32) -> Mat {
-    let mut m = identity(4);
-    m.kind = Kind::TransformNoScale;
+    let mat = [
+        [1.0, 0.0, 0.0, x],
+        [0.0, 1.0, 0.0, y],
+        [0.0, 0.0, 1.0, z],
+        [0.0, 0.0, 0.0, 1.0],
+    ];
+    let kind = Kind::TransformNoScale;
 
-    m.mat[0][3] = x;
-    m.mat[1][3] = y;
-    m.mat[2][3] = z;
-    m
+    Mat::new(mat, kind)
 }
 
 pub fn scaling(x: f32, y: f32, z: f32) -> Mat {
-    let mut m = identity(4);
-    m.kind = Kind::Transform;
+    let mat = [
+        [x, 0.0, 0.0, 0.0],
+        [0.0, y, 0.0, 0.0],
+        [0.0, 0.0, z, 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+    ];
+    let kind = Kind::Transform;
 
-    m.mat[0][0] = x;
-    m.mat[1][1] = y;
-    m.mat[2][2] = z;
-    m
+    Mat::new(mat, kind)
 }
 
 pub fn rotate_x(rad: f32) -> Mat {
-    let mut m = identity(4);
-    m.kind = Kind::TransformNoScale;
-
     let sin = rad.sin();
     let cos = rad.cos();
-    m.mat[1][1] = cos;
-    m.mat[1][2] = -sin;
-    m.mat[2][1] = sin;
-    m.mat[2][2] = cos;
-    m
+    let mat = [
+        [1.0, 0.0, 0.0, 0.0],
+        [0.0, cos, -sin, 0.0],
+        [0.0, sin, cos, 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+    ];
+    let kind = Kind::TransformNoScale;
+
+    Mat::new(mat, kind)
 }
 
 pub fn rotate_y(rad: f32) -> Mat {
-    let mut m = identity(4);
-    m.kind = Kind::TransformNoScale;
-
     let sin = rad.sin();
     let cos = rad.cos();
-    m.mat[0][0] = cos;
-    m.mat[0][2] = sin;
-    m.mat[2][0] = -sin;
-    m.mat[2][2] = cos;
-    m
+    let mat = [
+        [cos, 0.0, sin, 0.0],
+        [0.0, 1.0, 0.0, 0.0],
+        [-sin, 0.0, cos, 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+    ];
+    let kind = Kind::TransformNoScale;
+
+    Mat::new(mat, kind)
 }
 
 pub fn rotate_z(rad: f32) -> Mat {
-    let mut m = identity(4);
-    m.kind = Kind::TransformNoScale;
-
     let sin = rad.sin();
     let cos = rad.cos();
-    m.mat[0][0] = cos;
-    m.mat[0][1] = -sin;
-    m.mat[1][0] = sin;
-    m.mat[1][1] = cos;
-    m
+    let mat = [
+        [cos, -sin, 0.0, 0.0],
+        [sin, cos, 0.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+    ];
+    let kind = Kind::TransformNoScale;
+
+    Mat::new(mat, kind)
 }
 
 pub fn shearing(xy: f32, xz: f32, yx: f32, yz: f32, zx: f32, zy: f32) -> Mat {
-    let mut m = identity(4);
-    m.kind = Kind::General;
+    let mat = [
+        [1.0, xy, xz, 0.0],
+        [yx, 1.0, yz, 0.0],
+        [zx, zy, 1.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+    ];
+    let kind = Kind::General;
 
-    m.mat[0][1] = xy;
-    m.mat[0][2] = xz;
-    m.mat[1][0] = yx;
-    m.mat[1][2] = yz;
-    m.mat[2][0] = zx;
-    m.mat[2][1] = zy;
-    m
+    Mat::new(mat, kind)
 }
 
 pub fn view(from: tuple::Tup, to: tuple::Tup, up: tuple::Tup) -> Mat {
-    let mut m = identity(4);
-    m.kind = Kind::General;
-
     let forward = (&to - &from).normalize();
     let left = tuple::cross(&forward, &up.normalize());
     let true_up = tuple::cross(&left, &forward);
 
-    m.mat[0][0] = left.x;
-    m.mat[0][1] = left.y;
-    m.mat[0][2] = left.z;
+    let mat = [
+            [left.x, left.y, left.z, 0.0],
+            [true_up.x, true_up.y, true_up.z, 0.0],
+            [-forward.x, -forward.y, -forward.z, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+    ];
+    let kind = Kind::General;
 
-    m.mat[1][0] = true_up.x;
-    m.mat[1][1] = true_up.y;
-    m.mat[1][2] = true_up.z;
-
-    m.mat[2][0] = -forward.x;
-    m.mat[2][1] = -forward.y;
-    m.mat[2][2] = -forward.z;
-
-    &m * &(translation(-from.x, -from.y, -from.z))
+    Mat::new(mat, kind) * translation(-from.x, -from.y, -from.z)
 }
