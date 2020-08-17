@@ -272,27 +272,21 @@ pub fn from_reader(
         .iter()
         .map(|spec| match spec {
             ObjectSpec::Sphere(spec) => {
-                let mut sphere = Sphere::new();
-                sphere.transform = scene.process_transformations(&spec.transform);
-
+                let sphere = Sphere::new(scene.process_transformations(&spec.transform));
                 Ok(Object {
                     geometry: Geometry::Sphere(sphere),
                     material: scene.process_material(&spec.material)?,
                 })
             }
             ObjectSpec::Plane(spec) => {
-                let mut plane = Plane::new();
-                plane.transform = scene.process_transformations(&spec.transform);
-
+                let plane = Plane::new(scene.process_transformations(&spec.transform));
                 Ok(Object {
                     geometry: Geometry::Plane(plane),
                     material: scene.process_material(&spec.material)?,
                 })
             }
             ObjectSpec::Cube(spec) => {
-                let mut cube = Cube::new();
-                cube.transform = scene.process_transformations(&spec.transform);
-
+                let cube = Cube::new(scene.process_transformations(&spec.transform));
                 Ok(Object {
                     geometry: Geometry::Cube(cube),
                     material: scene.process_material(&spec.material)?,
@@ -393,12 +387,10 @@ impl SceneFile {
                     None => None,
                 },
             )),
-            PatternSpec::Reference { name } => {
-                match self.patterns.get(name) {
-                    Some(name) => Ok(self.process_pattern(name)?),
-                    None => Err(format!("could not find pattern with name '{}'", name).into()),
-                }
-            }
+            PatternSpec::Reference { name } => match self.patterns.get(name) {
+                Some(name) => Ok(self.process_pattern(name)?),
+                None => Err(format!("could not find pattern with name '{}'", name).into()),
+            },
         }
     }
 
@@ -433,12 +425,10 @@ impl SceneFile {
         match c {
             ColorSpec::Ints(r, g, b) => Ok(color_u8(*r, *g, *b)),
             ColorSpec::Floats(r, g, b) => Ok(color(*r, *g, *b)),
-            ColorSpec::Reference(name) => {
-                match self.colors.get(name) {
-                    Some(color) => Ok(self.process_color(color)?),
-                    None => Err(format!("could not find material with name '{}'", name).into()),
-                }
-            }
+            ColorSpec::Reference(name) => match self.colors.get(name) {
+                Some(color) => Ok(self.process_color(color)?),
+                None => Err(format!("could not find material with name '{}'", name).into()),
+            },
             ColorSpec::Hex(hex) => Ok(color_u8((*hex >> 16) as u8, (*hex >> 8) as u8, *hex as u8)),
         }
     }

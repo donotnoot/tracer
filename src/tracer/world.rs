@@ -32,7 +32,7 @@ impl World {
             objects: vec![
                 {
                     let mut object = Object {
-                        geometry: Geometry::Sphere(Sphere::new()),
+                        geometry: Geometry::Sphere(Sphere::default()),
                         material: Material::new(),
                     };
                     object.material.color = color(0.8, 1.0, 0.6);
@@ -41,8 +41,7 @@ impl World {
                     object
                 },
                 {
-                    let mut geometry = Sphere::new();
-                    geometry.transform = scaling(0.5, 0.5, 0.5);
+                    let geometry = Sphere::new(scaling(0.5, 0.5, 0.5));
                     Object {
                         geometry: Geometry::Sphere(geometry),
                         material: Material::new(),
