@@ -2,9 +2,8 @@ use super::objects::Object;
 use super::ray::Ray;
 
 use super::tuple::{dot, Tup};
-use std::rc::Rc;
 
-pub type Intersections = Vec<Intersection>;
+pub type Intersections<'a> = Vec<Intersection<'a>>;
 
 pub fn hit(i: &[Intersection]) -> (f32, usize, bool) {
     let mut min = std::f32::INFINITY;
@@ -26,9 +25,9 @@ pub fn hit(i: &[Intersection]) -> (f32, usize, bool) {
 }
 
 #[derive(Debug)]
-pub struct Computations {
+pub struct Computations<'a> {
     pub t: f32,
-    pub object: Rc<Object>,
+    pub object: &'a Object,
     pub inside: bool,
     pub point: Tup,
     pub eye: Tup,
@@ -40,7 +39,7 @@ pub struct Computations {
     pub n2: f32,
 }
 
-impl Computations {
+impl<'a> Computations<'a> {
     pub fn schlick(&self) -> f32 {
         let mut cos = dot(&self.eye, &self.normal);
 
@@ -62,12 +61,12 @@ impl Computations {
 }
 
 #[derive(Debug)]
-pub struct Intersection {
+pub struct Intersection<'a>  {
     pub t: f32,
-    pub object: Rc<Object>,
+    pub object: &'a Object,
 }
 
-impl Intersection {
+impl<'a>  Intersection<'a>  {
     pub fn computations(&self, r: &Ray, xs: Option<&Intersections>) -> Computations {
         let point = r.position(self.t);
         let eye = -&r.direction;
@@ -92,7 +91,7 @@ impl Intersection {
 
         Computations {
             t: self.t,
-            object: self.object.clone(),
+            object: self.object,
             point,
             eye,
             normal,
@@ -114,7 +113,7 @@ impl Intersection {
         }
 
         // todo: what if no hit?
-        let mut containers: Vec<&Rc<Object>> = Vec::with_capacity(xs.len());
+        let mut containers: Vec<&Object> = Vec::with_capacity(xs.len());
 
         for i in xs.iter() {
             let is_hit = std::ptr::eq(self, i);
@@ -127,7 +126,7 @@ impl Intersection {
                 }
             }
 
-            if let Some(idx) = containers.iter().position(|&e| Rc::ptr_eq(e, &i.object)) {
+            if let Some(idx) = containers.iter().position(|&e| std::ptr::eq(e, i.object)) {
                 containers.remove(idx);
             } else {
                 containers.push(&i.object);
@@ -178,14 +177,15 @@ mod tests {
 
     #[test]
     fn getting_the_hit_when_all_are_positive() {
+        let sphere = make_sphere();
         let ixs: Intersections = vec![
             Intersection {
                 t: 1.0,
-                object: Rc::new(make_sphere()),
+                object: &sphere,
             },
             Intersection {
                 t: 2.0,
-                object: Rc::new(make_sphere()),
+                object: &sphere,
             },
         ];
 
@@ -198,18 +198,19 @@ mod tests {
 
     #[test]
     fn getting_the_hit_when_some_pos_some_neg() {
+        let sphere = make_sphere();
         let ixs: Intersections = vec![
             Intersection {
                 t: -1.0,
-                object: Rc::new(make_sphere()),
+                object: &sphere,
             },
             Intersection {
                 t: 1.0,
-                object: Rc::new(make_sphere()),
+                object: &sphere,
             },
             Intersection {
                 t: 2.0,
-                object: Rc::new(make_sphere()),
+                object: &sphere,
             },
         ];
 
@@ -222,14 +223,15 @@ mod tests {
 
     #[test]
     fn getting_the_hit_when_all_are_neg() {
+        let sphere = make_sphere();
         let ixs: Intersections = vec![
             Intersection {
                 t: -1.0,
-                object: Rc::new(make_sphere()),
+                object: &sphere,
             },
             Intersection {
                 t: -2.0,
-                object: Rc::new(make_sphere()),
+                object: &sphere,
             },
         ];
 
@@ -242,22 +244,23 @@ mod tests {
 
     #[test]
     fn the_hit_is_always_the_lowest_positive_intersection() {
+        let sphere = make_sphere();
         let ixs: Intersections = vec![
             Intersection {
                 t: -1.0,
-                object: Rc::new(make_sphere()),
+                object: &sphere,
             },
             Intersection {
                 t: 1.0,
-                object: Rc::new(make_sphere()),
+                object: &sphere,
             },
             Intersection {
                 t: -2.0,
-                object: Rc::new(make_sphere()),
+                object: &sphere,
             },
             Intersection {
                 t: 2.0,
-                object: Rc::new(make_sphere()),
+                object: &sphere,
             },
         ];
 
@@ -276,7 +279,7 @@ mod tests {
         };
         let i = Intersection {
             t: 4.0,
-            object: Rc::new(make_sphere()),
+            object: &make_sphere(),
         };
 
         let c = i.computations(&r, None);
@@ -304,7 +307,7 @@ mod tests {
         };
         let i = Intersection {
             t: 4.0,
-            object: Rc::new(make_sphere()),
+            object: &make_sphere(),
         };
         let c = i.computations(&r, None);
 
@@ -319,7 +322,7 @@ mod tests {
         };
         let i = Intersection {
             t: 1.0,
-            object: Rc::new(make_sphere()),
+            object: &make_sphere(),
         };
         let c = i.computations(&r, None);
 
@@ -348,10 +351,10 @@ mod tests {
         s.transform = translation(0.0, 0.0, 1.0);
         let i = Intersection {
             t: 5.0,
-            object: Rc::new(Object {
+            object: &Object {
                 geometry: Geometry::Sphere(s),
                 material: Material::new(),
-            }),
+            },
         };
         let c = i.computations(&r, None);
 
@@ -369,10 +372,10 @@ mod tests {
         s.transform = translation(0.0, 0.0, 1.0);
         let i = Intersection {
             t: 5.0,
-            object: Rc::new(Object {
+            object: &Object {
                 geometry: Geometry::Sphere(s),
                 material: Material::new(),
-            }),
+            },
         };
         let c = i.computations(&r, None);
 
@@ -393,7 +396,7 @@ mod tests {
         };
         let i = Intersection {
             t: p,
-            object: Rc::new(plane),
+            object: &plane,
         };
         let c = i.computations(&r, None);
 
@@ -412,7 +415,7 @@ mod tests {
                 material: Material::new(),
             };
             s.material.refractive_index = 1.5;
-            Rc::new(s)
+            s
         };
         let b = {
             let mut s = Sphere::new();
@@ -422,7 +425,7 @@ mod tests {
                 material: Material::new(),
             };
             s.material.refractive_index = 2.0;
-            Rc::new(s)
+            s
         };
         let c = {
             let mut s = Sphere::new();
@@ -432,7 +435,7 @@ mod tests {
                 material: Material::new(),
             };
             s.material.refractive_index = 2.5;
-            Rc::new(s)
+            s
         };
 
         let r = Ray {
@@ -442,27 +445,27 @@ mod tests {
         let xs: Intersections = vec![
             Intersection {
                 t: 2.0,
-                object: Rc::clone(&a),
+                object: &a,
             },
             Intersection {
                 t: 2.75,
-                object: Rc::clone(&b),
+                object: &b,
             },
             Intersection {
                 t: 3.25,
-                object: Rc::clone(&c),
+                object: &c,
             },
             Intersection {
                 t: 4.75,
-                object: Rc::clone(&b),
+                object: &b,
             },
             Intersection {
                 t: 5.25,
-                object: Rc::clone(&c),
+                object: &c,
             },
             Intersection {
                 t: 6.0,
-                object: Rc::clone(&a),
+                object: &a,
             },
         ];
 
@@ -499,7 +502,7 @@ mod tests {
 
     #[test]
     fn schlick_total_internal_reflection() {
-        let shape = Rc::new(glass_sphere());
+        let shape = &glass_sphere();
         let p = 2f32.sqrt() / 2.0;
         let ray = Ray {
             origin: point(0.0, 0.0, p),
@@ -508,11 +511,11 @@ mod tests {
         let xs: Intersections = vec![
             Intersection {
                 t: -p,
-                object: shape.clone(),
+            object: &shape,
             },
             Intersection {
                 t: p,
-                object: shape.clone(),
+            object: &shape,
             },
         ];
         let comps = xs[1].computations(&ray, Some(&xs));
@@ -522,7 +525,7 @@ mod tests {
 
     #[test]
     fn schlick_perpendicular_angle() {
-        let shape = Rc::new(make_glass_sphere());
+        let shape = &make_glass_sphere();
         let ray = Ray {
             origin: point(0.0, 0.0, 0.0),
             direction: vector(0.0, 1.0, 0.0),
@@ -530,11 +533,11 @@ mod tests {
         let xs: Intersections = vec![
             Intersection {
                 t: -1.,
-                object: shape.clone(),
+            object: &shape,
             },
             Intersection {
                 t: 1.,
-                object: shape.clone(),
+            object: &shape,
             },
         ];
         let comps = xs[1].computations(&ray, Some(&xs));
@@ -545,14 +548,14 @@ mod tests {
 
     #[test]
     fn schlick_small_angle_n2_gt_n1() {
-        let shape = Rc::new(make_glass_sphere());
+        let shape = &make_glass_sphere();
         let ray = Ray {
             origin: point(0.0, 0.99, -2.0),
             direction: vector(0.0, 0.0, 1.0),
         };
         let xs: Intersections = vec![Intersection {
             t: 1.8589,
-            object: shape.clone(),
+            object: &shape,
         }];
         let comps = xs[0].computations(&ray, Some(&xs));
         let reflectance = comps.schlick();
