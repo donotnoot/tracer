@@ -7,7 +7,7 @@ use pretty_env_logger;
 use rayon::prelude::*;
 use rstracer::tracer::*;
 use std::error::Error;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr, SocketAddrV4, UdpSocket};
+use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
 use std::pin::Pin;
 use tonic::transport::Server;
 use tonic::{Code, Request, Response, Status, Streaming};
@@ -95,7 +95,16 @@ impl Worker for WorkerService {
 }
 
 fn tup_to_u32_color(t: tuple::Tup) -> u32 {
-    let c = |c: f32| -> u8 { (c * 255.0) as u8 };
+    let c = |c: f32| -> u8 {
+        let unclipped = c * 255.0;
+        if unclipped > 255. {
+            255u8
+        } else if unclipped < 0. {
+            0u8
+        } else {
+            unclipped as u8
+        }
+    };
     ((c(t.x) as u32) << 16) + ((c(t.y) as u32) << 8) + (c(t.z) as u32)
 }
 
