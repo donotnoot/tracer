@@ -10,20 +10,51 @@ light:
 camera:
   width: 1280
   height: 800
-  fov: 45
-  from: [-5, 2, -5]
+  fov: 35
+  from: [10, 1, -4]
   to: [0, 0, 0]
   up: [0, 1, 0]
 colors:
   black: 0
   white: 0xFFFFFF
+textures:
+  earth:
+    path: "./examples/textures/earth.png"
+  niag_top:
+    path: "./examples/textures/niagara_sky/posy.jpg.png"
+  niag_bot:
+    path: "./examples/textures/niagara_sky/negy.jpg.png"
+  niag_left:
+    path: "./examples/textures/niagara_sky/negx.jpg.png"
+  niag_right:
+    path: "./examples/textures/niagara_sky/posx.jpg.png"
+  niag_front:
+    path: "./examples/textures/niagara_sky/posz.jpg.png"
+  niag_back:
+    path: "./examples/textures/niagara_sky/negz.jpg.png"
 materials:
   bw_checker:
     color: "black"
     pattern:
-      type: "Checker"
-      color_a: "black"
-      color_b: "white"
+      type: "UV"
+      mapping: Planar
+      pattern:
+        type: Checker
+        color_a: "black"
+        color_b: "white"
+        height: 10
+        width: 20
+  uv_checker:
+    color: "black"
+    pattern:
+      type: "UV"
+      mapping: Spherical
+      pattern:
+        type: Checker
+        color_a: "black"
+        color_b: "white"
+        height: 10
+        width: 20
   blue:
     color: [100, 100, 255]
     ambient: 0.2
@@ -32,37 +63,40 @@ materials:
     reflectiveness: 0.3
   glass:
     color: "white"
-    ambient: 0.05
+    ambient: 0.03
     diffuse: 0
     specular: 1
     reflectiveness: 1
-    transparency: .7
+    transparency: .9
     shininess: 400
     refractive_index: 1.4
+  skybox:
+    color: "black"
+    specular: 0
+    diffuse: 0
+    ambient: 1
+    pattern:
+      type: "UV"
+      mapping: Cubical
+      pattern:
+        type: CubeImage
+        top: 
+          name: niag_top
+        bottom: 
+          name: niag_bot
+        left: 
+          name: niag_left
+        right: 
+          name: niag_right
+        front: 
+          name: niag_front
+        back: 
+          name: niag_back
 objects:
-  # Floor
-  - shape: "Plane"
-    material: "bw_checker"
+  - shape: Cube
     transform:
-      - Translation: [0, -10.0, 0]
-
-  # Left wall
-  - shape: "Plane"
-    material: "bw_checker"
-    transform:
-      - RotateX: 90
-      - Translation: [2, 10.0, 0]
-
-  # Right wall
-  - shape: "Plane"
-    material: "bw_checker"
-    transform:
-      - RotateY: 90
-      - RotateX: 90
-      - Translation: [2, 10.0, 0]
-
-  # Glass ball
-  - shape: "Sphere"
-    transform:
-      - Scaling: [2, 2, 2]
-    material: "blue"
+      - Scaling: [12, 12, 12]
+    material: skybox
+  - shape: Sphere
+    transform: []
+    material: glass
