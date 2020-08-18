@@ -1,8 +1,7 @@
 use super::material::Material;
 use super::matrix::{identity, Mat};
 use super::ray::Ray;
-
-use super::tuple::{dot, point, vector, Tup};
+use super::tuple::{cross, dot, point, vector, Tup};
 
 #[derive(Debug, Clone)]
 pub struct Object {
@@ -15,6 +14,7 @@ pub enum Geometry {
     Sphere(Sphere),
     Plane(Plane),
     Cube(Cube),
+    Tri(Tri),
 }
 
 impl Object {
@@ -22,9 +22,22 @@ impl Object {
         let local_point = |transform_inverse: &Mat| transform_inverse * p;
 
         let (local_normal, transform_inverse) = match &self.geometry {
-            Geometry::Sphere(o) => (o.normal(&local_point(&o.transform_inverse)), &o.transform_inverse),
-            Geometry::Plane(o) => (o.normal(&local_point(&o.transform_inverse)), &o.transform_inverse),
-            Geometry::Cube(o) => (o.normal(&local_point(&o.transform_inverse)), &o.transform_inverse),
+            Geometry::Sphere(o) => (
+                o.normal(&local_point(&o.transform_inverse)),
+                &o.transform_inverse,
+            ),
+            Geometry::Plane(o) => (
+                o.normal(&local_point(&o.transform_inverse)),
+                &o.transform_inverse,
+            ),
+            Geometry::Cube(o) => (
+                o.normal(&local_point(&o.transform_inverse)),
+                &o.transform_inverse,
+            ),
+            Geometry::Tri(o) => (
+                o.normal(&local_point(&o.transform_inverse)),
+                &o.transform_inverse,
+            ),
         };
 
         let mut world_normal = &transform_inverse.transpose() * &local_normal;
@@ -49,6 +62,10 @@ impl Object {
                 Some((t1, t2)) => (Some(t1), Some(t2)),
                 None => (None, None),
             },
+            Geometry::Tri(o) => match o.intersect(&common(r, &o.transform_inverse)) {
+                Some(t) => (Some(t), None),
+                None => (None, None),
+            },
         }
     }
 
@@ -57,6 +74,7 @@ impl Object {
             Geometry::Sphere(o) => o.transform.clone(),
             Geometry::Plane(o) => o.transform.clone(),
             Geometry::Cube(o) => o.transform.clone(),
+            Geometry::Tri(o) => o.transform.clone(),
         }
     }
 }
@@ -70,7 +88,10 @@ pub struct Sphere {
 impl Sphere {
     pub fn new(transform: Mat) -> Self {
         let transform_inverse = transform.inverse();
-        Sphere { transform, transform_inverse }
+        Sphere {
+            transform,
+            transform_inverse,
+        }
     }
 
     fn normal(&self, p: &Tup) -> Tup {
@@ -116,7 +137,10 @@ pub struct Plane {
 impl Plane {
     pub fn new(transform: Mat) -> Self {
         let transform_inverse = transform.inverse();
-        Plane { transform, transform_inverse }
+        Plane {
+            transform,
+            transform_inverse,
+        }
     }
 
     fn normal(&self, _: &Tup) -> Tup {
@@ -147,7 +171,10 @@ pub struct Cube {
 impl Cube {
     pub fn new(transform: Mat) -> Self {
         let transform_inverse = transform.inverse();
-        Cube { transform, transform_inverse }
+        Cube {
+            transform,
+            transform_inverse,
+        }
     }
 
     fn normal(&self, point: &Tup) -> Tup {
@@ -212,6 +239,75 @@ impl Default for Cube {
         Self::new(identity())
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct Tri {
+    transform: Mat,
+    transform_inverse: Mat,
+    p1: Tup,
+    p2: Tup,
+    p3: Tup,
+    e1: Tup,
+    e2: Tup,
+    normal: Tup,
+}
+
+impl Tri {
+    pub fn new(transform: Mat, p1: Tup, p2: Tup, p3: Tup) -> Self {
+        let transform_inverse = transform.inverse();
+        let (e1, e2) = ((&p2 - &p1), (&p3 - &p1));
+        let normal = cross(&e2, &e1).normalize();
+        Tri {
+            transform,
+            transform_inverse,
+            p1,
+            p2,
+            p3,
+            e1,
+            e2,
+            normal,
+        }
+    }
+
+    fn normal(&self, _: &Tup) -> Tup {
+        self.normal.clone()
+    }
+
+    fn intersect(&self, ray: &Ray) -> Option<f32> {
+        let dir_cross_e2 = cross(&ray.direction, &self.e2);
+        let determinant = dot(&self.e1, &dir_cross_e2);
+        if determinant.abs() < 10e-4 {
+            return None;
+        }
+
+        let f = 1. / determinant;
+        let p1_to_origin = &ray.origin - &self.p1;
+        let u = f * dot(&p1_to_origin, &dir_cross_e2);
+        if u < 0. || u > 1. {
+            return None;
+        }
+
+        let origin_cross_e1 = cross(&p1_to_origin, &self.e1);
+        let v = f * dot(&ray.direction, &origin_cross_e1);
+        if v < 0. || (v + u) > 1. {
+            return None;
+        }
+
+        Some(f * dot(&self.e2, &origin_cross_e1))
+    }
+}
+
+impl Default for Tri {
+    fn default() -> Self {
+        Self::new(
+            identity(),
+            point(0., 0., 0.),
+            point(1., 0., 0.),
+            point(0., 1., 0.),
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::super::transformations::{rotate_z, scaling, translation};
@@ -518,5 +614,86 @@ mod tests {
         .for_each(|elem| {
             test(elem.0, elem.1);
         });
+    }
+
+    #[test]
+    fn tri_constructor_precalculations() {
+        let tri = Tri::new(
+            identity(),
+            point(0., 1., 0.),
+            point(-1., 0., 0.),
+            point(1., 0., 0.),
+        );
+
+        assert_eq!(tri.e1, vector(-1., -1., 0.));
+        assert_eq!(tri.e2, vector(1., -1., 0.));
+        assert_eq!(tri.normal, vector(0., 0., -1.));
+    }
+
+    #[test]
+    fn tri_returns_precomputed_normal() {
+        let tri = Tri::default();
+
+        assert_eq!(tri.normal, tri.normal(&point(0., 0., 0.)));
+    }
+
+    #[test]
+    fn tri_none_with_parallel_ray() {
+        let tri = Tri::new(
+            identity(),
+            point(0., 1., 0.),
+            point(-1., 0., 0.),
+            point(1., 0., 0.),
+        );
+        let ray = Ray {
+            origin: point(0., -1., -2.),
+            direction: vector(0., 1., 0.),
+        };
+
+        assert_eq!(tri.intersect(&ray), None);
+    }
+
+    #[test]
+    fn tri_none_with_edge_misses() {
+        let tri = Tri::new(
+            identity(),
+            point(0., 1., 0.),
+            point(-1., 0., 0.),
+            point(1., 0., 0.),
+        );
+
+        // p1-p3 edge
+        let ray = Ray {
+            origin: point(1., 1., -2.),
+            direction: vector(0., 0., 1.),
+        };
+        assert_eq!(tri.intersect(&ray), None);
+
+        // p1-p2 edge
+        let ray = Ray {
+            origin: point(-1., 1., -2.),
+            direction: vector(0., 0., 1.),
+        };
+        assert_eq!(tri.intersect(&ray), None);
+
+        // p2-p3 edge
+        let ray = Ray {
+            origin: point(0., -1., -2.),
+            direction: vector(0., 0., 1.),
+        };
+        assert_eq!(tri.intersect(&ray), None);
+    }
+
+    #[test]
+    fn tri_intersection() {
+        let tri = Tri::new(
+            identity(),
+            point(0., 1., 0.),
+            point(-1., 0., 0.),
+            point(1., 0., 0.),
+        );
+        let ray = Ray { origin: point(0., 0.5, -2.), direction: vector(0., 0., 1.) };
+
+        assert_eq!(tri.intersect(&ray), Some(2.));
     }
 }
