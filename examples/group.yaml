@@ -1,0 +1,78 @@
+background_color: "black"
+rendering:
+  randomize_rays: true
+  max_bounces: 4
+  antialias: 2
+light:
+  position: [-5.0, 5.0, -5.0]
+  intensity: white
+  kind: null
+camera:
+  width: 800
+  height: 600
+  fov: 45
+  from: [0, 2, -5]
+  to: [0, 0, 0]
+  up: [0, 1, 0]
+colors:
+  black: 0
+  white: 0xFFFFFF
+groups:
+  group_test:
+    - RotateY: 45
+    - Scaling: [0.33333, 1, 1]
+materials:
+  uv_sphere:
+    color: black
+    ambient: 0.2
+    diffuse: 0.8
+    specular: 0.2
+    pattern:
+      type: UV
+      mapping: Spherical
+      pattern:
+        type: Checker
+        color_a: black
+        color_b: white
+        height: 15
+        width: 30
+  red:
+    color: [255, 100, 100]
+    ambient: 0.2
+    diffuse: 0.8
+    specular: 1
+    reflectiveness: 0.3
+  green:
+    color: [100, 255, 100]
+    ambient: 0.2
+    diffuse: 0.8
+    specular: 1
+    reflectiveness: 0.3
+  blue:
+    color: [100, 100, 255]
+    ambient: 0.2
+    diffuse: 0.8
+    specular: 1
+    reflectiveness: 0.3
+objects:
+  - shape: Sphere
+    material: uv_sphere
+    transform:
+      - Scaling: [30, 30, 30]
+
+  - shape: Cube
+    material: red
+    transform:
+      - Group: group_test
+      - Translation: [-2.1, 0, 0]
+
+  - shape: Cube
+    material: green
+    transform:
+      - Group: group_test
+
+  - shape: Cube
+    material: blue
+    transform:
+      - Group: group_test
+      - Translation: [2.1, 0, 0]

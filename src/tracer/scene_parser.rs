@@ -27,6 +27,9 @@ struct SceneFile {
     objects: Vec<ObjectSpec>,
 
     #[serde(default)]
+    groups: HashMap<String, Vec<TransformSpec>>,
+
+    #[serde(default)]
     textures: HashMap<String, TextureSpec>,
 
     #[serde(default)]
@@ -256,6 +259,7 @@ pub enum TextureSpec {
 
 #[derive(Debug, Deserialize)]
 enum TransformSpec {
+    Group(String),
     Translation(f32, f32, f32),
     Scaling(f32, f32, f32),
     RotateX(f32),
@@ -326,21 +330,21 @@ pub fn from_reader(
         .iter()
         .map(|spec| match spec {
             ObjectSpec::Sphere(spec) => {
-                let sphere = Sphere::new(scene.process_transformations(&spec.transform));
+                let sphere = Sphere::new(scene.process_transformations(&spec.transform)?);
                 Ok(Object {
                     geometry: Geometry::Sphere(sphere),
                     material: scene.process_material(&spec.material)?,
                 })
             }
             ObjectSpec::Plane(spec) => {
-                let plane = Plane::new(scene.process_transformations(&spec.transform));
+                let plane = Plane::new(scene.process_transformations(&spec.transform)?);
                 Ok(Object {
                     geometry: Geometry::Plane(plane),
                     material: scene.process_material(&spec.material)?,
                 })
             }
             ObjectSpec::Cube(spec) => {
-                let cube = Cube::new(scene.process_transformations(&spec.transform));
+                let cube = Cube::new(scene.process_transformations(&spec.transform)?);
                 Ok(Object {
                     geometry: Geometry::Cube(cube),
                     material: scene.process_material(&spec.material)?,
@@ -348,7 +352,7 @@ pub fn from_reader(
             }
             ObjectSpec::Tri(spec) => {
                 let tri = Tri::new(
-                    scene.process_transformations(&spec.transform),
+                    scene.process_transformations(&spec.transform)?,
                     point(spec.p1.0, spec.p1.1, spec.p1.2),
                     point(spec.p2.0, spec.p2.1, spec.p2.2),
                     point(spec.p3.0, spec.p3.1, spec.p3.2),
@@ -370,28 +374,34 @@ pub fn from_reader(
 }
 
 impl SceneFile {
-    fn process_transformations(&self, t: &[TransformSpec]) -> Mat {
+    fn process_transformations(&self, t: &[TransformSpec]) -> Result<Mat, Box<dyn Error>> {
         let mut m = matrix::identity();
 
         for transform in t.iter() {
-            m = m * self.process_transform(transform);
+            m = m * self.process_transform(transform)?;
         }
 
-        m
+        Ok(m)
     }
 
-    fn process_transform(&self, t: &TransformSpec) -> Mat {
+    fn process_transform(&self, t: &TransformSpec) -> Result<Mat, Box<dyn Error>> {
         match t {
-            TransformSpec::Translation(x, y, z) => translation(*x, *y, *z),
-            TransformSpec::RotateX(deg) => rotate_x(deg2rad(*deg)),
-            TransformSpec::RotateY(deg) => rotate_y(deg2rad(*deg)),
-            TransformSpec::RotateZ(deg) => rotate_z(deg2rad(*deg)),
+            TransformSpec::Group(name) => match self.groups.get(name) {
+                Some(transforms) => Ok(self.process_transformations(transforms)?),
+                None => {
+                    Err(format!("could not find transformation group with name '{}'", name).into())
+                }
+            },
+            TransformSpec::Translation(x, y, z) => Ok(translation(*x, *y, *z)),
+            TransformSpec::RotateX(deg) => Ok(rotate_x(deg2rad(*deg))),
+            TransformSpec::RotateY(deg) => Ok(rotate_y(deg2rad(*deg))),
+            TransformSpec::RotateZ(deg) => Ok(rotate_z(deg2rad(*deg))),
             TransformSpec::Rotate(x, y, z) => {
-                rotate_z(deg2rad(*z)) * rotate_y(deg2rad(*y)) * rotate_x(deg2rad(*x))
+                Ok(rotate_z(deg2rad(*z)) * rotate_y(deg2rad(*y)) * rotate_x(deg2rad(*x)))
             }
-            TransformSpec::Scaling(x, y, z) => scaling(*x, *y, *z),
+            TransformSpec::Scaling(x, y, z) => Ok(scaling(*x, *y, *z)),
             TransformSpec::Shearing(xy, xz, yx, yz, zx, zy) => {
-                shearing(*xy, *xz, *yx, *yz, *zx, *zy)
+                Ok(shearing(*xy, *xz, *yx, *yz, *zx, *zy))
             }
         }
     }
@@ -406,7 +416,7 @@ impl SceneFile {
                 self.process_color(color_a)?,
                 self.process_color(color_b)?,
                 match transform {
-                    Some(t) => Some(self.process_transformations(t)),
+                    Some(t) => Some(self.process_transformations(t)?),
                     None => None,
                 },
             )),
@@ -418,7 +428,7 @@ impl SceneFile {
                 self.process_color(color_a)?,
                 self.process_color(color_b)?,
                 match transform {
-                    Some(t) => Some(self.process_transformations(t)),
+                    Some(t) => Some(self.process_transformations(t)?),
                     None => None,
                 },
             )),
@@ -430,7 +440,7 @@ impl SceneFile {
                 self.process_color(color_a)?,
                 self.process_color(color_b)?,
                 match transform {
-                    Some(t) => Some(self.process_transformations(t)),
+                    Some(t) => Some(self.process_transformations(t)?),
                     None => None,
                 },
             )),
@@ -491,14 +501,14 @@ impl SceneFile {
                 self.process_color(color_a)?,
                 self.process_color(color_b)?,
                 match transform {
-                    Some(t) => Some(self.process_transformations(t)),
+                    Some(t) => Some(self.process_transformations(t)?),
                     None => None,
                 },
             )),
             PatternSpec::Mandelbrot { color, transform } => Ok(Pattern::Mandelbrot(
                 self.process_color(color)?,
                 match transform {
-                    Some(t) => Some(self.process_transformations(t)),
+                    Some(t) => Some(self.process_transformations(t)?),
                     None => None,
                 },
             )),
