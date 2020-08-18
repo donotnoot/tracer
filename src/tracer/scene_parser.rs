@@ -3,7 +3,7 @@ use super::light::{Light, LightKind};
 use super::material::Material;
 use super::matrix;
 use super::matrix::Mat;
-use super::objects::{Cube, Geometry, Object, Plane, Sphere};
+use super::objects::{Cube, Geometry, Object, Plane, Sphere, Tri};
 use super::patterns::*;
 use super::transformations::*;
 use super::tuple::{color, color_u8, point, vector, Tup};
@@ -105,6 +105,7 @@ enum ObjectSpec {
     Sphere(SphereSpec),
     Plane(PlaneSpec),
     Cube(CubeSpec),
+    Tri(TriSpec),
 }
 
 #[derive(Debug, Deserialize)]
@@ -123,6 +124,15 @@ struct SphereSpec {
 struct CubeSpec {
     transform: Vec<TransformSpec>,
     material: MaterialSpec,
+}
+
+#[derive(Debug, Deserialize)]
+struct TriSpec {
+    transform: Vec<TransformSpec>,
+    material: MaterialSpec,
+    p1: (f32, f32, f32),
+    p2: (f32, f32, f32),
+    p3: (f32, f32, f32),
 }
 
 #[derive(Debug, Deserialize)]
@@ -226,7 +236,7 @@ enum UVPatternSpec {
         right: TextureSpec,
         front: TextureSpec,
         back: TextureSpec,
-    }
+    },
 }
 
 #[derive(Debug, Deserialize)]
@@ -336,6 +346,18 @@ pub fn from_reader(
                     material: scene.process_material(&spec.material)?,
                 })
             }
+            ObjectSpec::Tri(spec) => {
+                let tri = Tri::new(
+                    scene.process_transformations(&spec.transform),
+                    point(spec.p1.0, spec.p1.1, spec.p1.2),
+                    point(spec.p2.0, spec.p2.1, spec.p2.2),
+                    point(spec.p3.0, spec.p3.1, spec.p3.2),
+                );
+                Ok(Object {
+                    geometry: Geometry::Tri(tri),
+                    material: scene.process_material(&spec.material)?,
+                })
+            }
         })
         .collect();
 
@@ -430,18 +452,32 @@ impl SceneFile {
                         *width,
                         *height,
                     ),
-                    UVPatternSpec::Image {texture} => {
+                    UVPatternSpec::Image { texture } => {
                         let texture = self.process_texture(texture)?;
                         UVPattern::Image(texture)
-                    },
-                    UVPatternSpec::CubeImage{top, bottom, left, right, front, back} => {
+                    }
+                    UVPatternSpec::CubeImage {
+                        top,
+                        bottom,
+                        left,
+                        right,
+                        front,
+                        back,
+                    } => {
                         let top = self.process_texture(top)?;
                         let bottom = self.process_texture(bottom)?;
                         let left = self.process_texture(left)?;
                         let right = self.process_texture(right)?;
                         let front = self.process_texture(front)?;
                         let back = self.process_texture(back)?;
-                        UVPattern::CubeImage{top, bottom, left, right, front, back}
+                        UVPattern::CubeImage {
+                            top,
+                            bottom,
+                            left,
+                            right,
+                            front,
+                            back,
+                        }
                     }
                 };
 
