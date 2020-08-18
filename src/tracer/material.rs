@@ -114,7 +114,7 @@ mod tests {
         };
         let result = mat.lighting(
             &Object {
-                geometry: Geometry::Sphere(Sphere::new()),
+                geometry: Geometry::Sphere(Sphere::default()),
                 material: Material::new(),
             },
             &light,
@@ -144,7 +144,7 @@ mod tests {
         };
         let result = mat.lighting(
             &Object {
-                geometry: Geometry::Sphere(Sphere::new()),
+                geometry: Geometry::Sphere(Sphere::default()),
                 material: Material::new(),
             },
             &light,
@@ -175,7 +175,7 @@ mod tests {
         };
         let result = mat.lighting(
             &Object {
-                geometry: Geometry::Sphere(Sphere::new()),
+                geometry: Geometry::Sphere(Sphere::default()),
                 material: Material::new(),
             },
             &light,
@@ -207,7 +207,7 @@ mod tests {
         };
         let result = mat.lighting(
             &Object {
-                geometry: Geometry::Sphere(Sphere::new()),
+                geometry: Geometry::Sphere(Sphere::default()),
                 material: Material::new(),
             },
             &light,
@@ -237,7 +237,7 @@ mod tests {
         };
         let result = mat.lighting(
             &Object {
-                geometry: Geometry::Sphere(Sphere::new()),
+                geometry: Geometry::Sphere(Sphere::default()),
                 material: Material::new(),
             },
             &light,
@@ -266,7 +266,7 @@ mod tests {
         };
         let result = mat.lighting(
             &Object {
-                geometry: Geometry::Sphere(Sphere::new()),
+                geometry: Geometry::Sphere(Sphere::default()),
                 material: Material::new(),
             },
             &light,
@@ -303,7 +303,7 @@ mod tests {
 
         let c1 = mat.lighting(
             &Object {
-                geometry: Geometry::Sphere(Sphere::new()),
+                geometry: Geometry::Sphere(Sphere::default()),
                 material: Material::new(),
             },
             &light,
@@ -314,7 +314,7 @@ mod tests {
         );
         let c2 = mat.lighting(
             &Object {
-                geometry: Geometry::Sphere(Sphere::new()),
+                geometry: Geometry::Sphere(Sphere::default()),
                 material: Material::new(),
             },
             &light,
