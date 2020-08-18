@@ -99,18 +99,20 @@ func main() {
 		width = int32(yamlMap["camera"].(map[interface{}]interface{})["width"].(int))
 
 		// load all textures...
-		for key, texture := range yamlMap["textures"].(map[interface{}]interface{}) {
-			path := texture.(map[interface{}]interface{})["path"].(string)
-			file, err := ioutil.ReadFile(path)
-			if err != nil {
-				log.Fatal(err)
-			}
+		if _, ok := yamlMap["textures"]; ok {
+			for key, texture := range yamlMap["textures"].(map[interface{}]interface{}) {
+				path := texture.(map[interface{}]interface{})["path"].(string)
+				file, err := ioutil.ReadFile(path)
+				if err != nil {
+					log.Fatal(err)
+				}
 
-			encoded := base64.StdEncoding.EncodeToString(file)
-			yamlMap["textures"].(map[interface{}]interface{})[key] = map[interface{}]interface{}{
-				"data": encoded,
+				encoded := base64.StdEncoding.EncodeToString(file)
+				yamlMap["textures"].(map[interface{}]interface{})[key] = map[interface{}]interface{}{
+					"data": encoded,
+				}
+				log.Printf("encoded texture %q in base64, %d bytes", key, len(encoded))
 			}
-			log.Printf("encoded texture %q in base64, %d bytes", key, len(encoded))
 		}
 
 		raw, err := yaml.Marshal(yamlMap)
