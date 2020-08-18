@@ -1,7 +1,5 @@
 workers:
-  - address: "localhost:9000"
-  # - address: "192.168.0.62:9000"
-  - address: "0164.local:9000"
+  - address: "localhost:11811"
 tiling:
-  size: 10
+  size: 32
 

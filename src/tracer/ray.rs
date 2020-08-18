@@ -48,7 +48,7 @@ mod tests {
             direction: vector(0.0, 0.0, 1.0),
         };
         let s = Object {
-            geometry: Geometry::Sphere(Sphere::new()),
+            geometry: Geometry::Sphere(Sphere::default()),
             material: Material::new(),
         };
         let ixs = Object::intersect(&s, &r);
@@ -64,7 +64,7 @@ mod tests {
             direction: vector(0.0, 0.0, 1.0),
         };
         let s = Object {
-            geometry: Geometry::Sphere(Sphere::new()),
+            geometry: Geometry::Sphere(Sphere::default()),
             material: Material::new(),
         };
         let ixs = Object::intersect(&s, &r);
@@ -80,7 +80,7 @@ mod tests {
             direction: vector(0.0, 0.0, 1.0),
         };
         let s = Object {
-            geometry: Geometry::Sphere(Sphere::new()),
+            geometry: Geometry::Sphere(Sphere::default()),
             material: Material::new(),
         };
         let ixs = Object::intersect(&s, &r);
@@ -95,7 +95,7 @@ mod tests {
             direction: vector(0.0, 0.0, 1.0),
         };
         let s = Object {
-            geometry: Geometry::Sphere(Sphere::new()),
+            geometry: Geometry::Sphere(Sphere::default()),
             material: Material::new(),
         };
         let ixs = Object::intersect(&s, &r);
@@ -111,7 +111,7 @@ mod tests {
             direction: vector(0.0, 0.0, 1.0),
         };
         let s = Object {
-            geometry: Geometry::Sphere(Sphere::new()),
+            geometry: Geometry::Sphere(Sphere::default()),
             material: Material::new(),
         };
         let ixs = Object::intersect(&s, &r);

@@ -25,8 +25,8 @@ colors:
   dark_gray: 0x31393C
 materials:
   bw_ring:
-    color: "black"
-    reflectiveness: 0.06
+    color: [30, 30, 30]
+    reflectiveness: 0.15
     pattern:
       type: "Ring"
       color_a: "black"
@@ -70,6 +70,9 @@ materials:
     transparency: 1
     shininess: 500
     refractive_index: 1.56
+textures:
+  earth:
+    path: "./examples/textures/earth.png"
 objects:
   # Floor
   - shape: Plane
@@ -109,11 +112,11 @@ objects:
       - Translation: [-2.5, 0, 0]
     material: blue
 
-  - shape: Cube
-    transform:
-      - Translation: [0, 1, -4.5]
-      - Rotate: [30, 10, 4]
-    material: red
+  # - shape: Cube
+  #   transform:
+  #     - Translation: [0, 1, -4.5]
+  #     - Rotate: [30, 10, 4]
+  #   material: red
 
   - shape: Cube
     transform:
@@ -126,3 +129,19 @@ objects:
       - Translation: [-1, 2, -1]
       - Rotate: [5, 0, 50]
     material: green
+
+  - shape: Sphere
+    transform:
+      - Translation: [0.5, 0.5, -5]
+      - Scaling: [1.5, 1.5, 1.5]
+      - Rotate: [35, -130, 0]
+    material:
+      color: black
+      specular: 0
+      pattern:
+        type: UV
+        mapping: Spherical
+        pattern:
+          type: Image
+          texture:
+            name: earth

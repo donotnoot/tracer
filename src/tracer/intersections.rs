@@ -160,7 +160,7 @@ mod tests {
 
     fn make_sphere() -> Object {
         Object {
-            geometry: Geometry::Sphere(Sphere::new()),
+            geometry: Geometry::Sphere(Sphere::default()),
             material: Material::new(),
         }
     }
@@ -170,7 +170,7 @@ mod tests {
         material.transparency = 1.0;
         material.refractive_index = 1.5;
         Object {
-            geometry: Geometry::Sphere(Sphere::new()),
+            geometry: Geometry::Sphere(Sphere::default()),
             material,
         }
     }
@@ -347,8 +347,7 @@ mod tests {
             origin: point(0.0, 0.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let mut s = Sphere::new();
-        s.transform = translation(0.0, 0.0, 1.0);
+        let s = Sphere::new(translation(0.0, 0.0, 1.0));
         let i = Intersection {
             t: 5.0,
             object: &Object {
@@ -368,8 +367,7 @@ mod tests {
             origin: point(0.0, 0.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let mut s = Sphere::new();
-        s.transform = translation(0.0, 0.0, 1.0);
+        let s = Sphere::new(translation(0.0, 0.0, 1.0));
         let i = Intersection {
             t: 5.0,
             object: &Object {
@@ -386,7 +384,7 @@ mod tests {
     #[test]
     fn reflection_vector() {
         let plane = Object {
-            geometry: Geometry::Plane(Plane::new()),
+            geometry: Geometry::Plane(Plane::default()),
             material: Material::new(),
         };
         let p = 2.0f32.sqrt() / 2.0;
@@ -408,8 +406,7 @@ mod tests {
     #[test]
     fn finding_n1_and_n2_at_various_intersections() {
         let a = {
-            let mut s = Sphere::new();
-            s.transform = scaling(2.0, 2.0, 2.0);
+            let s = Sphere::new(scaling(2.0, 2.0, 2.0));
             let mut s = Object {
                 geometry: Geometry::Sphere(s),
                 material: Material::new(),
@@ -418,8 +415,7 @@ mod tests {
             s
         };
         let b = {
-            let mut s = Sphere::new();
-            s.transform = translation(0.0, 0.0, -0.25);
+            let s = Sphere::new(translation(0.0, 0.0, -0.25));
             let mut s = Object {
                 geometry: Geometry::Sphere(s),
                 material: Material::new(),
@@ -428,8 +424,7 @@ mod tests {
             s
         };
         let c = {
-            let mut s = Sphere::new();
-            s.transform = translation(0.0, 0.0, 0.25);
+            let s = Sphere::new(translation(0.0, 0.0, 0.25));
             let mut s = Object {
                 geometry: Geometry::Sphere(s),
                 material: Material::new(),
@@ -495,7 +490,7 @@ mod tests {
         material.transparency = 1.0;
         material.refractive_index = 1.5;
         Object {
-            geometry: Geometry::Sphere(Sphere::new()),
+            geometry: Geometry::Sphere(Sphere::default()),
             material,
         }
     }

@@ -27,6 +27,9 @@ struct SceneFile {
     objects: Vec<ObjectSpec>,
 
     #[serde(default)]
+    textures: HashMap<String, TextureSpec>,
+
+    #[serde(default)]
     colors: HashMap<String, ColorSpec>,
 
     #[serde(default)]
@@ -189,6 +192,10 @@ enum PatternSpec {
         color_b: ColorSpec,
         transform: Option<Vec<TransformSpec>>,
     },
+    UV {
+        mapping: UVMappingSpec,
+        pattern: UVPatternSpec,
+    },
     Ring {
         color_a: ColorSpec,
         color_b: ColorSpec,
@@ -198,6 +205,43 @@ enum PatternSpec {
         color: ColorSpec,
         transform: Option<Vec<TransformSpec>>,
     },
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type")]
+enum UVPatternSpec {
+    Checker {
+        color_a: ColorSpec,
+        color_b: ColorSpec,
+        width: f32,
+        height: f32,
+    },
+    Image {
+        texture: TextureSpec,
+    },
+    CubeImage {
+        top: TextureSpec,
+        bottom: TextureSpec,
+        left: TextureSpec,
+        right: TextureSpec,
+        front: TextureSpec,
+        back: TextureSpec,
+    }
+}
+
+#[derive(Debug, Deserialize)]
+enum UVMappingSpec {
+    Spherical,
+    Planar,
+    Cubical,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+pub enum TextureSpec {
+    Reference { name: String },
+    File { path: String },
+    B64 { data: String },
 }
 
 #[derive(Debug, Deserialize)]
@@ -368,6 +412,41 @@ impl SceneFile {
                     None => None,
                 },
             )),
+            PatternSpec::UV { mapping, pattern } => {
+                let mapping = match mapping {
+                    UVMappingSpec::Spherical => UVMapping::Spherical,
+                    UVMappingSpec::Planar => UVMapping::Planar,
+                    UVMappingSpec::Cubical => UVMapping::Cubical,
+                };
+                let pattern = match pattern {
+                    UVPatternSpec::Checker {
+                        color_a,
+                        color_b,
+                        width,
+                        height,
+                    } => UVPattern::Checker(
+                        self.process_color(color_a)?,
+                        self.process_color(color_b)?,
+                        *width,
+                        *height,
+                    ),
+                    UVPatternSpec::Image {texture} => {
+                        let texture = self.process_texture(texture)?;
+                        UVPattern::Image(texture)
+                    },
+                    UVPatternSpec::CubeImage{top, bottom, left, right, front, back} => {
+                        let top = self.process_texture(top)?;
+                        let bottom = self.process_texture(bottom)?;
+                        let left = self.process_texture(left)?;
+                        let right = self.process_texture(right)?;
+                        let front = self.process_texture(front)?;
+                        let back = self.process_texture(back)?;
+                        UVPattern::CubeImage{top, bottom, left, right, front, back}
+                    }
+                };
+
+                Ok(Pattern::UV(mapping, pattern))
+            }
             PatternSpec::Ring {
                 color_a,
                 color_b,
@@ -430,6 +509,17 @@ impl SceneFile {
                 None => Err(format!("could not find material with name '{}'", name).into()),
             },
             ColorSpec::Hex(hex) => Ok(color_u8((*hex >> 16) as u8, (*hex >> 8) as u8, *hex as u8)),
+        }
+    }
+
+    fn process_texture(&self, t: &TextureSpec) -> Result<Texture, Box<dyn Error>> {
+        match t {
+            TextureSpec::File { path } => Ok(Texture::read(std::fs::File::open(path)?)?),
+            TextureSpec::B64 { data } => Ok(Texture::read(base64::decode(data)?.as_slice())?),
+            TextureSpec::Reference { name } => match self.textures.get(name) {
+                Some(color) => Ok(self.process_texture(color)?),
+                None => Err(format!("could not find texture with name '{}'", name).into()),
+            },
         }
     }
 }

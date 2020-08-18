@@ -223,8 +223,7 @@ mod tests {
             origin: point(0.0, 0.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let mut s = Sphere::new();
-        s.transform = scaling(2.0, 2.0, 2.0);
+        let s = Sphere::new(scaling(2.0, 2.0, 2.0));
 
         let obj = Object {
             geometry: Geometry::Sphere(s),
@@ -242,8 +241,7 @@ mod tests {
             origin: point(0.0, 0.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let mut s = Sphere::new();
-        s.transform = translation(5.0, 2.0, 2.0);
+        let s = Sphere::new(translation(5.0, 2.0, 2.0));
 
         let obj = Object {
             geometry: Geometry::Sphere(s),
@@ -258,33 +256,32 @@ mod tests {
     fn sphere_normals() {
         {
             // x axis
-            let s = Sphere::new();
+            let s = Sphere::default();
             let normal = s.normal(&point(1.0, 0.0, 0.0));
             assert!(normal.cmp_epsilon(1.0, 0.0, 0.0, 0.0));
         }
         {
             // y axis
-            let s = Sphere::new();
+            let s = Sphere::default();
             let normal = s.normal(&point(0.0, 1.0, 0.0));
             assert!(normal.cmp_epsilon(0.0, 1.0, 0.0, 0.0));
         }
         {
             // z axis
-            let s = Sphere::new();
+            let s = Sphere::default();
             let normal = s.normal(&point(0.0, 0.0, 1.0));
             assert!(normal.cmp_epsilon(0.0, 0.0, 1.0, 0.0));
         }
         {
             // non axis
-            let s = Sphere::new();
+            let s = Sphere::default();
             let p = 3_f32.sqrt() / 3.0;
             let normal = s.normal(&point(p, p, p));
             assert!(normal.cmp_epsilon(p, p, p, 0.0));
         }
         {
             // translated
-            let mut s = Sphere::new();
-            s.transform = translation(0.0, 1.0, 0.0);
+            let s = Sphere::new(translation(0.0, 1.0, 0.0));
 
             let obj = Object {
                 geometry: Geometry::Sphere(s),
@@ -298,8 +295,7 @@ mod tests {
         }
         {
             // transformed
-            let mut s = Sphere::new();
-            s.transform = scaling(1.0, 0.5, 1.0) * rotate_z(std::f32::consts::PI / 5.0);
+            let s = Sphere::new(scaling(1.0, 0.5, 1.0) * rotate_z(std::f32::consts::PI / 5.0));
 
             let p = 2.0_f32.sqrt() / 2.0;
             let obj = Object {
@@ -316,7 +312,7 @@ mod tests {
 
     #[test]
     fn sphere_normals_should_be_normalised() {
-        let s = Sphere::new();
+        let s = Sphere::default();
         let p = 3_f32.sqrt() / 3.0;
         let normal = s.normal(&point(p, p, p));
         let normalized = normal.normalize();
@@ -325,7 +321,7 @@ mod tests {
 
     #[test]
     fn normal_of_a_plane_is_constant() {
-        let p = Plane::new();
+        let p = Plane::default();
         let n1 = p.normal(&point(0.0, 0.0, 0.0));
         let n2 = p.normal(&point(100.0, 0.0, 0.0));
         let n3 = p.normal(&point(0.0, 1000.0, 20.0));
@@ -339,7 +335,7 @@ mod tests {
     fn plane_intersections() {
         {
             // parallel to the plane
-            let p = Plane::new();
+            let p = Plane::default();
             let r = Ray {
                 origin: point(0.0, 10.0, 0.0),
                 direction: vector(0.0, 0.0, 1.0),
@@ -353,7 +349,7 @@ mod tests {
         }
         {
             // coplanar
-            let p = Plane::new();
+            let p = Plane::default();
             let r = Ray {
                 origin: point(0.0, 0.0, 0.0),
                 direction: vector(0.0, 0.0, 1.0),
@@ -367,7 +363,7 @@ mod tests {
         }
         {
             // from above
-            let p = Plane::new();
+            let p = Plane::default();
             let r = Ray {
                 origin: point(0.0, 1.0, 0.0),
                 direction: vector(0.0, -1.0, 0.0),
@@ -381,7 +377,7 @@ mod tests {
         }
         {
             // from below
-            let p = Plane::new();
+            let p = Plane::default();
             let r = Ray {
                 origin: point(0.0, -1.0, 0.0),
                 direction: vector(0.0, 1.0, 0.0),
@@ -397,7 +393,7 @@ mod tests {
 
     #[test]
     fn ray_intersects_cube() {
-        let cube = Cube::new();
+        let cube = Cube::default();
 
         let test = |name: String, ray: Ray, expected: Option<(f32, f32)>| {
             let result = cube.intersect(&ray);
@@ -471,7 +467,7 @@ mod tests {
 
     #[test]
     fn ray_misses_cube() {
-        let cube = Cube::new();
+        let cube = Cube::default();
 
         let test = |ray: Ray| {
             let result = cube.intersect(&ray);
@@ -501,7 +497,7 @@ mod tests {
 
     #[test]
     fn cube_normal() {
-        let cube = Cube::new();
+        let cube = Cube::default();
 
         let test = |point: Tup, expected_normal: Tup| {
             let result = cube.normal(&point);

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"flag"
 	fmt "fmt"
 	"io"
@@ -14,7 +15,6 @@ import (
 
 	"github.com/donotnoot/tracer/netcode/pkg/pb"
 	rl "github.com/gen2brain/raylib-go/raylib"
-	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"gopkg.in/yaml.v2"
 )
@@ -32,18 +32,6 @@ type WorkerSpec struct {
 
 type TilingSpec struct {
 	Size int `yaml:"size"`
-}
-
-// Scene represents the scene to be rendered.
-type Scene struct {
-	id         string
-	CameraSpec CameraSpec `yaml:"camera"`
-}
-
-// CameraSpec represents the specs for the camera in the scene.
-type CameraSpec struct {
-	Width  float32 `yaml:"width"`
-	Height float32 `yaml:"height"`
 }
 
 type TileInProgress struct {
@@ -94,21 +82,45 @@ func main() {
 	rand.Shuffle(len(RaylibColors), func(a, b int) { RaylibColors[a], RaylibColors[b] = RaylibColors[b], RaylibColors[a] })
 
 	var sceneRaw string
-	scene := &Scene{id: uuid.New().String()}
+	height := int32(0)
+	width := int32(0)
 	{
 		log.Println("reading scene specification...")
 		contents, err := ioutil.ReadFile(*sceneFile)
 		if err != nil {
 			log.Fatal(err)
 		}
-		if err := yaml.Unmarshal(contents, scene); err != nil {
+		yamlMap := make(map[string]interface{})
+		if err := yaml.Unmarshal(contents, &yamlMap); err != nil {
 			log.Fatal("could not read scene spec", err)
 		}
-		sceneRaw = string(contents)
+		// yolo??
+		height = int32(yamlMap["camera"].(map[interface{}]interface{})["height"].(int))
+		width = int32(yamlMap["camera"].(map[interface{}]interface{})["width"].(int))
+
+		// load all textures...
+		for key, texture := range yamlMap["textures"].(map[interface{}]interface{}) {
+			path := texture.(map[interface{}]interface{})["path"].(string)
+			file, err := ioutil.ReadFile(path)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			encoded := base64.StdEncoding.EncodeToString(file)
+			yamlMap["textures"].(map[interface{}]interface{})[key] = map[interface{}]interface{}{
+				"data": encoded,
+			}
+			log.Printf("encoded texture %q in base64, %d bytes", key, len(encoded))
+		}
+
+		raw, err := yaml.Marshal(yamlMap)
+		if err != nil {
+			log.Fatal("could not read scene spec", err)
+		}
+
+		sceneRaw = string(raw)
 		log.Println("scene spec OK")
 	}
-	height := int32(scene.CameraSpec.Height)
-	width := int32(scene.CameraSpec.Width)
 
 	network := &Network{}
 	{
@@ -142,7 +154,13 @@ func main() {
 			log.Fatalf("could not establish render connection with %s: %s", worker.Address, err)
 		}
 		defer func() {
-			log.Println("closing render client stream from", worker.Address, renderClient.CloseSend())
+			log.Println("closing render client stream from", worker.Address)
+			if err := renderClient.CloseSend(); err != nil {
+				log.Printf("error closing render client stream from %q: %s", worker.Address, err)
+			}
+			if err := renderClient.Context().Err(); err != nil {
+				log.Printf("context from %q: %s", worker.Address, err)
+			}
 		}()
 
 		if err := renderClient.Send(&pb.Job{
@@ -238,7 +256,11 @@ func main() {
 						Tile: tile,
 					},
 				}); err != nil {
-					log.Fatal(err)
+					if err == io.EOF {
+						return
+					}
+					log.Println(err)
+					return
 				}
 				sentAt := time.Now()
 
@@ -248,9 +270,10 @@ func main() {
 				recv, err := worker.Client.Recv()
 				if err != nil {
 					if err == io.EOF {
-						break
+						return
 					}
-					log.Fatal(err)
+					log.Println(err)
+					return
 				}
 				log.Printf("%q processed tile in %v", worker.Name, time.Since(sentAt))
 				atomic.AddInt32(&worker.CompletedTiles, 1)

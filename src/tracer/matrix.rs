@@ -269,6 +269,7 @@ pub fn identity() -> Mat {
 #[cfg(test)]
 mod tests {
     use super::super::transformations::*;
+    use super::super::tuple;
     use super::*;
 
     #[test]

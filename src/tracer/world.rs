@@ -285,8 +285,7 @@ mod tests {
     fn reflection_color_of_reflective_material() {
         let mut w = World::new_with_stuff();
 
-        let mut plane = Plane::new();
-        plane.transform = translation(0.0, -1.0, 0.0);
+        let plane = Plane::new(translation(0.0, -1.0, 0.0));
         let mut material = Material::new();
         material.reflectiveness = 0.5;
         let s = Object {
@@ -317,8 +316,7 @@ mod tests {
     fn shade_hit_with_reflective_material() {
         let mut w = World::new_with_stuff();
 
-        let mut plane = Plane::new();
-        plane.transform = translation(0.0, -1.0, 0.0);
+        let plane = Plane::new(translation(0.0, -1.0, 0.0));
         let mut material = Material::new();
         material.reflectiveness = 0.5;
         let s = Object {
@@ -349,8 +347,7 @@ mod tests {
     fn the_reflected_color_at_the_maximum_recursive_depth() {
         let mut w = World::new_with_stuff();
 
-        let mut plane = Plane::new();
-        plane.transform = translation(0.0, -1.0, 0.0);
+        let plane = Plane::new(translation(0.0, -1.0, 0.0));
         let mut material = Material::new();
         material.reflectiveness = 0.5;
         let s = Object {
@@ -435,7 +432,7 @@ mod tests {
             material.transparency = 1.0;
             material.refractive_index = 1.5;
             Object {
-                geometry: Geometry::Sphere(Sphere::new()),
+                geometry: Geometry::Sphere(Sphere::default()),
                 material,
             }
         };
@@ -468,8 +465,7 @@ mod tests {
     fn shade_hit_reflective_transparent_material() {
         let mut w = World::new_with_stuff();
 
-        let mut floor = Plane::new();
-        floor.transform = translation(0.0, -1.0, 0.0);
+        let floor = Plane::new(translation(0.0, -1.0, 0.0));
         let mut material = Material::new();
         material.reflectiveness = 0.5;
         material.transparency = 0.5;
@@ -480,8 +476,7 @@ mod tests {
         };
         w.objects.push(s.clone());
 
-        let mut ball = Sphere::new();
-        ball.transform = translation(0., -3.5, -0.5);
+        let ball = Sphere::new(translation(0., -3.5, -0.5));
         let mut material = Material::new();
         material.color = color(1.0, 0., 0.);
         material.ambient = 0.5;
