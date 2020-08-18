@@ -61,12 +61,12 @@ impl<'a> Computations<'a> {
 }
 
 #[derive(Debug)]
-pub struct Intersection<'a>  {
+pub struct Intersection<'a> {
     pub t: f32,
     pub object: &'a Object,
 }
 
-impl<'a>  Intersection<'a>  {
+impl<'a> Intersection<'a> {
     pub fn computations(&self, r: &Ray, xs: Option<&Intersections>) -> Computations {
         let point = r.position(self.t);
         let eye = -&r.direction;
@@ -438,10 +438,7 @@ mod tests {
             direction: vector(0.0, 0.0, 1.0),
         };
         let xs: Intersections = vec![
-            Intersection {
-                t: 2.0,
-                object: &a,
-            },
+            Intersection { t: 2.0, object: &a },
             Intersection {
                 t: 2.75,
                 object: &b,
@@ -458,10 +455,7 @@ mod tests {
                 t: 5.25,
                 object: &c,
             },
-            Intersection {
-                t: 6.0,
-                object: &a,
-            },
+            Intersection { t: 6.0, object: &a },
         ];
 
         let comps = |idx: usize, n1: f32, n2: f32| {
@@ -506,11 +500,11 @@ mod tests {
         let xs: Intersections = vec![
             Intersection {
                 t: -p,
-            object: &shape,
+                object: &shape,
             },
             Intersection {
                 t: p,
-            object: &shape,
+                object: &shape,
             },
         ];
         let comps = xs[1].computations(&ray, Some(&xs));
@@ -528,11 +522,11 @@ mod tests {
         let xs: Intersections = vec![
             Intersection {
                 t: -1.,
-            object: &shape,
+                object: &shape,
             },
             Intersection {
                 t: 1.,
-            object: &shape,
+                object: &shape,
             },
         ];
         let comps = xs[1].computations(&ray, Some(&xs));

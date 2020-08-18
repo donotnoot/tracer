@@ -85,10 +85,10 @@ pub fn view(from: tuple::Tup, to: tuple::Tup, up: tuple::Tup) -> Mat {
     let true_up = tuple::cross(&left, &forward);
 
     let mat = [
-            [left.x, left.y, left.z, 0.0],
-            [true_up.x, true_up.y, true_up.z, 0.0],
-            [-forward.x, -forward.y, -forward.z, 0.0],
-            [0.0, 0.0, 0.0, 1.0],
+        [left.x, left.y, left.z, 0.0],
+        [true_up.x, true_up.y, true_up.z, 0.0],
+        [-forward.x, -forward.y, -forward.z, 0.0],
+        [0.0, 0.0, 0.0, 1.0],
     ];
     let kind = Kind::General;
 

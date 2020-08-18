@@ -65,12 +65,12 @@ impl World {
             match Object::intersect(&object, r) {
                 (None, None) => (),
                 (Some(t1), Some(t2)) => {
-                    i.push(Intersection{t: t1, object});
-                    i.push(Intersection{t: t2, object});
-                },
+                    i.push(Intersection { t: t1, object });
+                    i.push(Intersection { t: t2, object });
+                }
                 (Some(t), None) => {
-                    i.push(Intersection{t, object});
-                },
+                    i.push(Intersection { t, object });
+                }
                 _ => panic!("Object::intersect returned invalid intersections."),
             }
         }

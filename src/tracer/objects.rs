@@ -692,7 +692,10 @@ mod tests {
             point(-1., 0., 0.),
             point(1., 0., 0.),
         );
-        let ray = Ray { origin: point(0., 0.5, -2.), direction: vector(0., 0., 1.) };
+        let ray = Ray {
+            origin: point(0., 0.5, -2.),
+            direction: vector(0., 0., 1.),
+        };
 
         assert_eq!(tri.intersect(&ray), Some(2.));
     }
