@@ -94,21 +94,45 @@ func main() {
 	rand.Shuffle(len(RaylibColors), func(a, b int) { RaylibColors[a], RaylibColors[b] = RaylibColors[b], RaylibColors[a] })
 
 	var sceneRaw string
-	scene := &Scene{id: uuid.New().String()}
+	height := int32(0)
+	width := int32(0)
 	{
 		log.Println("reading scene specification...")
 		contents, err := ioutil.ReadFile(*sceneFile)
 		if err != nil {
 			log.Fatal(err)
 		}
-		if err := yaml.Unmarshal(contents, scene); err != nil {
+		yamlMap := make(map[string]interface{})
+		if err := yaml.Unmarshal(contents, &yamlMap); err != nil {
 			log.Fatal("could not read scene spec", err)
 		}
-		sceneRaw = string(contents)
+		// yolo??
+		height = int32(yamlMap["camera"].(map[interface{}]interface{})["height"].(int))
+		width = int32(yamlMap["camera"].(map[interface{}]interface{})["width"].(int))
+
+		// load all textures...
+		for key, texture := range yamlMap["textures"].(map[interface{}]interface{}) {
+			path := texture.(map[interface{}]interface{})["path"].(string)
+			file, err := ioutil.ReadFile(path)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			encoded := base64.StdEncoding.EncodeToString(file)
+			yamlMap["textures"].(map[interface{}]interface{})[key] = map[interface{}]interface{}{
+				"data": encoded,
+			}
+			log.Printf("encoded texture %q in base64, %d bytes", key, len(encoded))
+		}
+
+		raw, err := yaml.Marshal(yamlMap)
+		if err != nil {
+			log.Fatal("could not read scene spec", err)
+		}
+
+		sceneRaw = string(raw)
 		log.Println("scene spec OK")
 	}
-	height := int32(scene.CameraSpec.Height)
-	width := int32(scene.CameraSpec.Width)
 
 	network := &Network{}
 	{
