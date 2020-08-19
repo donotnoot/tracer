@@ -64,9 +64,14 @@ impl<'a> Computations<'a> {
 pub struct Intersection<'a> {
     pub t: f32,
     pub object: &'a Object,
+    pub uv: Option<(f32, f32)>,
 }
 
 impl<'a> Intersection<'a> {
+    pub fn new(t: f32, object: &'a Object, uv: Option<(f32, f32)>) -> Self {
+        Intersection { t, object, uv }
+    }
+
     pub fn computations(&self, r: &Ray, xs: Option<&Intersections>) -> Computations {
         let point = r.position(self.t);
         let eye = -&r.direction;
@@ -179,14 +184,8 @@ mod tests {
     fn getting_the_hit_when_all_are_positive() {
         let sphere = make_sphere();
         let ixs: Intersections = vec![
-            Intersection {
-                t: 1.0,
-                object: &sphere,
-            },
-            Intersection {
-                t: 2.0,
-                object: &sphere,
-            },
+            Intersection::new(1.0, &sphere, None),
+            Intersection::new(2.0, &sphere, None),
         ];
 
         let (min, index, hit) = hit(&ixs);
@@ -200,18 +199,9 @@ mod tests {
     fn getting_the_hit_when_some_pos_some_neg() {
         let sphere = make_sphere();
         let ixs: Intersections = vec![
-            Intersection {
-                t: -1.0,
-                object: &sphere,
-            },
-            Intersection {
-                t: 1.0,
-                object: &sphere,
-            },
-            Intersection {
-                t: 2.0,
-                object: &sphere,
-            },
+            Intersection::new(-1.0, &sphere, None),
+            Intersection::new(1.0, &sphere, None),
+            Intersection::new(2.0, &sphere, None),
         ];
 
         let (min, index, hit) = hit(&ixs);
@@ -225,14 +215,8 @@ mod tests {
     fn getting_the_hit_when_all_are_neg() {
         let sphere = make_sphere();
         let ixs: Intersections = vec![
-            Intersection {
-                t: -1.0,
-                object: &sphere,
-            },
-            Intersection {
-                t: -2.0,
-                object: &sphere,
-            },
+            Intersection::new(-1.0, &sphere, None),
+            Intersection::new(-2.0, &sphere, None),
         ];
 
         let (min, index, hit) = hit(&ixs);
@@ -246,22 +230,10 @@ mod tests {
     fn the_hit_is_always_the_lowest_positive_intersection() {
         let sphere = make_sphere();
         let ixs: Intersections = vec![
-            Intersection {
-                t: -1.0,
-                object: &sphere,
-            },
-            Intersection {
-                t: 1.0,
-                object: &sphere,
-            },
-            Intersection {
-                t: -2.0,
-                object: &sphere,
-            },
-            Intersection {
-                t: 2.0,
-                object: &sphere,
-            },
+            Intersection::new(-1.0, &sphere, None),
+            Intersection::new(1.0, &sphere, None),
+            Intersection::new(-2.0, &sphere, None),
+            Intersection::new(2.0, &sphere, None),
         ];
 
         let (min, index, hit) = hit(&ixs);
@@ -277,10 +249,8 @@ mod tests {
             origin: point(0.0, 0.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let i = Intersection {
-            t: 4.0,
-            object: &make_sphere(),
-        };
+        let s = &make_sphere();
+        let i = Intersection::new(4.0, s, None);
 
         let c = i.computations(&r, None);
 
@@ -305,10 +275,8 @@ mod tests {
             origin: point(0.0, 0.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let i = Intersection {
-            t: 4.0,
-            object: &make_sphere(),
-        };
+        let s = &make_sphere();
+        let i = Intersection::new(4.0, s, None);
         let c = i.computations(&r, None);
 
         assert!(!c.inside);
@@ -320,10 +288,8 @@ mod tests {
             origin: point(0.0, 0.0, 0.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let i = Intersection {
-            t: 1.0,
-            object: &make_sphere(),
-        };
+        let s = &make_sphere();
+        let i = Intersection::new(1.0, s, None);
         let c = i.computations(&r, None);
 
         assert!(c.inside);
@@ -347,14 +313,11 @@ mod tests {
             origin: point(0.0, 0.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let s = Sphere::new(translation(0.0, 0.0, 1.0));
-        let i = Intersection {
-            t: 5.0,
-            object: &Object {
-                geometry: Geometry::Sphere(s),
-                material: Material::new(),
-            },
+        let s = &Object {
+            geometry: Geometry::Sphere(Sphere::new(translation(0.0, 0.0, 1.0))),
+            material: Material::new(),
         };
+        let i = Intersection::new(5.0, s, None);
         let c = i.computations(&r, None);
 
         assert!(c.over_point.z < 10e-4);
@@ -367,14 +330,15 @@ mod tests {
             origin: point(0.0, 0.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let s = Sphere::new(translation(0.0, 0.0, 1.0));
-        let i = Intersection {
-            t: 5.0,
-            object: &Object {
-                geometry: Geometry::Sphere(s),
+        let s = &Object {
+                geometry: Geometry::Sphere(Sphere::new(translation(0.0, 0.0, 1.0))),
                 material: Material::new(),
-            },
-        };
+            };
+        let i = Intersection::new(
+            5.0,
+            s,
+            None,
+        );
         let c = i.computations(&r, None);
 
         assert!(c.under_point.z < 10e-4);
@@ -392,10 +356,7 @@ mod tests {
             origin: point(0.0, 1.0, -1.0),
             direction: vector(0.0, -p, p),
         };
-        let i = Intersection {
-            t: p,
-            object: &plane,
-        };
+        let i = Intersection::new(p, &plane, None);
         let c = i.computations(&r, None);
 
         assert_eq!(c.reflection.x, 0.0);
@@ -438,24 +399,12 @@ mod tests {
             direction: vector(0.0, 0.0, 1.0),
         };
         let xs: Intersections = vec![
-            Intersection { t: 2.0, object: &a },
-            Intersection {
-                t: 2.75,
-                object: &b,
-            },
-            Intersection {
-                t: 3.25,
-                object: &c,
-            },
-            Intersection {
-                t: 4.75,
-                object: &b,
-            },
-            Intersection {
-                t: 5.25,
-                object: &c,
-            },
-            Intersection { t: 6.0, object: &a },
+            Intersection::new(2.0, &a, None),
+            Intersection::new(2.75, &b, None),
+            Intersection::new(3.25, &c, None),
+            Intersection::new(4.75, &b, None),
+            Intersection::new(5.25, &c, None),
+            Intersection::new(6.0, &a, None),
         ];
 
         let comps = |idx: usize, n1: f32, n2: f32| {
@@ -498,14 +447,8 @@ mod tests {
             direction: vector(0.0, 1.0, 0.0),
         };
         let xs: Intersections = vec![
-            Intersection {
-                t: -p,
-                object: &shape,
-            },
-            Intersection {
-                t: p,
-                object: &shape,
-            },
+            Intersection::new(-p, &shape, None),
+            Intersection::new(p, &shape, None),
         ];
         let comps = xs[1].computations(&ray, Some(&xs));
         let reflectance = comps.schlick();
@@ -520,14 +463,8 @@ mod tests {
             direction: vector(0.0, 1.0, 0.0),
         };
         let xs: Intersections = vec![
-            Intersection {
-                t: -1.,
-                object: &shape,
-            },
-            Intersection {
-                t: 1.,
-                object: &shape,
-            },
+            Intersection::new(-1., &shape, None),
+            Intersection::new(1., &shape, None),
         ];
         let comps = xs[1].computations(&ray, Some(&xs));
         let reflectance = comps.schlick();
@@ -542,10 +479,7 @@ mod tests {
             origin: point(0.0, 0.99, -2.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let xs: Intersections = vec![Intersection {
-            t: 1.8589,
-            object: &shape,
-        }];
+        let xs: Intersections = vec![Intersection::new(1.8589, &shape, None)];
         let comps = xs[0].computations(&ray, Some(&xs));
         let reflectance = comps.schlick();
         assert!((reflectance - 0.48873).abs() < 10e-4);
