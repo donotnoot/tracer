@@ -63,13 +63,13 @@ impl World {
 
         for object in self.objects.iter() {
             match Object::intersect(&object, r) {
-                (None, None) => (),
-                (Some(t1), Some(t2)) => {
-                    i.push(Intersection { t: t1, object });
-                    i.push(Intersection { t: t2, object });
+                (None, None, None) => (),
+                (Some(t1), Some(t2), None) => {
+                    i.push(Intersection::new(t1, object, None));
+                    i.push(Intersection::new(t2, object, None));
                 }
-                (Some(t), None) => {
-                    i.push(Intersection { t, object });
+                (Some(t), None, uv) => {
+                    i.push(Intersection::new(t, object, uv));
                 }
                 _ => panic!("Object::intersect returned invalid intersections."),
             }
@@ -269,10 +269,7 @@ mod tests {
             origin: point(0.0, 0.0, 0.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let i = Intersection {
-            t: 1.0,
-            object: &w.objects[1],
-        };
+        let i = Intersection::new(1.0, &w.objects[1], None);
         let c = i.computations(&r, None);
         let color = w.reflected_color(&c, 10);
 
@@ -299,10 +296,7 @@ mod tests {
             origin: point(0.0, 0.0, -3.0),
             direction: vector(0.0, -p, p),
         };
-        let i = Intersection {
-            t: 2.0f32.sqrt(),
-            object: &s,
-        };
+        let i = Intersection::new(2.0f32.sqrt(), &s, None);
         let c = i.computations(&r, None);
         let color = w.reflected_color(&c, 10);
 
@@ -330,10 +324,7 @@ mod tests {
             origin: point(0.0, 0.0, -3.0),
             direction: vector(0.0, -p, p),
         };
-        let i = Intersection {
-            t: 2.0f32.sqrt(),
-            object: &s,
-        };
+        let i = Intersection::new(2.0f32.sqrt(), &s, None);
         let c = i.computations(&r, None);
         let color = w.shade_hit(&c, 10);
 
@@ -361,10 +352,7 @@ mod tests {
             origin: point(0.0, 0.0, -2.0),
             direction: vector(0.0, -p, p),
         };
-        let i = Intersection {
-            t: 2.0f32.sqrt(),
-            object: &s,
-        };
+        let i = Intersection::new(2.0f32.sqrt(), &s, None);
         let c = i.computations(&r, None);
         let color = w.reflected_color(&c, 0);
 
@@ -380,14 +368,8 @@ mod tests {
             direction: vector(0.0, 0.0, 1.0),
         };
         let xs: Intersections = vec![
-            Intersection {
-                t: 4.0,
-                object: &w.objects[0],
-            },
-            Intersection {
-                t: 6.0,
-                object: &w.objects[0],
-            },
+            Intersection::new(4.0, &w.objects[0], None),
+            Intersection::new(6.0, &w.objects[0], None),
         ];
         let comps = xs[0].computations(&r, Some(&xs));
 
@@ -406,14 +388,8 @@ mod tests {
             direction: vector(0.0, 0.0, 1.0),
         };
         let xs: Intersections = vec![
-            Intersection {
-                t: 4.0,
-                object: &w.objects[0],
-            },
-            Intersection {
-                t: 6.0,
-                object: &w.objects[0],
-            },
+            Intersection::new(4.0, &w.objects[0], None),
+            Intersection::new(6.0, &w.objects[0], None),
         ];
         let comps = xs[0].computations(&r, Some(&xs));
 
@@ -443,14 +419,8 @@ mod tests {
             direction: vector(0.0, 1.0, 0.0),
         };
         let xs: Intersections = vec![
-            Intersection {
-                t: -p,
-                object: &w.objects[0],
-            },
-            Intersection {
-                t: p,
-                object: &w.objects[0],
-            },
+            Intersection::new(-p, &w.objects[0], None),
+            Intersection::new(p, &w.objects[0], None),
         ];
         let comps = xs[1].computations(&r, Some(&xs));
 
@@ -485,10 +455,7 @@ mod tests {
             material,
         });
 
-        let xs: Intersections = vec![Intersection {
-            t: 2.0f32.sqrt(),
-            object: &s,
-        }];
+        let xs: Intersections = vec![Intersection::new(2.0f32.sqrt(), &s, None)];
 
         let p = (2f32).sqrt() / 2.;
         let r = Ray {
