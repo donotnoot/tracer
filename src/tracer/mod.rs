@@ -4,6 +4,7 @@ pub mod intersections;
 pub mod light;
 pub mod material;
 pub mod matrix;
+pub mod obj_parser;
 pub mod objects;
 pub mod patterns;
 pub mod ray;
