@@ -18,7 +18,7 @@ pub enum Geometry {
 }
 
 impl Object {
-    pub fn normal(&self, p: &Tup) -> Tup {
+    pub fn normal(&self, p: &Tup, uv: Option<(f32, f32)>) -> Tup {
         let local_point = |transform_inverse: &Mat| transform_inverse * p;
 
         let (local_normal, transform_inverse) = match &self.geometry {
@@ -35,7 +35,10 @@ impl Object {
                 &o.transform_inverse,
             ),
             Geometry::Tri(o) => (
-                o.normal(&local_point(&o.transform_inverse)),
+                match uv {
+                    Some((u, v)) => o.normal(u, v),
+                    None => o.normal.clone(),
+                },
                 &o.transform_inverse,
             ),
         };
@@ -46,25 +49,25 @@ impl Object {
         world_normal.normalize()
     }
 
-    pub fn intersect(object: &Self, r: &Ray) -> (Option<f32>, Option<f32>) {
+    pub fn intersect(object: &Self, r: &Ray) -> (Option<f32>, Option<f32>, Option<(f32, f32)>) {
         let common = |ray: &Ray, transform_inverse: &Mat| ray.transform(&transform_inverse);
 
         match &object.geometry {
             Geometry::Sphere(o) => match o.intersect(&common(r, &o.transform_inverse)) {
-                Some((t1, t2)) => (Some(t1), Some(t2)),
-                None => (None, None),
+                Some((t1, t2)) => (Some(t1), Some(t2), None),
+                None => (None, None, None),
             },
             Geometry::Plane(o) => match o.intersect(&common(r, &o.transform_inverse)) {
-                Some(t) => (Some(t), None),
-                None => (None, None),
+                Some(t) => (Some(t), None, None),
+                None => (None, None, None),
             },
             Geometry::Cube(o) => match o.intersect(&common(r, &o.transform_inverse)) {
-                Some((t1, t2)) => (Some(t1), Some(t2)),
-                None => (None, None),
+                Some((t1, t2)) => (Some(t1), Some(t2), None),
+                None => (None, None, None),
             },
             Geometry::Tri(o) => match o.intersect(&common(r, &o.transform_inverse)) {
-                Some(t) => (Some(t), None),
-                None => (None, None),
+                Some((t, u, v)) => (Some(t), None, Some((u, v))),
+                None => (None, None, None),
             },
         }
     }
@@ -250,10 +253,17 @@ pub struct Tri {
     e1: Tup,
     e2: Tup,
     normal: Tup,
+    smooth_normals: Option<(Tup, Tup, Tup)>,
 }
 
 impl Tri {
-    pub fn new(transform: Mat, p1: Tup, p2: Tup, p3: Tup) -> Self {
+    pub fn new(
+        transform: Mat,
+        p1: Tup,
+        p2: Tup,
+        p3: Tup,
+        smooth_normals: Option<(Tup, Tup, Tup)>,
+    ) -> Self {
         let transform_inverse = transform.inverse();
         let (e1, e2) = ((&p2 - &p1), (&p3 - &p1));
         let normal = cross(&e2, &e1).normalize();
@@ -266,14 +276,18 @@ impl Tri {
             e1,
             e2,
             normal,
+            smooth_normals,
         }
     }
 
-    fn normal(&self, _: &Tup) -> Tup {
-        self.normal.clone()
+    fn normal(&self, u: f32, v: f32) -> Tup {
+        match &self.smooth_normals {
+            Some((n1, n2, n3)) => n2 * u + n3 * v + n1 * (1. - u - v),
+            None => self.normal.clone(),
+        }
     }
 
-    fn intersect(&self, ray: &Ray) -> Option<f32> {
+    fn intersect(&self, ray: &Ray) -> Option<(f32, f32, f32)> {
         let dir_cross_e2 = cross(&ray.direction, &self.e2);
         let determinant = dot(&self.e1, &dir_cross_e2);
         if determinant.abs() < 10e-4 {
@@ -293,7 +307,7 @@ impl Tri {
             return None;
         }
 
-        Some(f * dot(&self.e2, &origin_cross_e1))
+        Some((f * dot(&self.e2, &origin_cross_e1), u, v))
     }
 }
 
@@ -304,6 +318,7 @@ impl Default for Tri {
             point(0., 0., 0.),
             point(1., 0., 0.),
             point(0., 1., 0.),
+            None,
         )
     }
 }
@@ -345,7 +360,7 @@ mod tests {
         };
         let ixs = Object::intersect(&obj, &r);
 
-        assert_eq!(ixs, (None, None));
+        assert_eq!(ixs, (None, None, None));
     }
 
     #[test]
@@ -383,7 +398,7 @@ mod tests {
                 geometry: Geometry::Sphere(s),
                 material: Material::new(),
             };
-            let normal = obj.normal(&point(0.0, 1.70711, -0.70711));
+            let normal = obj.normal(&point(0.0, 1.70711, -0.70711), None);
 
             assert_eq!(0.0, normal.x);
             assert!((normal.y - 0.70711).abs() < 10e-5);
@@ -398,7 +413,7 @@ mod tests {
                 geometry: Geometry::Sphere(s),
                 material: Material::new(),
             };
-            let normal = obj.normal(&point(0.0, p, -p));
+            let normal = obj.normal(&point(0.0, p, -p), None);
 
             assert!(normal.x.abs() < 10e-5);
             assert!((normal.y - 0.97014).abs() < 10e-5);
@@ -623,6 +638,7 @@ mod tests {
             point(0., 1., 0.),
             point(-1., 0., 0.),
             point(1., 0., 0.),
+            None,
         );
 
         assert_eq!(tri.e1, vector(-1., -1., 0.));
@@ -634,7 +650,7 @@ mod tests {
     fn tri_returns_precomputed_normal() {
         let tri = Tri::default();
 
-        assert_eq!(tri.normal, tri.normal(&point(0., 0., 0.)));
+        assert_eq!(tri.normal, tri.normal(0., 0.));
     }
 
     #[test]
@@ -644,6 +660,7 @@ mod tests {
             point(0., 1., 0.),
             point(-1., 0., 0.),
             point(1., 0., 0.),
+            None,
         );
         let ray = Ray {
             origin: point(0., -1., -2.),
@@ -660,6 +677,7 @@ mod tests {
             point(0., 1., 0.),
             point(-1., 0., 0.),
             point(1., 0., 0.),
+            None,
         );
 
         // p1-p3 edge
@@ -691,12 +709,13 @@ mod tests {
             point(0., 1., 0.),
             point(-1., 0., 0.),
             point(1., 0., 0.),
+            None,
         );
         let ray = Ray {
             origin: point(0., 0.5, -2.),
             direction: vector(0., 0., 1.),
         };
 
-        assert_eq!(tri.intersect(&ray), Some(2.));
+        assert_eq!(tri.intersect(&ray), Some((2., 0.25, 0.25)));
     }
 }

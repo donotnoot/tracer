@@ -77,7 +77,7 @@ impl<'a> Intersection<'a> {
         let eye = -&r.direction;
 
         let (inside, normal) = {
-            let normal = self.object.normal(&point);
+            let normal = self.object.normal(&point, self.uv);
             if dot(&normal, &eye) < 0.0 {
                 (true, -&normal)
             } else {
@@ -331,14 +331,10 @@ mod tests {
             direction: vector(0.0, 0.0, 1.0),
         };
         let s = &Object {
-                geometry: Geometry::Sphere(Sphere::new(translation(0.0, 0.0, 1.0))),
-                material: Material::new(),
-            };
-        let i = Intersection::new(
-            5.0,
-            s,
-            None,
-        );
+            geometry: Geometry::Sphere(Sphere::new(translation(0.0, 0.0, 1.0))),
+            material: Material::new(),
+        };
+        let i = Intersection::new(5.0, s, None);
         let c = i.computations(&r, None);
 
         assert!(c.under_point.z < 10e-4);
