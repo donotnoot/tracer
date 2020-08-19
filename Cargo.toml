@@ -31,5 +31,8 @@ tonic-build = "0.3"
 debug = true
 
 [profile.release]
-# debug = true
+debug = false
+debug-assertions = false
 lto = true
+opt-level = 3
+overflow-checks = false
