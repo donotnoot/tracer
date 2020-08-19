@@ -2,7 +2,8 @@
 
 Simple distributed ray tracing 3D engine.
 
-![example render](example.png)
+![example render](./gallery/main.png)
+![example render](./gallery/teapot_skybox.png)
 
 # Credit:
 
