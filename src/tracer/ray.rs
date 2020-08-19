@@ -85,7 +85,7 @@ mod tests {
         };
         let ixs = Object::intersect(&s, &r);
 
-        assert_eq!(ixs, (None, None));
+        assert_eq!(ixs, (None, None, None));
     }
 
     #[test]
