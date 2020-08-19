@@ -221,11 +221,7 @@ impl std::cmp::PartialEq<Tup> for Tup {
 
 impl std::fmt::Display for Tup {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.w as i32 {
-            0 => write!(f, "Point({}, {}, {})", self.x, self.y, self.z),
-            1 => write!(f, "Vector({}, {}, {})", self.x, self.y, self.z),
-            _ => write!(f, "Tuple({}, {}, {}, {})", self.x, self.y, self.z, self.w),
-        }
+        write!(f, "Tuple({}, {}, {}, {})", self.x, self.y, self.z, self.w)
     }
 }
 
