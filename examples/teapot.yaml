@@ -1,0 +1,79 @@
+background_color: "black"
+rendering:
+  randomize_rays: true
+  max_bounces: 4
+  antialias: 2
+light:
+  position: [0, 5.0, -5.0]
+  intensity: "white"
+  kind: null
+camera:
+  width: 800
+  height: 600
+  fov: 45
+  from: [0, 2, -5]
+  to: [0, 0.5, 0]
+  up: [0, 1, 0]
+colors:
+  black: 0
+  white: 0xFFFFFF
+models:
+  3dmodel:
+    path: ./examples/models/teapot2.obj
+textures:
+  sky_top:
+    path: "./examples/textures/snow/posy.jpg.png"
+  sky_bot:
+    path: "./examples/textures/snow/negy.jpg.png"
+  sky_left:
+    path: "./examples/textures/snow/negx.jpg.png"
+  sky_right:
+    path: "./examples/textures/snow/posx.jpg.png"
+  sky_front:
+    path: "./examples/textures/snow/posz.jpg.png"
+  sky_back:
+    path: "./examples/textures/snow/negz.jpg.png"
+materials:
+  skybox:
+    color: "black"
+    specular: 0
+    diffuse: 0
+    ambient: 1
+    pattern:
+      type: "UV"
+      mapping: Cubical
+      pattern:
+        type: CubeImage
+        top: 
+          name: sky_top
+        bottom:
+          name: sky_bot
+        left: 
+          name: sky_left
+        right: 
+          name: sky_right
+        front: 
+          name: sky_front
+        back: 
+          name: sky_back
+  model_material:
+    color: [230, 230, 230]
+    ambient: 0.2
+    diffuse: 0.8
+    specular: .56
+    reflectiveness: 0.2
+objects:
+  - shape: Cube
+    transform:
+      - Scaling: [10, 10, 10]
+      - RotateY: 20
+    material: skybox
+
+  - shape: Model
+    transform:
+      - Translation: [0, 0, 0]
+      - Scaling: [.4, .4, .4]
+    material: model_material
+    model:
+      name: 3dmodel
+    smooth: true
