@@ -3,6 +3,7 @@ use super::light::{Light, LightKind};
 use super::material::Material;
 use super::matrix;
 use super::matrix::Mat;
+use super::obj_parser::parse_obj;
 use super::objects::{Cube, Geometry, Object, Plane, Sphere, Tri};
 use super::patterns::*;
 use super::transformations::*;
@@ -28,6 +29,9 @@ struct SceneFile {
 
     #[serde(default)]
     groups: HashMap<String, Vec<TransformSpec>>,
+
+    #[serde(default)]
+    models: HashMap<String, ModelSpec>,
 
     #[serde(default)]
     textures: HashMap<String, TextureSpec>,
@@ -109,6 +113,12 @@ enum ObjectSpec {
     Plane(PlaneSpec),
     Cube(CubeSpec),
     Tri(TriSpec),
+    Model {
+        model: ModelSpec,
+        material: MaterialSpec,
+        transform: Vec<TransformSpec>,
+        smooth: bool,
+    },
 }
 
 #[derive(Debug, Deserialize)]
@@ -136,6 +146,7 @@ struct TriSpec {
     p1: (f32, f32, f32),
     p2: (f32, f32, f32),
     p3: (f32, f32, f32),
+    smooth: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -258,6 +269,14 @@ pub enum TextureSpec {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(untagged)]
+pub enum ModelSpec {
+    Reference { name: String },
+    File { path: String },
+    B64 { data: String },
+}
+
+#[derive(Debug, Deserialize)]
 enum TransformSpec {
     Group(String),
     Translation(f32, f32, f32),
@@ -325,30 +344,35 @@ pub fn from_reader(
 
     world.background_color = scene.process_color(&scene.background_color)?;
 
-    let results: Result<Vec<Object>, Box<dyn Error>> = scene
+    let mut objects: Vec<Object> = Vec::new();
+
+    let results: Result<Vec<()>, Box<dyn Error>> = scene
         .objects
         .iter()
         .map(|spec| match spec {
             ObjectSpec::Sphere(spec) => {
                 let sphere = Sphere::new(scene.process_transformations(&spec.transform)?);
-                Ok(Object {
+                objects.push(Object {
                     geometry: Geometry::Sphere(sphere),
                     material: scene.process_material(&spec.material)?,
-                })
+                });
+                Ok(())
             }
             ObjectSpec::Plane(spec) => {
                 let plane = Plane::new(scene.process_transformations(&spec.transform)?);
-                Ok(Object {
+                objects.push(Object {
                     geometry: Geometry::Plane(plane),
                     material: scene.process_material(&spec.material)?,
-                })
+                });
+                Ok(())
             }
             ObjectSpec::Cube(spec) => {
                 let cube = Cube::new(scene.process_transformations(&spec.transform)?);
-                Ok(Object {
+                objects.push(Object {
                     geometry: Geometry::Cube(cube),
                     material: scene.process_material(&spec.material)?,
-                })
+                });
+                Ok(())
             }
             ObjectSpec::Tri(spec) => {
                 let tri = Tri::new(
@@ -356,17 +380,34 @@ pub fn from_reader(
                     point(spec.p1.0, spec.p1.1, spec.p1.2),
                     point(spec.p2.0, spec.p2.1, spec.p2.2),
                     point(spec.p3.0, spec.p3.1, spec.p3.2),
+                    None,
                 );
-                Ok(Object {
+                objects.push(Object {
                     geometry: Geometry::Tri(tri),
                     material: scene.process_material(&spec.material)?,
-                })
+                });
+                Ok(())
+            }
+            ObjectSpec::Model {
+                model,
+                material,
+                transform,
+                smooth,
+            } => {
+                let tris = scene.process_model(model, transform, *smooth)?;
+                for tri in tris.into_iter() {
+                    objects.push(Object {
+                        geometry: Geometry::Tri(tri),
+                        material: scene.process_material(&material)?,
+                    });
+                }
+                Ok(())
             }
         })
         .collect();
 
     world.objects = match results {
-        Ok(results) => Ok(results),
+        Ok(_) => Ok(objects),
         Err(error) => Err(error),
     }?;
 
@@ -563,8 +604,32 @@ impl SceneFile {
             TextureSpec::File { path } => Ok(Texture::read(std::fs::File::open(path)?)?),
             TextureSpec::B64 { data } => Ok(Texture::read(base64::decode(data)?.as_slice())?),
             TextureSpec::Reference { name } => match self.textures.get(name) {
-                Some(color) => Ok(self.process_texture(color)?),
+                Some(texture) => Ok(self.process_texture(texture)?),
                 None => Err(format!("could not find texture with name '{}'", name).into()),
+            },
+        }
+    }
+
+    fn process_model(
+        &self,
+        m: &ModelSpec,
+        t: &[TransformSpec],
+        smooth: bool,
+    ) -> Result<Vec<Tri>, Box<dyn Error>> {
+        match m {
+            ModelSpec::File { path } => Ok(parse_obj(
+                std::fs::File::open(path)?,
+                self.process_transformations(t)?,
+                smooth,
+            )?),
+            ModelSpec::B64 { data } => Ok(parse_obj(
+                base64::decode(data)?.as_slice(),
+                self.process_transformations(t)?,
+                smooth,
+            )?),
+            ModelSpec::Reference { name } => match self.models.get(name) {
+                Some(model) => Ok(self.process_model(model, t, smooth)?),
+                None => Err(format!("could not find model with name '{}'", name).into()),
             },
         }
     }
