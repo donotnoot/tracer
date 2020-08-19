@@ -2,11 +2,13 @@ use super::material::Material;
 use super::matrix::{identity, Mat};
 use super::ray::Ray;
 use super::tuple::{cross, dot, point, vector, Tup};
+use super::patterns::Pattern;
 
 #[derive(Debug, Clone)]
 pub struct Object {
     pub geometry: Geometry,
     pub material: Material,
+    pub normal_map: Option<Pattern>,
 }
 
 #[derive(Debug, Clone)]
@@ -18,6 +20,14 @@ pub enum Geometry {
 }
 
 impl Object {
+    pub fn new(geometry: Geometry, material: Material, normal_map: Option<Pattern>) -> Self {
+        Object {
+            geometry,
+            material,
+            normal_map,
+        }
+    }
+
     pub fn normal(&self, p: &Tup, uv: Option<(f32, f32)>) -> Tup {
         let local_point = |transform_inverse: &Mat| transform_inverse * p;
 
@@ -339,6 +349,7 @@ mod tests {
         let obj = Object {
             geometry: Geometry::Sphere(s),
             material: Material::new(),
+            normal_map: None,
         };
         let ixs = Object::intersect(&obj, &r);
 
@@ -357,6 +368,7 @@ mod tests {
         let obj = Object {
             geometry: Geometry::Sphere(s),
             material: Material::new(),
+            normal_map: None,
         };
         let ixs = Object::intersect(&obj, &r);
 
@@ -397,6 +409,7 @@ mod tests {
             let obj = Object {
                 geometry: Geometry::Sphere(s),
                 material: Material::new(),
+                normal_map: None,
             };
             let normal = obj.normal(&point(0.0, 1.70711, -0.70711), None);
 
@@ -412,6 +425,7 @@ mod tests {
             let obj = Object {
                 geometry: Geometry::Sphere(s),
                 material: Material::new(),
+                normal_map: None,
             };
             let normal = obj.normal(&point(0.0, p, -p), None);
 

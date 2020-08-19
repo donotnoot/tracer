@@ -116,6 +116,7 @@ mod tests {
             &Object {
                 geometry: Geometry::Sphere(Sphere::default()),
                 material: Material::new(),
+                normal_map: None,
             },
             &light,
             pos,
@@ -146,6 +147,7 @@ mod tests {
             &Object {
                 geometry: Geometry::Sphere(Sphere::default()),
                 material: Material::new(),
+                normal_map: None,
             },
             &light,
             pos,
@@ -177,6 +179,7 @@ mod tests {
             &Object {
                 geometry: Geometry::Sphere(Sphere::default()),
                 material: Material::new(),
+                normal_map: None,
             },
             &light,
             pos,
@@ -209,6 +212,7 @@ mod tests {
             &Object {
                 geometry: Geometry::Sphere(Sphere::default()),
                 material: Material::new(),
+                normal_map: None,
             },
             &light,
             pos,
@@ -239,6 +243,7 @@ mod tests {
             &Object {
                 geometry: Geometry::Sphere(Sphere::default()),
                 material: Material::new(),
+                normal_map: None,
             },
             &light,
             pos,
@@ -268,6 +273,7 @@ mod tests {
             &Object {
                 geometry: Geometry::Sphere(Sphere::default()),
                 material: Material::new(),
+                normal_map: None,
             },
             &light,
             pos,
@@ -305,6 +311,7 @@ mod tests {
             &Object {
                 geometry: Geometry::Sphere(Sphere::default()),
                 material: Material::new(),
+                normal_map: None,
             },
             &light,
             point(0.9, 0.0, 0.0),
@@ -316,6 +323,7 @@ mod tests {
             &Object {
                 geometry: Geometry::Sphere(Sphere::default()),
                 material: Material::new(),
+                normal_map: None,
             },
             &light,
             point(1.0, 0.0, 0.0),

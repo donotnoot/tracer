@@ -355,6 +355,7 @@ pub fn from_reader(
                 objects.push(Object {
                     geometry: Geometry::Sphere(sphere),
                     material: scene.process_material(&spec.material)?,
+                    normal_map: None,
                 });
                 Ok(())
             }
@@ -363,6 +364,7 @@ pub fn from_reader(
                 objects.push(Object {
                     geometry: Geometry::Plane(plane),
                     material: scene.process_material(&spec.material)?,
+                    normal_map: None,
                 });
                 Ok(())
             }
@@ -371,6 +373,7 @@ pub fn from_reader(
                 objects.push(Object {
                     geometry: Geometry::Cube(cube),
                     material: scene.process_material(&spec.material)?,
+                    normal_map: None,
                 });
                 Ok(())
             }
@@ -385,6 +388,7 @@ pub fn from_reader(
                 objects.push(Object {
                     geometry: Geometry::Tri(tri),
                     material: scene.process_material(&spec.material)?,
+                    normal_map: None,
                 });
                 Ok(())
             }
@@ -399,6 +403,7 @@ pub fn from_reader(
                     objects.push(Object {
                         geometry: Geometry::Tri(tri),
                         material: scene.process_material(&material)?,
+                        normal_map: None,
                     });
                 }
                 Ok(())

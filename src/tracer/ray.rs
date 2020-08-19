@@ -47,10 +47,7 @@ mod tests {
             origin: point(0.0, 0.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let s = Object {
-            geometry: Geometry::Sphere(Sphere::default()),
-            material: Material::new(),
-        };
+        let s = Object::new (Geometry::Sphere(Sphere::default()), Material::new(), None);
         let ixs = Object::intersect(&s, &r);
 
         assert_eq!(ixs.0.unwrap(), 4.0);
@@ -63,10 +60,7 @@ mod tests {
             origin: point(0.0, 1.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let s = Object {
-            geometry: Geometry::Sphere(Sphere::default()),
-            material: Material::new(),
-        };
+        let s = Object::new (Geometry::Sphere(Sphere::default()), Material::new(), None);
         let ixs = Object::intersect(&s, &r);
 
         assert_eq!(ixs.0.unwrap(), 5.0);
@@ -79,10 +73,7 @@ mod tests {
             origin: point(0.0, 2.0, -5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let s = Object {
-            geometry: Geometry::Sphere(Sphere::default()),
-            material: Material::new(),
-        };
+        let s = Object::new (Geometry::Sphere(Sphere::default()), Material::new(), None);
         let ixs = Object::intersect(&s, &r);
 
         assert_eq!(ixs, (None, None, None));
@@ -94,10 +85,7 @@ mod tests {
             origin: point(0.0, 0.0, 0.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let s = Object {
-            geometry: Geometry::Sphere(Sphere::default()),
-            material: Material::new(),
-        };
+        let s = Object::new (Geometry::Sphere(Sphere::default()), Material::new(), None);
         let ixs = Object::intersect(&s, &r);
 
         assert_eq!(ixs.0.unwrap(), -1.0);
@@ -110,10 +98,7 @@ mod tests {
             origin: point(0.0, 0.0, 5.0),
             direction: vector(0.0, 0.0, 1.0),
         };
-        let s = Object {
-            geometry: Geometry::Sphere(Sphere::default()),
-            material: Material::new(),
-        };
+        let s = Object::new (Geometry::Sphere(Sphere::default()), Material::new(), None);
         let ixs = Object::intersect(&s, &r);
 
         assert_eq!(ixs.0.unwrap(), -6.0);

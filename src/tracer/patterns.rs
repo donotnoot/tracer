@@ -408,6 +408,7 @@ mod tests {
                 &Object {
                     geometry: Geometry::Sphere(obj),
                     material: Material::new(),
+                    normal_map: None,
                 },
                 &point(1.5, 0.0, 0.0),
             );
@@ -425,6 +426,7 @@ mod tests {
                 &Object {
                     geometry: Geometry::Sphere(obj),
                     material: Material::new(),
+                    normal_map: None,
                 },
                 &point(1.5, 0.0, 0.0),
             );
@@ -442,6 +444,7 @@ mod tests {
                 &Object {
                     geometry: Geometry::Sphere(obj),
                     material: Material::new(),
+                    normal_map: None,
                 },
                 &point(2.5, 0.0, 0.0),
             );

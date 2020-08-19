@@ -31,10 +31,7 @@ impl World {
         World {
             objects: vec![
                 {
-                    let mut object = Object {
-                        geometry: Geometry::Sphere(Sphere::default()),
-                        material: Material::new(),
-                    };
+                    let mut object = Object::new(Geometry::Sphere(Sphere::default()), Material::new(), None);
                     object.material.color = color(0.8, 1.0, 0.6);
                     object.material.diffuse = 0.7;
                     object.material.specular = 0.2;
@@ -42,10 +39,7 @@ impl World {
                 },
                 {
                     let geometry = Sphere::new(scaling(0.5, 0.5, 0.5));
-                    Object {
-                        geometry: Geometry::Sphere(geometry),
-                        material: Material::new(),
-                    }
+                    Object::new(Geometry::Sphere(geometry), Material::new(), None)
                 },
             ],
             light: Light {
@@ -285,10 +279,7 @@ mod tests {
         let plane = Plane::new(translation(0.0, -1.0, 0.0));
         let mut material = Material::new();
         material.reflectiveness = 0.5;
-        let s = Object {
-            geometry: Geometry::Plane(plane),
-            material,
-        };
+        let s = Object::new (Geometry::Plane(plane), material, None);
         w.objects.push(s.clone());
 
         let p = 2.0f32.sqrt() / 2.0;
@@ -313,10 +304,7 @@ mod tests {
         let plane = Plane::new(translation(0.0, -1.0, 0.0));
         let mut material = Material::new();
         material.reflectiveness = 0.5;
-        let s = Object {
-            geometry: Geometry::Plane(plane),
-            material,
-        };
+        let s = Object::new (Geometry::Plane(plane), material, None);
         w.objects.push(s.clone());
 
         let p = 2.0f32.sqrt() / 2.0;
@@ -341,10 +329,7 @@ mod tests {
         let plane = Plane::new(translation(0.0, -1.0, 0.0));
         let mut material = Material::new();
         material.reflectiveness = 0.5;
-        let s = Object {
-            geometry: Geometry::Plane(plane),
-            material,
-        };
+        let s = Object::new (Geometry::Plane(plane), material, None);
         w.objects.push(s.clone());
 
         let p = 2.0f32.sqrt() / 2.0;
@@ -407,10 +392,7 @@ mod tests {
             let mut material = Material::new();
             material.transparency = 1.0;
             material.refractive_index = 1.5;
-            Object {
-                geometry: Geometry::Sphere(Sphere::default()),
-                material,
-            }
+            Object::new (Geometry::Sphere(Sphere::default()), material, None)
         };
 
         let p = 2f32.sqrt() / 2.0;
@@ -440,20 +422,14 @@ mod tests {
         material.reflectiveness = 0.5;
         material.transparency = 0.5;
         material.refractive_index = 1.5;
-        let s = Object {
-            geometry: Geometry::Plane(floor),
-            material,
-        };
+        let s = Object::new (Geometry::Plane(floor), material, None);
         w.objects.push(s.clone());
 
         let ball = Sphere::new(translation(0., -3.5, -0.5));
         let mut material = Material::new();
         material.color = color(1.0, 0., 0.);
         material.ambient = 0.5;
-        w.objects.push(Object {
-            geometry: Geometry::Sphere(ball),
-            material,
-        });
+        w.objects.push(Object::new (Geometry::Sphere(ball), material, None));
 
         let xs: Intersections = vec![Intersection::new(2.0f32.sqrt(), &s, None)];
 
