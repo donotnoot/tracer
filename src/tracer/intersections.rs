@@ -167,6 +167,7 @@ mod tests {
         Object {
             geometry: Geometry::Sphere(Sphere::default()),
             material: Material::new(),
+            normal_map: None,
         }
     }
 
@@ -177,6 +178,7 @@ mod tests {
         Object {
             geometry: Geometry::Sphere(Sphere::default()),
             material,
+            normal_map: None,
         }
     }
 
@@ -316,6 +318,7 @@ mod tests {
         let s = &Object {
             geometry: Geometry::Sphere(Sphere::new(translation(0.0, 0.0, 1.0))),
             material: Material::new(),
+            normal_map: None,
         };
         let i = Intersection::new(5.0, s, None);
         let c = i.computations(&r, None);
@@ -333,6 +336,7 @@ mod tests {
         let s = &Object {
             geometry: Geometry::Sphere(Sphere::new(translation(0.0, 0.0, 1.0))),
             material: Material::new(),
+            normal_map: None,
         };
         let i = Intersection::new(5.0, s, None);
         let c = i.computations(&r, None);
@@ -346,6 +350,7 @@ mod tests {
         let plane = Object {
             geometry: Geometry::Plane(Plane::default()),
             material: Material::new(),
+            normal_map: None,
         };
         let p = 2.0f32.sqrt() / 2.0;
         let r = Ray {
@@ -367,6 +372,7 @@ mod tests {
             let mut s = Object {
                 geometry: Geometry::Sphere(s),
                 material: Material::new(),
+                normal_map: None,
             };
             s.material.refractive_index = 1.5;
             s
@@ -376,6 +382,7 @@ mod tests {
             let mut s = Object {
                 geometry: Geometry::Sphere(s),
                 material: Material::new(),
+                normal_map: None,
             };
             s.material.refractive_index = 2.0;
             s
@@ -385,6 +392,7 @@ mod tests {
             let mut s = Object {
                 geometry: Geometry::Sphere(s),
                 material: Material::new(),
+                normal_map: None,
             };
             s.material.refractive_index = 2.5;
             s
@@ -431,6 +439,7 @@ mod tests {
         Object {
             geometry: Geometry::Sphere(Sphere::default()),
             material,
+            normal_map: None,
         }
     }
 

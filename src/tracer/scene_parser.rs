@@ -125,12 +125,14 @@ enum ObjectSpec {
 struct PlaneSpec {
     transform: Vec<TransformSpec>,
     material: MaterialSpec,
+    normal_map: Option<PatternSpec>,
 }
 
 #[derive(Debug, Deserialize)]
 struct SphereSpec {
     transform: Vec<TransformSpec>,
     material: MaterialSpec,
+    normal_map: Option<PatternSpec>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -168,6 +170,7 @@ struct Phong {
     transparency: f32,
     refractive_index: f32,
     pattern: Option<PatternSpec>,
+    light_through: bool,
 }
 
 impl Default for Phong {
@@ -182,6 +185,7 @@ impl Default for Phong {
             pattern: None,
             transparency: 0.0,
             refractive_index: 1.0,
+            light_through: false,
         }
     }
 }
@@ -355,6 +359,10 @@ pub fn from_reader(
                 objects.push(Object {
                     geometry: Geometry::Sphere(sphere),
                     material: scene.process_material(&spec.material)?,
+                    normal_map: match &spec.normal_map {
+                        Some(normal_map_spec) => Some(scene.process_pattern(&normal_map_spec)?),
+                        None => None,
+                    }
                 });
                 Ok(())
             }
@@ -363,6 +371,10 @@ pub fn from_reader(
                 objects.push(Object {
                     geometry: Geometry::Plane(plane),
                     material: scene.process_material(&spec.material)?,
+                    normal_map: match &spec.normal_map {
+                        Some(normal_map_spec) => Some(scene.process_pattern(&normal_map_spec)?),
+                        None => None,
+                    }
                 });
                 Ok(())
             }
@@ -371,6 +383,7 @@ pub fn from_reader(
                 objects.push(Object {
                     geometry: Geometry::Cube(cube),
                     material: scene.process_material(&spec.material)?,
+                    normal_map: None,
                 });
                 Ok(())
             }
@@ -385,6 +398,7 @@ pub fn from_reader(
                 objects.push(Object {
                     geometry: Geometry::Tri(tri),
                     material: scene.process_material(&spec.material)?,
+                    normal_map: None,
                 });
                 Ok(())
             }
@@ -399,6 +413,7 @@ pub fn from_reader(
                     objects.push(Object {
                         geometry: Geometry::Tri(tri),
                         material: scene.process_material(&material)?,
+                        normal_map: None,
                     });
                 }
                 Ok(())
@@ -584,6 +599,7 @@ impl SceneFile {
             },
             transparency: p.transparency,
             refractive_index: p.refractive_index,
+            light_through: p.light_through,
         })
     }
 

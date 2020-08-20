@@ -3,6 +3,7 @@ use super::objects::Object;
 use super::tuple::{color, color_u8, vector, Tup};
 use num_complex::Complex;
 use std::io;
+use std::error::Error;
 
 #[derive(Debug, Clone)]
 pub enum Pattern {
@@ -109,16 +110,18 @@ impl Pattern {
 
     pub fn at_object(&self, o: &Object, p: &Tup) -> Tup {
         let object_space = &o.transformation().inverse() * p;
-        let transform = match self {
-            Pattern::Stripe(_, _, Some(t)) => t.clone(),
-            Pattern::Gradient(_, _, Some(t)) => t.clone(),
-            Pattern::Checker(_, _, Some(t)) => t.clone(),
-            Pattern::Ring(_, _, Some(t)) => t.clone(),
-            Pattern::Mandelbrot(_, Some(t)) => t.clone(),
-            _ => identity(),
-        };
-        let pattern_space = &transform.inverse() * &object_space;
+        self.at_object_local(&object_space)
+    }
 
+    pub fn at_object_local(&self, p: &Tup) -> Tup {
+        let pattern_space = match self {
+            Pattern::Stripe(_, _, Some(t)) => &t.inverse() * p,
+            Pattern::Gradient(_, _, Some(t)) => &t.inverse() * p,
+            Pattern::Checker(_, _, Some(t)) => &t.inverse() * p,
+            Pattern::Ring(_, _, Some(t)) => &t.inverse() * p,
+            Pattern::Mandelbrot(_, Some(t)) => &t.inverse() * p,
+            _ => p.clone(),
+        };
         self.at(&pattern_space)
     }
 
@@ -276,37 +279,30 @@ impl Pattern {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct Texture {
-    data: Vec<u8>,
-    height: u32,
+    image: image::RgbImage,
     width: u32,
-    bytes_per_px: usize,
+    height: u32,
 }
 
 impl Texture {
-    pub fn read(r: impl io::Read) -> io::Result<Self> {
-        let decoder = png::Decoder::new(r);
-        let (info, mut reader) = decoder.read_info()?;
-        let mut data: Vec<u8> = vec![0; info.buffer_size()];
-        reader.next_frame(&mut data)?;
-        let info = reader.info();
-        Ok(Texture {
-            data,
-            height: info.height,
-            width: info.width,
-            bytes_per_px: reader.info().bytes_per_pixel(),
-        })
+    pub fn read(mut r: impl io::Read) -> Result<Self, Box<dyn Error>> {
+        let mut image_data = Vec::new();
+        r.read_to_end(&mut image_data)?;
+        let image = image::load_from_memory(image_data.as_slice())?.to_rgb();
+        let width = image.width();
+        let height = image.height();
+        Ok(Texture {image, width, height})
     }
 
     pub fn color_at(&self, x: u32, y: u32) -> Option<Tup> {
-        let idx = (x + y * self.width) as usize * self.bytes_per_px;
-
-        let red = self.data.get(idx)?;
-        let green = self.data.get(idx + 1)?;
-        let blue = self.data.get(idx + 2)?;
-
-        Some(color_u8(*red, *green, *blue))
+        if x < self.width && y < self.height {
+            let pixel = self.image.get_pixel(x, y);
+            Some(color_u8(pixel[0], pixel[1], pixel[2]))
+        } else {
+            None
+        }
     }
 }
 
@@ -408,6 +404,7 @@ mod tests {
                 &Object {
                     geometry: Geometry::Sphere(obj),
                     material: Material::new(),
+                    normal_map: None,
                 },
                 &point(1.5, 0.0, 0.0),
             );
@@ -425,6 +422,7 @@ mod tests {
                 &Object {
                     geometry: Geometry::Sphere(obj),
                     material: Material::new(),
+                    normal_map: None,
                 },
                 &point(1.5, 0.0, 0.0),
             );
@@ -442,6 +440,7 @@ mod tests {
                 &Object {
                     geometry: Geometry::Sphere(obj),
                     material: Material::new(),
+                    normal_map: None,
                 },
                 &point(2.5, 0.0, 0.0),
             );
