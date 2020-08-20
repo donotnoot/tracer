@@ -185,6 +185,15 @@ impl<'a, 'b> std::ops::Mul<&'b Tup> for &'a Tup {
     }
 }
 
+/// Hadamard product (move)
+impl std::ops::Mul<Tup> for Tup {
+    type Output = Tup;
+
+    fn mul(self, rhs: Tup) -> Tup {
+        &self * &rhs
+    }
+}
+
 /// Subtracts two tuples
 impl<'a, 'b> std::ops::Sub<&'b Tup> for &'a Tup {
     type Output = Tup;
@@ -196,6 +205,15 @@ impl<'a, 'b> std::ops::Sub<&'b Tup> for &'a Tup {
             z: self.z - rhs.z,
             w: self.w - rhs.w,
         }
+    }
+}
+
+/// Subtracts two tuples (move)
+impl std::ops::Sub<Tup> for Tup {
+    type Output = Tup;
+
+    fn sub(self, f: Tup) -> Tup {
+        &self - &f
     }
 }
 
