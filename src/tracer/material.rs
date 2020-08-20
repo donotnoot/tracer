@@ -14,6 +14,7 @@ pub struct Material {
     pub pattern: Option<Pattern>,
     pub transparency: f32,
     pub refractive_index: f32,
+    pub light_through: bool,
 }
 
 impl Material {
@@ -28,6 +29,7 @@ impl Material {
             pattern: None,
             transparency: 0.0,
             refractive_index: 1.0,
+            light_through: false,
         }
     }
 
