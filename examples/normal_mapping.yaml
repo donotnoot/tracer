@@ -1,0 +1,81 @@
+background_color: "black"
+rendering:
+  randomize_rays: true
+  max_bounces: 256
+  antialias: 2
+light:
+  position: [-3, 3, 10.0]
+  intensity: "white"
+  kind: null
+camera:
+  width: 1280
+  height: 800
+  fov: 45
+  from: [0, 0, 5]
+  to: [0, 0, 0]
+  up: [0, 1, 0]
+colors:
+  black: 0
+  white: 0xFFFFFF
+textures:
+  fabric:
+    path: "./examples/textures/fabric.png"
+  fabric_normal:
+    path: "./examples/textures/fabric_normal.png"
+  earth:
+    path: "./examples/textures/earth.png"
+  earth_normal:
+    path: "./examples/textures/earth_normal.png"
+  golf_normal:
+    path: "./examples/textures/golf_normal.png"
+materials:
+  fabric:
+    color: "black"
+    ambient: 0.1
+    diffuse: 0.6
+    specular: 0.1
+    shininess: 200
+    pattern:
+      type: UV
+      mapping: Spherical
+      pattern:
+        type: Image
+        texture:
+          name: fabric
+  earth:
+    color: "black"
+    ambient: 0.1
+    diffuse: 0.8
+    specular: 1
+    shininess: 200
+    pattern:
+      type: UV
+      mapping: Spherical
+      pattern:
+        type: Image
+        texture:
+          name: earth
+  floor:
+    color: [200, 200, 200]
+    ambient: 0.2
+    diffuse: 0.8
+    specular: 0.1
+objects:
+  - shape: Plane
+    material: floor
+    normal_map_factor: 1
+    transform:
+      - Translation: [0, -1, 0]
+
+  - shape: Sphere
+    transform:
+      - Rotate: [20, 230, 0]
+    material: floor
+    normal_map_factor: 1
+    normal_map: 
+      type: UV
+      mapping: Spherical
+      pattern:
+        type: Image
+        texture:
+          name: golf_normal
