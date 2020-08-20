@@ -2,10 +2,11 @@
 
 Simple distributed ray tracing 3D engine.
 
-![example render](./gallery/main.png)
-![example render](./gallery/teapot_skybox.png)
+![some primitives with textures, reflection and refraction](./gallery/main.png)
+![the solar system](./gallery/solar_system.png)
+![the utah teapot with normal interpolation inside a skybox](./gallery/teapot_skybox.png)
 
-# Credit:
+# Credit
 
 ## Ray Tracing
 
@@ -15,3 +16,6 @@ Mostly from "The Ray Tracer Challenge" book by Jamis Buck. Go buy that book, it'
 
 - http://www.humus.name/index.php?page=Textures
 - http://planetpixelemporium.com/earth.html
+- http://www.celestiamotherlode.net/catalog/earthbumpspec.php
+- https://www.solarsystemscope.com/textures/
+- http://wwwtyro.github.io/space-3d/

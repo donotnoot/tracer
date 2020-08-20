@@ -1,0 +1,242 @@
+background_color: "black"
+rendering:
+  max_bounces: 8
+  antialias: 4
+light:
+  position: [30, 0, 0]
+  intensity: [2.8, 2.8, 2.8]
+  kind:
+    corner: [30, 10, -3]
+    uvec: [0, 0, 4]
+    vvec: [0, 4, 0]
+    usteps: 16
+    vsteps: 16
+camera:
+  width: 800
+  height: 500
+  fov: 65
+  from: [0, 30, 0]
+  to: [0, 0, 0]
+  up: [0, 0, -1]
+colors:
+  black: 0
+  white: 0xFFFFFF
+textures:
+  sun:
+    path: "./examples/solar_system/sun.jpg"
+  mercury:
+    path: "./examples/solar_system/mercury.jpg"
+  venus:
+    path: "./examples/solar_system/venus.jpg"
+  earth:
+    path: "./examples/solar_system/earth.jpg"
+  mars:
+    path: "./examples/solar_system/mars.jpg"
+  jupiter:
+    path: "./examples/solar_system/jupiter.jpg"
+  saturn:
+    path: "./examples/solar_system/saturn.jpg"
+  uranus:
+    path: "./examples/solar_system/uranus.jpg"
+  neptune:
+    path: "./examples/solar_system/neptune.jpg"
+  skybox_top:
+    path: "./examples/solar_system/top.png"
+  skybox_bot:
+    path: "./examples/solar_system/bottom.png"
+  skybox_left:
+    path: "./examples/solar_system/left.png"
+  skybox_right:
+    path: "./examples/solar_system/right.png"
+  skybox_front:
+    path: "./examples/solar_system/front.png"
+  skybox_back:
+    path: "./examples/solar_system/back.png"
+materials:
+  sun:
+    ambient: 2
+    diffuse: 0
+    specular: 0
+    shininess: 300
+    light_through: true
+    pattern:
+      type: UV
+      mapping: Spherical
+      pattern:
+        type: Image
+        texture:
+          name: sun
+  mercury:
+    ambient: 0.05
+    diffuse: 0.8
+    specular: 0.05
+    shininess: 100
+    pattern:
+      type: UV
+      mapping: Spherical
+      pattern:
+        type: Image
+        texture:
+          name: mercury
+  venus:
+    ambient: 0.05
+    diffuse: 0.8
+    specular: 0.1
+    shininess: 100
+    pattern:
+      type: UV
+      mapping: Spherical
+      pattern:
+        type: Image
+        texture:
+          name: venus
+  earth:
+    ambient: 0.05
+    diffuse: 0.8
+    specular: 0.1
+    shininess: 100
+    pattern:
+      type: UV
+      mapping: Spherical
+      pattern:
+        type: Image
+        texture:
+          name: earth
+  mars:
+    ambient: 0.05
+    diffuse: 0.8
+    specular: 0.1
+    shininess: 100
+    pattern:
+      type: UV
+      mapping: Spherical
+      pattern:
+        type: Image
+        texture:
+          name: mars
+  jupiter:
+    ambient: 0.05
+    diffuse: 1
+    specular: 0.1
+    shininess: 100
+    pattern:
+      type: UV
+      mapping: Spherical
+      pattern:
+        type: Image
+        texture:
+          name: jupiter
+  saturn:
+    ambient: 0.05
+    diffuse: 0.8
+    specular: 0.1
+    shininess: 100
+    pattern:
+      type: UV
+      mapping: Spherical
+      pattern:
+        type: Image
+        texture:
+          name: saturn
+  uranus:
+    ambient: 0.05
+    diffuse: 0.8
+    specular: 0.1
+    shininess: 100
+    pattern:
+      type: UV
+      mapping: Spherical
+      pattern:
+        type: Image
+        texture:
+          name: uranus
+  neptune:
+    ambient: 0.05
+    diffuse: 0.8
+    specular: 0.1
+    shininess: 100
+    pattern:
+      type: UV
+      mapping: Spherical
+      pattern:
+        type: Image
+        texture:
+          name: neptune
+  skybox:
+    ambient: .7
+    pattern:
+      type: "UV"
+      mapping: Cubical
+      pattern:
+        type: CubeImage
+        top: 
+          name: skybox_top
+        bottom: 
+          name: skybox_bot
+        left: 
+          name: skybox_left
+        right: 
+          name: skybox_right
+        front: 
+          name: skybox_front
+        back: 
+          name: skybox_back
+objects:
+  - shape: Sphere
+    material: sun
+    transform:
+      - Translation: [70, 0, 0]
+      - Scaling: [ 30, 80, 80 ]
+
+  - shape: Sphere
+    material: mercury
+    transform:
+      - Translation: [15, 0, -8]
+
+  - shape: Sphere
+    material: venus
+    transform:
+      - Translation: [11, 0, -4]
+      - Scaling: [ 2, 2, 2 ]
+
+
+  - shape: Sphere
+    material: earth
+    transform:
+      - Translation: [10, 0, 3]
+      - Scaling: [2, 2, 2]
+
+  - shape: Sphere
+    material: mars
+    transform:
+      - Translation: [5, 0, -6]
+      - Scaling: [ 1.2, 1.2, 1.2 ]
+
+  - shape: Sphere
+    material: jupiter
+    transform:
+      - Translation: [-1, 0, 8]
+      - Scaling: [8,8,8]
+
+  - shape: Sphere
+    material: saturn
+    transform:
+      - Translation: [-5, 0, -8]
+      - Scaling: [7,7,7]
+
+  - shape: Sphere
+    material: uranus
+    transform:
+      - Translation: [-12, 0, 3]
+      - Scaling: [ 3, 3, 3 ]
+
+  - shape: Sphere
+    material: neptune
+    transform:
+      - Translation: [-16, 0, -3]
+      - Scaling: [ 3, 3, 3 ]
+
+  - shape: Cube
+    material: skybox
+    transform:
+      - Scaling: [ 100, 100, 100 ]
