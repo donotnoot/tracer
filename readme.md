@@ -4,6 +4,7 @@ Simple distributed ray tracing 3D engine.
 
 ![some primitives with textures, reflection and refraction](./gallery/main.png)
 ![the solar system](./gallery/solar_system.png)
+![a golf ball with bump mapping](./gallery/golf_ball.png)
 ![the utah teapot with normal interpolation inside a skybox](./gallery/teapot_skybox.png)
 
 # Credit
