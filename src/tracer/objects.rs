@@ -1,8 +1,8 @@
 use super::material::Material;
-use super::matrix::{identity, Mat};
+use super::matrix::{identity, Kind, Mat};
+use super::patterns::Pattern;
 use super::ray::Ray;
 use super::tuple::{cross, dot, point, vector, Tup};
-use super::patterns::Pattern;
 
 #[derive(Debug, Clone)]
 pub struct Object {
@@ -56,7 +56,24 @@ impl Object {
         let mut world_normal = &transform_inverse.transpose() * &local_normal;
         world_normal.w = 0.0;
 
-        world_normal.normalize()
+        match &self.normal_map {
+            Some(pattern) => {
+                let normal_perturb = (pattern.at_object_local(p) * 2.) - vector(1., 1., 1.);
+                let t = (&world_normal * &vector(0., 0., 1.)).normalize();
+                let b = cross(&world_normal, &t).normalize();
+                let tbn = Mat::new(
+                    [
+                        [t.x, b.x, world_normal.x, 0.],
+                        [t.y, b.y, world_normal.y, 0.],
+                        [t.z, b.z, world_normal.z, 0.],
+                        [0., 0., 0., 0.],
+                    ],
+                    Kind::General,
+                );
+                (&tbn * &normal_perturb).normalize()
+            }
+            None => world_normal,
+        }
     }
 
     pub fn intersect(object: &Self, r: &Ray) -> (Option<f32>, Option<f32>, Option<(f32, f32)>) {
