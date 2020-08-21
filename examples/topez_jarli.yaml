@@ -8,8 +8,8 @@ light:
   intensity: "white"
   kind: null
 camera:
-  width: 1280
-  height: 800
+  width: 800
+  height: 450
   fov: 35
   from: [10, 1, -4]
   to: [0, 0, 0]

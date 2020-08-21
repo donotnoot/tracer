@@ -3,15 +3,19 @@ rendering:
   randomize_rays: false
   max_bounces: 3
   antialias: 2
-light:
-  position: [-5.0, 5, -5.0]
-  intensity: [1.2, 1.2, 1.2]
-  kind:
-    corner: [-5.0, 5, -5.0]
-    uvec: [2, 0, 0]
-    vvec: [0, 2, 0]
-    usteps: 4
-    vsteps: 4
+lights:
+  # Ceiling Light
+  - type: Area
+    position: [0, 10, 0]
+    color: [1.5, 1.5, 1.5]
+    u_size: [8, 0, 0]
+    v_size: [0, 0, 8]
+    u_steps: 8
+    v_steps: 8
+  # "Flash" from the camera
+  # - type: Point
+  #   position: [-9, 1, -13]
+  #   color: [100, 100, 100]
 camera:
   width: 800
   height: 500
@@ -19,6 +23,7 @@ camera:
   from: [-9, 1, -13]
   to: [0, 0, 0]
   up: [0, 1, 0]
+  gamma: 1.8
 colors:
   black: 0
   white: 0xFFFFFF
@@ -79,12 +84,6 @@ objects:
     material: bw_ring
     transform:
       - Translation: [0, -1, 0]
-
-  # # Ceiling
-  # - shape: Plane
-  #   material: bw_checker
-  #   transform:
-  #     - Translation: [0, 10, 0]
 
   # Left wall
   - shape: Plane
