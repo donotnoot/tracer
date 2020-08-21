@@ -10,7 +10,7 @@ use rand::Rng;
 #[derive(Debug)]
 pub struct World {
     pub objects: Vec<Object>,
-    pub light: Light,
+    pub lights: Vec<Light>,
     pub background_color: Tup,
 }
 
@@ -18,11 +18,10 @@ impl World {
     pub fn new() -> Self {
         World {
             objects: vec![],
-            light: Light {
+            lights: vec![Light::Point(PointLight {
                 position: point(-10.0, 10.0, -10.0),
-                intensity: vector(1.0, 1.0, 1.0),
-                kind: LightKind::Point,
-            },
+                color: color(1.0, 1.0, 1.0),
+            })],
             background_color: color(0.0, 0.0, 0.0),
         }
     }
@@ -43,11 +42,10 @@ impl World {
                     Object::new(Geometry::Sphere(geometry), Material::new(), None)
                 },
             ],
-            light: Light {
+            lights: vec![Light::Point(PointLight {
                 position: point(-10.0, 10.0, -10.0),
-                intensity: vector(1.0, 1.0, 1.0),
-                kind: LightKind::Point,
-            },
+                color: color(1.0, 1.0, 1.0),
+            })],
             background_color: color(0.0, 0.0, 0.0),
         }
     }
@@ -84,18 +82,18 @@ impl World {
         i
     }
 
-    fn shadow_at_point(&self, p: &Tup) -> f32 {
-        match &self.light.kind {
-            LightKind::Point => self.point_shadow_intensity(&self.light.position, p),
-            LightKind::Area {
-                corner: _,
-                vvec: _,
-                vsteps,
-                uvec: _,
-                usteps,
-                samples,
-            } => self.area_light_shadow_intensity(p, *vsteps, *usteps, *samples),
-        }
+    fn shadow_at_point(&self, p: &Tup) -> Tup {
+        self.lights
+            .iter()
+            .map(|light| match &light {
+                Light::Point(light) => {
+                    &light.color * (1. - self.point_shadow_intensity(&light.position, p))
+                }
+                Light::Area(light) => {
+                    &light.color * (1. - self.area_light_shadow_intensity(p, light))
+                }
+            })
+            .sum::<Tup>() / (self.lights.len() as f32)
     }
 
     fn point_shadow_intensity(&self, light: &Tup, p: &Tup) -> f32 {
@@ -123,21 +121,20 @@ impl World {
         }
     }
 
-    fn area_light_shadow_intensity(&self, p: &Tup, vsteps: u32, usteps: u32, samples: u32) -> f32 {
+    fn area_light_shadow_intensity(&self, p: &Tup, light: &AreaLight) -> f32 {
         let mut total = 0.0;
         let mut rng = rand::thread_rng();
 
-        for v in 0..vsteps {
-            for u in 0..usteps {
+        for v in 1..=light.vsteps {
+            for u in 1..=light.usteps {
                 let light_position =
-                    self.light
-                        .point_on(u, v, rng.gen_range(0., 1.), rng.gen_range(0., 1.));
+                    light.point_on(u, v, rng.gen_range(0.8, 1.2), rng.gen_range(0.8, 1.2));
 
                 total += self.point_shadow_intensity(&light_position, p)
             }
         }
 
-        total / samples as f32
+        total / light.samples as f32
     }
 
     pub fn color_at(&self, r: &Ray, depth_remaining: u32) -> Tup {
@@ -156,22 +153,15 @@ impl World {
         let reflectiveness = c.object.material.reflectiveness;
         let transparency = c.object.material.transparency;
 
-        let shadow_strength = self.shadow_at_point(&c.over_point) - transparency;
-        let shadow_strength = if shadow_strength > 1.0 {
-            1.0
-        } else if shadow_strength < 0.0 {
-            0.0
-        } else {
-            shadow_strength
-        };
+        let shadow_color = self.shadow_at_point(&c.over_point); //TODO: - transparency;
 
         let surface = c.object.material.lighting(
             &(*c.object),
-            &self.light,
+            &self.lights,
             c.over_point.clone(),
             c.eye.clone(),
             c.normal.clone(),
-            shadow_strength,
+            shadow_color,
         );
 
         let refracted = self.refracted_color(&c, depth_remaining);

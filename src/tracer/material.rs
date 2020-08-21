@@ -36,51 +36,50 @@ impl Material {
     pub fn lighting(
         &self,
         o: &Object,
-        l: &Light,
+        l: &Vec<Light>,
         p: Tup,
         eye: Tup,
         normal: Tup,
-        shadow_strength: f32,
+        shadow_color: Tup,
     ) -> Tup {
         let object_color = match &self.pattern {
             Some(c) => c.at_object(o, &p),
             None => self.color.clone(), // TODO: no need to clone this...
         };
 
-        let effective_color = &object_color * &l.intensity;
-        let ambient = &effective_color * self.ambient;
+        l.iter()
+            .map(|l| {
+                let effective_color = &object_color * l.color();
+                let ambient = &effective_color * self.ambient;
 
-        if shadow_strength >= 1.0 {
-            return ambient;
-        }
+                let light = (l.position() - &p).normalize();
+                let light_normal_dot = dot(&light, &normal);
 
-        let light = (&l.position - &p).normalize();
-        let light_normal_dot = dot(&light, &normal);
+                let (diffuse, specular) = if light_normal_dot < 0.0 {
+                    let diffuse = color(0.0, 0.0, 0.0);
+                    let specular = color(0.0, 0.0, 0.0);
+                    (diffuse, specular)
+                } else {
+                    let diffuse = &effective_color * (self.diffuse * light_normal_dot);
+                    let reflect = &(-&light).reflect(&normal);
+                    let reflect_dot_eye = dot(&reflect, &eye);
 
-        let (diffuse, specular) = if light_normal_dot < 0.0 {
-            let diffuse = color(0.0, 0.0, 0.0);
-            let specular = color(0.0, 0.0, 0.0);
-            (diffuse, specular)
-        } else {
-            let diffuse = &effective_color * (self.diffuse * light_normal_dot);
-            let reflect = &(-&light).reflect(&normal);
-            let reflect_dot_eye = dot(&reflect, &eye);
+                    if reflect_dot_eye <= 0.0 {
+                        let specular = color(0.0, 0.0, 0.0);
+                        (diffuse, specular)
+                    } else {
+                        let factor = reflect_dot_eye.powf(self.shininess);
+                        let specular = l.color() * (self.specular * factor);
+                        (diffuse, specular)
+                    }
+                };
 
-            if reflect_dot_eye <= 0.0 {
-                let specular = color(0.0, 0.0, 0.0);
-                (diffuse, specular)
-            } else {
-                let factor = reflect_dot_eye.powf(self.shininess);
-                let specular = &l.intensity * (self.specular * factor);
-                (diffuse, specular)
-            }
-        };
+                let diffuse = &diffuse * &shadow_color;
+                let specular = &specular * &shadow_color;
 
-        let shadow_factor = 1.0 - shadow_strength;
-        let diffuse = diffuse * shadow_factor;
-        let specular = specular * shadow_factor;
-
-        ambient + diffuse + specular
+                ambient + diffuse + specular
+            })
+            .sum()
     }
 }
 
@@ -109,22 +108,18 @@ mod tests {
 
         let eyev = vector(0.0, 0.0, -1.0);
         let normalv = vector(0.0, 0.0, -1.0);
-        let light = Light {
-            position: point(0.0, 0.0, -10.0),
-            intensity: color(1.0, 1.0, 1.0),
-            kind: LightKind::Point,
-        };
+        let light = Light::new_point(point(0.0, 0.0, -10.0), color(1.0, 1.0, 1.0));
         let result = mat.lighting(
             &Object {
                 geometry: Geometry::Sphere(Sphere::default()),
                 material: Material::new(),
                 normal_map: None,
             },
-            &light,
+            &vec![light],
             pos,
             eyev,
             normalv,
-            0.0,
+            color(1., 1., 1.),
         );
 
         assert_eq!((1.9 - result.x).abs() <= std::f32::EPSILON, true);
@@ -140,22 +135,18 @@ mod tests {
         let p = 2_f32.sqrt() / 2.0;
         let eyev = vector(0.0, p, p);
         let normalv = vector(0.0, 0.0, -1.0);
-        let light = Light {
-            position: point(0.0, 0.0, -10.0),
-            intensity: color(1.0, 1.0, 1.0),
-            kind: LightKind::Point,
-        };
+        let light = Light::new_point(point(0.0, 0.0, -10.0), color(1.0, 1.0, 1.0));
         let result = mat.lighting(
             &Object {
                 geometry: Geometry::Sphere(Sphere::default()),
                 material: Material::new(),
                 normal_map: None,
             },
-            &light,
+            &vec![light],
             pos,
             eyev,
             normalv,
-            0.0,
+            color(1., 1., 1.),
         );
 
         assert_eq!((1.0 - result.x).abs() <= std::f32::EPSILON, true);
@@ -172,22 +163,18 @@ mod tests {
 
         let eyev = vector(0.0, 0.0, -1.0);
         let normalv = vector(0.0, 0.0, -1.0);
-        let light = Light {
-            position: point(0.0, 10.0, -10.0),
-            intensity: color(1.0, 1.0, 1.0),
-            kind: LightKind::Point,
-        };
+        let light = Light::new_point(point(0.0, 10.0, -10.0), color(1.0, 1.0, 1.0));
         let result = mat.lighting(
             &Object {
                 geometry: Geometry::Sphere(Sphere::default()),
                 material: Material::new(),
                 normal_map: None,
             },
-            &light,
+            &vec![light],
             pos,
             eyev,
             normalv,
-            0.0,
+            color(1., 1., 1.),
         );
 
         let r = 0.1 + p * 0.9;
@@ -205,22 +192,18 @@ mod tests {
 
         let eyev = vector(0.0, -p, -p);
         let normalv = vector(0.0, 0.0, -1.0);
-        let light = Light {
-            position: point(0.0, 10.0, -10.0),
-            intensity: color(1.0, 1.0, 1.0),
-            kind: LightKind::Point,
-        };
+        let light = Light::new_point(point(0.0, 10.0, -10.0), color(1.0, 1.0, 1.0));
         let result = mat.lighting(
             &Object {
                 geometry: Geometry::Sphere(Sphere::default()),
                 material: Material::new(),
                 normal_map: None,
             },
-            &light,
+            &vec![light],
             pos,
             eyev,
             normalv,
-            0.0,
+            color(1., 1., 1.),
         );
 
         let r = 0.1 + 0.9 * p + 0.9;
@@ -236,22 +219,18 @@ mod tests {
 
         let eyev = vector(0.0, 0.0, -1.0);
         let normalv = vector(0.0, 0.0, -1.0);
-        let light = Light {
-            position: point(0.0, 0.0, 10.0),
-            intensity: color(1.0, 1.0, 1.0),
-            kind: LightKind::Point,
-        };
+        let light = Light::new_point(point(0.0, 0.0, 10.0), color(1.0, 1.0, 1.0));
         let result = mat.lighting(
             &Object {
                 geometry: Geometry::Sphere(Sphere::default()),
                 material: Material::new(),
                 normal_map: None,
             },
-            &light,
+            &vec![light],
             pos,
             eyev,
             normalv,
-            0.0,
+            color(1., 1., 1.),
         );
 
         assert_eq!((0.1 - result.x).abs() <= std::f32::EPSILON, true);
@@ -266,22 +245,18 @@ mod tests {
 
         let eyev = vector(0.0, 0.0, -1.0);
         let normalv = vector(0.0, 0.0, -1.0);
-        let light = Light {
-            position: point(0.0, 0.0, -10.0),
-            intensity: color(1.0, 1.0, 1.0),
-            kind: LightKind::Point,
-        };
+        let light = Light::new_point(point(0.0, 0.0, -10.0), color(1.0, 1.0, 1.0));
         let result = mat.lighting(
             &Object {
                 geometry: Geometry::Sphere(Sphere::default()),
                 material: Material::new(),
                 normal_map: None,
             },
-            &light,
+            &vec![light],
             pos,
             eyev,
             normalv,
-            1.0,
+            color(0., 0., 0.),
         );
 
         assert_eq!((0.1 - result.x).abs() <= std::f32::EPSILON, true);
@@ -303,11 +278,7 @@ mod tests {
 
         let eyev = vector(0.0, 0.0, -1.0);
         let normalv = vector(0.0, 0.0, -1.0);
-        let light = Light {
-            position: point(0.0, 0.0, -10.0),
-            intensity: color(1.0, 1.0, 1.0),
-            kind: LightKind::Point,
-        };
+        let light = &vec![Light::new_point(point(0.0, 0.0, -10.0), color(1.0, 1.0, 1.0))];
 
         let c1 = mat.lighting(
             &Object {
@@ -315,11 +286,11 @@ mod tests {
                 material: Material::new(),
                 normal_map: None,
             },
-            &light,
+            light,
             point(0.9, 0.0, 0.0),
             eyev.clone(),
             normalv.clone(),
-            0.0,
+            color(1., 1., 1.),
         );
         let c2 = mat.lighting(
             &Object {
@@ -327,11 +298,11 @@ mod tests {
                 material: Material::new(),
                 normal_map: None,
             },
-            &light,
+            light,
             point(1.0, 0.0, 0.0),
             eyev,
             normalv,
-            0.0,
+            color(1., 1., 1.),
         );
 
         assert_eq!((1.0 - c2.x).abs() <= std::f32::EPSILON, false);
