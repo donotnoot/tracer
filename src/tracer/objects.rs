@@ -72,7 +72,7 @@ impl Object {
                 );
                 (&tbn * &normal_perturb).normalize()
             }
-            None => world_normal,
+            None => world_normal.normalize(),
         }
     }
 
