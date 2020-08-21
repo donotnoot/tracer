@@ -4,7 +4,7 @@ use super::canvas::Pixel;
 use super::matrix::{identity, Mat};
 use super::ray::Ray;
 
-use super::tuple::{point, Tup};
+use super::tuple::{point, Tup, color};
 use super::world::World;
 
 use rand::seq::SliceRandom;
@@ -22,13 +22,14 @@ pub struct Camera {
     pub pixel_size: f32,
     pub antialias: u32,
     pub reflection_limit: u32,
+    pub gamma: f32,
 
     transform: Mat,
     transform_inverse: Mat,
 }
 
 impl Camera {
-    pub fn new(h_size: f32, v_size: f32, fov: f32, aa: u32, max_depth: u32) -> Self {
+    pub fn new(h_size: f32, v_size: f32, fov: f32, aa: u32, max_depth: u32, gamma: f32) -> Self {
         let aspect_ratio = h_size / v_size;
         let half = (fov / 2.0).tan();
 
@@ -50,6 +51,7 @@ impl Camera {
             transform_inverse: identity(),
             antialias: aa,
             reflection_limit: max_depth,
+            gamma,
         }
     }
 
@@ -72,8 +74,15 @@ impl Camera {
         Ray { origin, direction }
     }
 
+    fn gamma_correct(&self, c: Tup) -> Tup {
+        let comp = |c: f32| {
+            c.powf(1./self.gamma)
+        };
+        color(comp(c.x), comp(c.y), comp(c.z))
+    }
+
     pub fn render_pixel(&self, w: &World, x: u32, y: u32) -> Tup {
-        match self.antialias {
+        self.gamma_correct(match self.antialias {
             0 | 1 => w.color_at(
                 &self.ray(x as f32, y as f32, 0.5, 0.5),
                 self.reflection_limit,
@@ -98,7 +107,7 @@ impl Camera {
 
                 p.into_iter().sum()
             }
-        }
+        })
     }
 
     pub fn render(&self, w: World, tx: Sender<Pixel>, shuffle: bool, tile_size: u32) {
@@ -147,19 +156,19 @@ mod tests {
 
     #[test]
     fn pixel_size_horizontal_camera() {
-        let c = Camera::new(200.0, 125.0, std::f32::consts::PI / 2.0, 1, 8);
+        let c = Camera::new(200.0, 125.0, std::f32::consts::PI / 2.0, 1, 8, 1.);
         assert!((c.pixel_size - 0.01).abs() <= std::f32::EPSILON);
     }
 
     #[test]
     fn pixel_size_vertical_camera() {
-        let c = Camera::new(125.0, 200.0, std::f32::consts::PI / 2.0, 1, 8);
+        let c = Camera::new(125.0, 200.0, std::f32::consts::PI / 2.0, 1, 8, 1.);
         assert!((c.pixel_size - 0.01).abs() <= std::f32::EPSILON);
     }
 
     #[test]
     fn ray_through_center_of_canvas() {
-        let c = Camera::new(201.0, 101.0, std::f32::consts::PI / 2.0, 1, 8);
+        let c = Camera::new(201.0, 101.0, std::f32::consts::PI / 2.0, 1, 8, 1.);
         let r = c.ray(100.0, 50.0, 0.5, 0.5);
 
         assert_eq!(point(0.0, 0.0, 0.0), r.origin);
@@ -171,7 +180,7 @@ mod tests {
 
     #[test]
     fn ray_through_corner_of_canvas() {
-        let c = Camera::new(201.0, 101.0, std::f32::consts::PI / 2.0, 1, 8);
+        let c = Camera::new(201.0, 101.0, std::f32::consts::PI / 2.0, 1, 8, 1.);
         let r = c.ray(0.0, 0.0, 0.5, 0.5);
 
         assert_eq!(point(0.0, 0.0, 0.0), r.origin);
@@ -183,7 +192,7 @@ mod tests {
 
     #[test]
     fn ray_when_camera_is_transformed() {
-        let mut c = Camera::new(201.0, 101.0, std::f32::consts::PI / 2.0, 1, 8);
+        let mut c = Camera::new(201.0, 101.0, std::f32::consts::PI / 2.0, 1, 8, 1.);
         c.set_transform(&rotate_y(std::f32::consts::PI / 4.0) * &translation(0.0, -2.0, 5.0));
         let r = c.ray(100.0, 50.0, 0.5, 0.5);
 
