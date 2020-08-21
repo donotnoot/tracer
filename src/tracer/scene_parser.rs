@@ -1,5 +1,5 @@
 use super::camera::Camera;
-use super::light::{Light, LightKind};
+use super::light::{AreaLight, Light, PointLight};
 use super::material::Material;
 use super::matrix;
 use super::matrix::Mat;
@@ -19,7 +19,7 @@ struct SceneFile {
     background_color: ColorSpec,
 
     #[serde(default)]
-    light: LightSpec,
+    lights: Vec<LightSpec>,
 
     #[serde(default)]
     rendering: RenderingSpec,
@@ -47,33 +47,35 @@ struct SceneFile {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct LightSpec {
-    pub position: [f32; 3],
-    pub intensity: ColorSpec,
-    pub kind: LightKindSpec,
+#[serde(tag = "type")]
+pub enum LightSpec {
+    Point(PointLightSpec),
+    Area(AreaLightSpec),
 }
 
 impl Default for LightSpec {
     fn default() -> Self {
-        LightSpec {
+        LightSpec::Point(PointLightSpec {
             position: [-10., 10., -10.],
-            intensity: ColorSpec::Floats(1.0, 1.0, 1.0),
-            kind: LightKindSpec::Point,
-        }
+            color: ColorSpec::Floats(1.0, 1.0, 1.0),
+        })
     }
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(untagged)]
-pub enum LightKindSpec {
-    Point,
-    Area {
-        corner: [f32; 3],
-        uvec: [f32; 3],
-        vvec: [f32; 3],
-        usteps: u32,
-        vsteps: u32,
-    },
+pub struct PointLightSpec {
+    pub position: [f32; 3],
+    pub color: ColorSpec,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AreaLightSpec {
+    pub position: [f32; 3],
+    pub color: ColorSpec,
+    pub u_size: [f32; 3],
+    pub v_size: [f32; 3],
+    pub u_steps: u32,
+    pub v_steps: u32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -104,6 +106,7 @@ struct CameraSection {
     from: [f32; 3],
     to: [f32; 3],
     up: [f32; 3],
+    gamma: f32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -299,35 +302,32 @@ pub fn from_reader(
 
     let mut world = World::new();
 
-    let light_position = point(
-        scene.light.position[0],
-        scene.light.position[1],
-        scene.light.position[2],
-    );
-
-    let light_intensity = scene.process_color(&scene.light.intensity)?;
-
-    world.light = match scene.light.kind {
-        LightKindSpec::Point => Light {
-            position: light_position,
-            intensity: light_intensity,
-            kind: LightKind::Point,
-        },
-        LightKindSpec::Area {
-            corner,
-            uvec,
-            vvec,
-            usteps,
-            vsteps,
-        } => Light::new_area(
-            &light_intensity,
-            &f32x3_to_point(corner),
-            &f32x3_to_vec(uvec),
-            usteps,
-            &f32x3_to_vec(vvec),
-            vsteps,
-        ),
-    };
+    world.lights = scene
+        .lights
+        .iter()
+        .map(|light_spec| -> Result<Light, Box<dyn Error>> {
+            match light_spec {
+                LightSpec::Point(spec) => {
+                    let position = point(spec.position[0], spec.position[1], spec.position[2]);
+                    let color = scene.process_color(&spec.color)?;
+                    Ok(Light::Point(PointLight { position, color }))
+                }
+                LightSpec::Area(spec) => {
+                    let color = scene.process_color(&spec.color)?;
+                    let area = Light::new_area(
+                        f32x3_to_point(spec.position),
+                        color,
+                        f32x3_to_vec(spec.u_size),
+                        spec.u_steps,
+                        f32x3_to_vec(spec.v_size),
+                        spec.v_steps,
+                    );
+                    println!("{:#?}", area);
+                    Ok(area)
+                }
+            }
+        })
+        .collect::<Result<Vec<Light>, Box<dyn Error>>>()?;
 
     let mut camera = Camera::new(
         scene.camera.width,
@@ -335,6 +335,7 @@ pub fn from_reader(
         deg2rad(scene.camera.fov),
         scene.rendering.antialias,
         scene.rendering.max_bounces,
+        scene.camera.gamma,
     );
     camera.set_transform(view(
         point(
@@ -362,7 +363,7 @@ pub fn from_reader(
                     normal_map: match &spec.normal_map {
                         Some(normal_map_spec) => Some(scene.process_pattern(&normal_map_spec)?),
                         None => None,
-                    }
+                    },
                 });
                 Ok(())
             }
@@ -374,7 +375,7 @@ pub fn from_reader(
                     normal_map: match &spec.normal_map {
                         Some(normal_map_spec) => Some(scene.process_pattern(&normal_map_spec)?),
                         None => None,
-                    }
+                    },
                 });
                 Ok(())
             }
