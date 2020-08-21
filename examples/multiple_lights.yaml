@@ -1,0 +1,97 @@
+background_color: black
+rendering:
+  randomize_rays: false
+  max_bounces: 3
+  antialias: 2
+lights:
+  # Magenta Light
+  - type: Area
+    position: [3, 5, -3]
+    color: [200, 0, 200]
+    u_size: [-1, 0, 0]
+    v_size: [0, -1, 0]
+    u_steps: 8
+    v_steps: 8
+
+  # Cyan Light
+  - type: Area
+    position: [-3, 5, -3]
+    color: [0, 200, 200]
+    u_size: [1, 0, 0]
+    v_size: [0, -1, 0]
+    u_steps: 8
+    v_steps: 8
+
+  # Yellow Light
+  - type: Area
+    position: [0, 5, 3]
+    color: [200, 200, 0]
+    u_size: [1, 0, 0]
+    v_size: [0, -1, 0]
+    u_steps: 8
+    v_steps: 8
+camera:
+  width: 800
+  height: 800
+  fov: 65
+  from: [0, 10, 0]
+  to: [0, 0, 0]
+  up: [0, 0, 1]
+  gamma: 1.8
+colors:
+  black: 0
+  white: 0xFFFFFF
+  dark_gray: 0x31393C
+materials:
+  sphere:
+    color: [200, 200, 200]
+    ambient: 0.2
+    diffuse: 0.8
+    specular: 1
+objects:
+  - shape: Plane
+    material:
+      color: [200, 200, 200]
+    transform:
+      - Translation: [0, -1, 0]
+
+  - shape: Sphere
+    transform: []
+    material: sphere
+
+  # Magenta Light
+  - shape: Sphere
+    transform:
+      - Translation: [3, 5, -3]
+      - Scaling: [0.1, 0.1, 0.1]
+    material:
+      light_through: true
+      color: [255, 100, 255]
+      ambient: 1.0
+      specular: 0.0
+      diffuse: 0.0
+
+  # Cyan Light
+  - shape: Sphere
+    transform:
+      - Translation: [-3, 5, -3]
+      - Scaling: [0.1, 0.1, 0.1]
+    material:
+      light_through: true
+      color: [100, 255, 255]
+      ambient: 1.0
+      specular: 0.0
+      diffuse: 0.0
+
+  # Yello Light
+  - shape: Sphere
+    transform:
+      - Translation: [0, 5, 3]
+      - Scaling: [0.1, 0.1, 0.1]
+    material:
+      light_through: true
+      color: [255, 255, 100]
+      ambient: 1.0
+      specular: 0.0
+      diffuse: 0.0
+
